@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 
 from Bio import SeqIO
+from Bio.PDB import PDBParser, PDBIO
 # import pickle
 
 # import numpy as np
@@ -82,3 +83,55 @@ def read_parent_fasta(fasta_path: str) -> str:
 
     # Return the sequence as a string
     return str(sequences[0].seq)
+
+
+
+def get_chain_ids(pdb_file_path: str) -> list:
+    """
+    Extract chain IDs from a given PDB file.
+
+    Args:
+    - pdb_file_path (str): The path to the PDB file.
+
+    Returns:
+    - list: A list of chain IDs in the PDB file.
+    """
+    parser = PDBParser(QUIET=True)  # QUIET=True suppresses warnings
+    structure = parser.get_structure("structure", pdb_file_path)
+
+    # Extract chain IDs
+    chain_ids = set()
+    for model in structure:
+        for chain in model:
+            chain_ids.add(chain.id)
+
+    return list(chain_ids)
+
+
+def modify_PDB_chain(input_file_path: str, output_file_path: str, original_chain_id: str, modified_chain_id: str):
+    """
+    Modify chain ID in a PDB file and save it to a new file.
+
+    Parameters:
+    input_file_path (str): Path to the input PDB file.
+    output_file_path (str): Path to the output PDB file.
+    original_chain_id (str): The chain ID to be replaced.
+    modified_chain_id (str): The new chain ID.
+    """
+
+    # Parse the input PDB file
+    parser = PDBParser()
+    structure = parser.get_structure("protein", input_file_path)
+
+    # Iterate over the chains and replace the original chain ID with the modified chain ID
+    for model in structure:
+        for chain in model:
+            if chain.id == original_chain_id:
+                chain.id = modified_chain_id
+
+    # Save the modified structure to the output PDB file
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(output_file_path)
+
+    print(f"Chain {original_chain_id} has been replaced with {modified_chain_id} in {output_file_path}")

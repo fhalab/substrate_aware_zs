@@ -292,24 +292,22 @@ class ProcessData(LibData):
 
         df = self.input_df.copy()
 
-        print(df.columns)
-
         # append muts column for none SSM data
         if self._mut_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
-
-        
-        print(df.columns)
 
         # split the amino acids for SSM data
         if "AA1" not in df.columns and self._combo_col_name in df.columns:
             df = self._split_aa(df).copy()
 
-        print(df.columns)
-
         # add full seq from fasta file by modifying self.parent_seq with the mutations
         if self._seq_col_name not in df.columns and self._combo_col_name in df.columns:
             df.loc[:, self._seq_col_name] = df[self._mut_col_name].apply(lambda x: self._mut2seq(x))
+
+        # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
+        for col in ["enzyme", "substrate", "substrate-smiles", "cofactor", "cofactor-smiles"]:
+            if col in self.lib_info:
+                df[col] = self.lib_info[col]
 
         # save the output csv
         df.to_csv(self.output_csv, index=False)
