@@ -30,7 +30,7 @@ if __name__ == "__main__":
         coves_dir="zs/coves",
         lmdb_dir: str = "lmdb",
         model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-        dout: str = "results",
+        dout: str = "zs/coves/results",
         n_ave: int = 100,
     )
     """

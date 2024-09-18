@@ -27,7 +27,7 @@ class LibData:
         input_csv: str,
         scale_fit: str,
         combo_col_name: str = "AAs",
-        mut_col_name: str = "muts",
+        var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
@@ -41,7 +41,9 @@ class LibData:
             'parent' means the parent fitness = 1
             'max' means max fitness = 1
         - combo_col_name, str: the column name for the mutated amino acids
-        - mut_col_name, str: the column name for the mutations
+            ie 'VDGV'
+        - var_col_name, str: the column name for the variants
+            ie 'V39D:D40G'
         - seq_col_name, str: the column name for the full sequence
         - fit_col_name, str: the column name for the fitness
         - seq_dir, str: the directory for the parent sequence fasta files
@@ -51,7 +53,7 @@ class LibData:
         self._scale_fit = scale_fit
 
         self._combo_col_name = combo_col_name
-        self._mut_col_name = mut_col_name
+        self._var_col_name = var_col_name
         self._seq_col_name = seq_col_name
         self._fit_col_name = fit_col_name
         self._seq_dir = seq_dir
@@ -126,7 +128,7 @@ class ProcessData(LibData):
         input_csv: str,
         scale_fit: str = "parent",
         combo_col_name: str = "AAs",
-        mut_col_name: str = "muts",
+        var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
@@ -139,13 +141,18 @@ class ProcessData(LibData):
         - scale_fit, str: ways to scale the fitness
             'parent' means the parent fitness = 1
             'max' means max fitness = 1
+        - combo_col_name, str: the column name for the mutated amino acids
+        - var_col_name, str: the column name for the variants
+        - seq_col_name, str: the column name for the full sequence
+        - fit_col_name, str: the column name for the fitness
+        - seq_dir, str: the directory for the parent sequence fasta files
         """
 
         super().__init__(
             input_csv,
             scale_fit,
             combo_col_name,
-            mut_col_name,
+            var_col_name,
             seq_col_name,
             fit_col_name,
             seq_dir,
@@ -194,8 +201,10 @@ class ProcessData(LibData):
         - str: the converted sequence
         """
 
-        mut_seq = ""
+        mut_name = ""
         mut_num = 0
+        mut_list = []
+        pos_list = []
 
         for i, (mut, wt) in enumerate(zip(muts, self.parent_aa)):
             # get wt aa + mut position from ie
@@ -212,10 +221,11 @@ class ProcessData(LibData):
             if mut != wt:
                 mut_num += 1
                 if mut_num != 1:
-                    mut_seq += ":" + wt_aa_pos + mut
+                    mut_name += ":" + wt_aa_pos + mut
                 else:
-                    mut_seq += wt_aa_pos + mut
-        return mut_seq
+                    mut_name += wt_aa_pos + mut
+
+        return mut_name
 
     def _append_mut(self, df: pd.DataFrame) -> pd.DataFrame:
 
@@ -230,20 +240,20 @@ class ProcessData(LibData):
         """
 
         df_appended = df.copy()
-        df_appended.loc[:, self._mut_col_name] = df_appended.apply(
+        df_appended.loc[:, self._var_col_name] = df_appended.apply(
             lambda x: self._convert_muts(x[self._combo_col_name]),
             axis=1,
         )
 
-        df_appended[self._mut_col_name] = df_appended[self._mut_col_name].replace(
+        df_appended[self._var_col_name] = df_appended[self._var_col_name].replace(
             "", "WT"
         )
 
         # add mut number
-        df_appended["n_mut"] = df_appended[self._mut_col_name].str.split(":").str.len()
+        df_appended["n_mut"] = df_appended[self._var_col_name].str.split(":").str.len()
 
         # change WT n_mut to 0
-        df_appended.loc[df_appended[self._mut_col_name] == "WT", "n_mut"] = 0
+        df_appended.loc[df_appended[self._var_col_name] == "WT", "n_mut"] = 0
 
         return df_appended.copy()
 
@@ -284,6 +294,7 @@ class ProcessData(LibData):
 
             return "".join(seq_list)
 
+
     def _process(self) -> pd.DataFrame:
 
         """
@@ -293,7 +304,7 @@ class ProcessData(LibData):
         df = self.input_df.copy()
 
         # append muts column for none SSM data
-        if self._mut_col_name not in df.columns and self._combo_col_name in df.columns:
+        if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
 
         # split the amino acids for SSM data
@@ -302,7 +313,7 @@ class ProcessData(LibData):
 
         # add full seq from fasta file by modifying self.parent_seq with the mutations
         if self._seq_col_name not in df.columns and self._combo_col_name in df.columns:
-            df.loc[:, self._seq_col_name] = df[self._mut_col_name].apply(lambda x: self._mut2seq(x))
+            df.loc[:, self._seq_col_name] = df[self._var_col_name].apply(lambda x: self._mut2seq(x))
 
         # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
         for col in ["enzyme", "substrate", "substrate-smiles", "cofactor", "cofactor-smiles"]:
@@ -324,7 +335,7 @@ def preprocess_all(
     input_pattern: str = "data/lib/*.csv",
     scale_fit: str = "parent",
     combo_col_name: str = "AAs",
-    mut_col_name: str = "muts",
+    var_col_name: str = "var",
     seq_col_name: str = "seq",
     fit_col_name: str = "fitness",
     seq_dir: str = "data/seq",
@@ -340,7 +351,7 @@ def preprocess_all(
         'parent' means the parent fitness = 1
         'max' means max fitness = 1
     - combo_col_name, str: the column name for the mutated amino acids
-    - mut_col_name, str: the column name for the mutations
+    - var_col_name, str: the column name for the variants
     - seq_col_name, str: the column name for the full sequence
     - fit_col_name, str: the column name for the fitness
     - seq_dir, str: the directory for the parent sequence fasta files
@@ -354,7 +365,7 @@ def preprocess_all(
             input_csv=input_csv,
             scale_fit=scale_fit,
             combo_col_name=combo_col_name,
-            mut_col_name=mut_col_name,
+            var_col_name=var_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
             seq_dir=seq_dir,
