@@ -17,11 +17,11 @@ dependencies:
   - python=3.11
   - biopandas
   - biopython
+  - biotite
   - bokeh
   - brokenaxes
   - cairosvg
   - colorcet
-  # - cudatoolkit=11.8
   - dask                    # for faster large df handling
   - datashader
   - dssp                    # optional for graphein, required for computing secondary structural features

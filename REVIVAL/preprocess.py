@@ -118,6 +118,8 @@ class LibData:
         return read_parent_fasta(self.seq_file)
 
 
+######### Handling SSM input meta data #########
+
 class ProcessData(LibData):
     """
     A parent class to process the data
@@ -371,3 +373,98 @@ def preprocess_all(
             seq_dir=seq_dir,
             output_dir=output_dir,
         )._process()
+
+
+######### Handling ZS data #########
+
+class ZSData(LibData):
+    """
+    A class for generating ZS scores
+    """
+
+    def __init__(
+        self,
+        input_csv: str,
+        scale_fit: str,
+        combo_col_name: str = "AAs",
+        var_col_name: str = "var",
+        mut_col_name: str = "mut",
+        pos_col_name: str = "pos",
+        seq_col_name: str = "seq",
+        fit_col_name: str = "fitness",
+        seq_dir: str = "data/seq",
+        zs_dir: str = "zs",
+    ):
+
+        """
+        - mut_col_name, str: the column name for the mutations
+            ie ['A', 'D']
+        - pos_col_name, str: the column name for the positions
+            ie [39, 40]
+        """
+
+        super().__init__(
+            input_csv,
+            scale_fit,
+            combo_col_name,
+            var_col_name,
+            seq_col_name,
+            fit_col_name,
+            seq_dir,
+        )
+
+        self._mut_col_name = mut_col_name
+        self._pos_col_name = pos_col_name
+
+        self._zs_dir = checkNgen_folder(zs_dir)
+
+    def _append_mut_dets(self, combo: str) -> tuple:
+
+        """
+        Append mut details from the combo column
+
+        Args:
+        - combo, str: the variants sequence
+
+        Returns:
+        - list: the list of mutated AA
+        - list: the list of mutated positions
+        """
+
+        mut_list = []
+        pos_list = []
+
+        for i, (mut, wt) in enumerate(zip(combo, self.parent_aa)):
+
+            if mut != wt:
+                mut_list.append(mut)
+                # note the info dict positiosn is 1 indexed
+                pos_list.append(self.lib_info["positions"][i + 1])
+
+        return mut_list, pos_list
+
+    @property
+    def df(self) -> pd.DataFrame:
+
+        """
+        Get the dataframe with mutation details
+        """
+
+        df = self.input_df.copy()
+
+        df[[self._mut_col_name, self._pos_col_name]] = df.apply(
+            lambda x: pd.Series(self._append_mut_dets(x[self._combo_col_name])),
+            axis=1,
+        )
+
+        return df.copy()
+
+    @property
+    def max_n_mut(self) -> int:
+
+        """
+        Get the maximum number of mutations
+        """
+
+        return self.df["n_mut"].max()
+
