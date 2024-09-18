@@ -4,20 +4,16 @@ A script for generating EMS zs scores
 
 from __future__ import annotations
 
-# Import packages
 import os
+from glob import glob
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
 
-# ESM
 import esm
-
-# from esm.model.msa_transformer import MSATransformer
-
-# Pytorch
 import torch
 
-from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import LibData
 from REVIVAL.util import checkNgen_folder
 
@@ -26,7 +22,9 @@ class ZSData(LibData):
     """
     A class for generating ZS scores
     """
-    def __init__(self,
+
+    def __init__(
+        self,
         input_csv: str,
         scale_fit: str,
         combo_col_name: str = "AAs",
@@ -35,8 +33,8 @@ class ZSData(LibData):
         pos_col_name: str = "pos",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
-        seq_dir: str = "data/seq"
-        ):
+        seq_dir: str = "data/seq",
+    ):
 
         """
         - mut_col_name, str: the column name for the mutations
@@ -45,13 +43,20 @@ class ZSData(LibData):
             ie [39, 40]
         """
 
-        super().__init__(input_csv, scale_fit, combo_col_name, var_col_name, seq_col_name, fit_col_name, seq_dir)
+        super().__init__(
+            input_csv,
+            scale_fit,
+            combo_col_name,
+            var_col_name,
+            seq_col_name,
+            fit_col_name,
+            seq_dir,
+        )
 
         self._mut_col_name = mut_col_name
         self._pos_col_name = pos_col_name
 
-
-    def _append_mut_dets(self, combo: str) -> str:
+    def _append_mut_dets(self, combo: str) -> tuple:
 
         """
         Append mut details from the combo column
@@ -72,21 +77,22 @@ class ZSData(LibData):
             if mut != wt:
                 mut_list.append(mut)
                 # note the info dict positiosn is 1 indexed
-                pos_list.append(self.lib_info["positions"][i+1])
+                pos_list.append(self.lib_info["positions"][i + 1])
 
         return mut_list, pos_list
 
     @property
     def df(self) -> pd.DataFrame:
-            
+
         """
         Get the dataframe with mutation details
         """
 
         df = self.input_df.copy()
-        df[[self._mut_col_name, self._pos_col_name]] = df[self.combo_col_name].apply(
-            lambda x: pd.Series(self._append_mut_dets(x)),
-            axis=1
+
+        df[[self._mut_col_name, self._pos_col_name]] = df.apply(
+            lambda x: pd.Series(self._append_mut_dets(x[self._combo_col_name])),
+            axis=1,
         )
 
         return df.copy()
@@ -101,13 +107,14 @@ class ZSData(LibData):
         return self.df["n_mut"].max()
 
 
-class ESM(LibData):
+class ESM(ZSData):
 
     """
     A class for generating ESM scores
     """
 
-    def __init__(self,
+    def __init__(
+        self,
         input_csv: str,
         scale_fit: str,
         esm_model_name: str = "esm2_t33_650M_UR50D",
@@ -119,10 +126,20 @@ class ESM(LibData):
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         esm_dir: str = "zs/esm",
-        regen_esm=False
-        ):
+        regen_esm=False,
+    ):
 
-        super().__init__(input_csv, scale_fit, combo_col_name, mut_col_name, pos_col_name, seq_col_name, fit_col_name, seq_dir)
+        super().__init__(
+            input_csv,
+            scale_fit,
+            combo_col_name,
+            var_col_name,
+            mut_col_name,
+            pos_col_name,
+            seq_col_name,
+            fit_col_name,
+            seq_dir,
+        )
 
         self._esm_model_name = esm_model_name
 
@@ -145,22 +162,27 @@ class ESM(LibData):
         self._esm_output_dir = checkNgen_folder(os.path.join(self._esm_dir, "output"))
         self._esm_path = os.path.join(self._esm_output_dir, f"{self.lib_name}.csv")
 
-        self._logit_dir = checkNgen_folder(os.path.join(self._esm_dir, "logits", self._esm_model_name))
+        self._logit_dir = checkNgen_folder(
+            os.path.join(self._esm_dir, "logits", self._esm_model_name)
+        )
         self._logit_path = os.path.join(self._logit_dir, f"{self.lib_name}.npy")
 
-        if self._logits_path != "" and os.path.exists(self._logits_path) and not(regen_esm):
-            print(f"{self._logits_path} exists and regen_esm = {regen_esm}. Loading...")
-            self._logits = np.load(self._logits_path)
+        if (
+            self._logit_path != ""
+            and os.path.exists(self._logit_path)
+            and not (regen_esm)
+        ):
+            print(f"{self._logit_path} exists and regen_esm = {regen_esm}. Loading...")
+            self._logits = np.load(self._logit_path)
         else:
-            print(f"Generating {self._logits_path}...")
+            print(f"Generating {self._logit_path}...")
             self._logits = self._get_logits()
 
         # generate esm score
-        self._esm_df = self._get_esm_score()
+        self._esm_df = self._run_esm()
 
         # save the esm score df
         self._esm_df.to_csv(self._esm_path, index=False)
-
 
     def _infer_model(self):
 
@@ -195,11 +217,15 @@ class ESM(LibData):
             batch_tokens_masked = batch_tokens_masked.to(self._device)
 
             with torch.no_grad():
-                token_probs = torch.log_softmax(
-                    self._model(batch_tokens_masked)["logits"], dim=-1
-                ).cpu().numpy()
+                token_probs = (
+                    torch.log_softmax(
+                        self._model(batch_tokens_masked)["logits"], dim=-1
+                    )
+                    .cpu()
+                    .numpy()
+                )
 
-            logits[i] = token_probs[0, i+1]
+            logits[i] = token_probs[0, i + 1]
 
         # save the logits
         np.save(self._logit_path, logits)
@@ -211,20 +237,20 @@ class ESM(LibData):
         """
         Get the probability of the mutant given the wild type sequence at certain position.
         """
-        
+
         wt_idx = self._alphabet.get_idx(wt)
         mt_idx = self._alphabet.get_idx(mt)
 
         return self._logits[pos, mt_idx] - self._logits[pos, wt_idx]
 
-    def _get_esm_score(self, df: pd.DataFrame, _sum: bool = False):
+    def _get_esm_score(self, df, _sum: bool = False):
 
         """
         Run ESM model for all variants in the data set
 
         Input:  - logits: Logits of the wild type sequence
                 - df: Data set containing the variants, loops trough column = 'mut' and 'pos'
-                - _sum: If True, the sum of the probabilities is calculated. 
+                - _sum: If True, the sum of the probabilities is calculated.
                     If False, the mean of the probabilities is calculated
 
         Output: - Score for each variant
@@ -234,7 +260,7 @@ class ESM(LibData):
         wt_sequence = list(self.parent_seq)
 
         if _sum:
-            for i, mut in enumerate(df["mut"]):
+            for i, mut in enumerate(df[self._mut_col_name]):
                 s = np.zeros(len(mut))
                 for j, mt in enumerate(mut):
                     if mt == "WT":
@@ -247,16 +273,16 @@ class ESM(LibData):
 
                     else:
                         pos = (
-                            int(df["pos"].iloc[i][j]) - 1
+                            int(df[self._pos_col_name].iloc[i][j]) - 1
                         )  # Position of the mutation with python indexing
                         wt = wt_sequence[pos]
                         s[j] = self._get_mutant_prob(mt=mt, wt=wt, pos=pos)
-                    
+
                     score[i] += s.sum()
 
         else:
-            for i, mut in enumerate(df["mut"]):
-
+            for i, mut in enumerate(df[self._mut_col_name]):
+  
                 mt = mut[0]
 
                 if mt == "WT":
@@ -268,21 +294,13 @@ class ESM(LibData):
                     continue
 
                 else:
-                    pos = int(df["pos"].iloc[i][0] - 1)
+                    pos = int(self.df[self._pos_col_name].iloc[i][0] - 1)
                     wt = wt_sequence[pos]
                     score[i] = self._get_mutant_prob(mt=mt, wt=wt, pos=pos)
 
         return score
 
-    def _get_n_df(self, n: int = 1):
-
-        """
-        Get n data frame with n mutants
-        """
-
-        return self.df[self.df["n_mut"] == n].copy()
-
-    def _get_esm_score(self):
+    def _run_esm(self):
 
         """
         Get any score for each variant in the data set
@@ -291,9 +309,9 @@ class ESM(LibData):
         df_n_list = []
 
         # Get the n mutant scores
-        for i in list(range(self.max_n_mut+1))[1:]:
+        for i in list(range(self.max_n_mut + 1))[1:]:
             # Filter out n mutants
-            df_n = self._get_n_df(i)
+            df_n = self.df[self.df["n_mut"] == i].copy()
             if df_n.empty:  # Check if the DataFrame is empty after filtering
                 assert "Data set is empty"
                 continue
@@ -310,3 +328,46 @@ class ESM(LibData):
 
         return pd.concat(df_n_list, axis=0)
 
+
+def run_all_esm(
+    pattern: str = "data/meta/scale2parent/*",
+    scale_fit: str = "parent",
+    esm_model_name: str = "esm2_t33_650M_UR50D",
+    combo_col_name: str = "AAs",
+    var_col_name: str = "var",
+    mut_col_name: str = "mut",
+    pos_col_name: str = "pos",
+    seq_col_name: str = "seq",
+    fit_col_name: str = "fitness",
+    seq_dir: str = "data/seq",
+    esm_dir: str = "zs/esm",
+    regen_esm=False,
+):
+
+    """
+    Run all ESM scores
+    """
+
+    if isinstance(pattern, str):
+        path_list = glob(pattern)
+    else:
+        path_list = deepcopy(pattern)
+
+    for p in path_list:
+
+        print(f"Running ESM for {p}...")
+
+        ESM(
+            input_csv=p,
+            scale_fit=scale_fit,
+            esm_model_name=esm_model_name,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            seq_dir=seq_dir,
+            esm_dir=esm_dir,
+            regen_esm=regen_esm,
+        )

@@ -1,4 +1,4 @@
-"""Test the preprocess module."""
+"""Test the coves module."""
 
 import sys
 import os
