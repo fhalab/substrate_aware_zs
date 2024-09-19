@@ -1,0 +1,25 @@
+# conda env update --file coves_cuda.yml --prune
+name: coves_cuda
+channels:
+  - pyg
+  - pytorch
+  - nvidia
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - biopython
+  - numpy
+  - pip
+  - pyg
+  - pytorch=2.1.1           # for h100
+  - pytorch-cuda=12.1       # change this as needed
+  - scikit-learn
+  - scipy
+  - tqdm
+  - pip:
+      - atom3d
+      - blackcellmagic
+      - rdkit
+      - torch-cluster
+#       - torch-geometric

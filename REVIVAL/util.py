@@ -7,7 +7,7 @@ from __future__ import annotations
 import os
 
 from Bio import SeqIO
-from Bio.PDB import PDBParser, PDBIO
+from Bio.PDB import PDBParser, PDBIO, MMCIFParser
 # import pickle
 
 # import numpy as np
@@ -135,3 +135,29 @@ def modify_PDB_chain(input_file_path: str, output_file_path: str, original_chain
     io.save(output_file_path)
 
     print(f"Chain {original_chain_id} has been replaced with {modified_chain_id} in {output_file_path}")
+
+
+def convert_cif_to_pdb(cif_file: str, pdb_file: str):
+    """
+    Converts a CIF file to PDB format while preserving as much structural data as possible.
+
+    Args:
+    - cif_file (str): Path to the input CIF file.
+    - pdb_file (str): Path to the output PDB file.
+    """
+    # Create a CIF parser object
+    parser = MMCIFParser(QUIET=True)
+    
+    # Parse the CIF file
+    structure = parser.get_structure('structure', cif_file)
+
+    # Create a PDBIO object to write the structure to PDB format
+    io = PDBIO()
+
+    # Set the structure to write
+    io.set_structure(structure)
+
+    # Save the structure to the PDB file
+    io.save(pdb_file)
+
+    print(f"Converted {cif_file} to {pdb_file}")

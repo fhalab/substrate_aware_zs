@@ -38,6 +38,7 @@ from REVIVAL.util import (
     read_parent_fasta,
     get_chain_ids,
     modify_PDB_chain,
+    convert_cif_to_pdb
 )
 
 ################ Modified from https://github.com/ddingding/CoVES/tree/publish #############
@@ -1124,17 +1125,22 @@ def run_coves(
     coves_pdb_path = os.path.join(coves_pdb_dir, lib + ".pdb")
 
     # check the chain ID in the pdb file
-    chain_number_list = sorted(get_chain_ids(pdb_file))
+    if os.path.exists(pdb_file):
+        chain_number_list = sorted(get_chain_ids(pdb_file))
 
-    if chain_number not in chain_number_list:
-        modify_PDB_chain(
-            input_file_path=pdb_file,
-            output_file_path=coves_pdb_path,
-            original_chain_id=chain_number_list[0],
-            modified_chain_id=chain_number,
-        )
-    else:
-        shutil.copy(pdb_file, coves_pdb_path)
+        if chain_number not in chain_number_list:
+            modify_PDB_chain(
+                input_file_path=pdb_file,
+                output_file_path=coves_pdb_path,
+                original_chain_id=chain_number_list[0],
+                modified_chain_id=chain_number,
+            )
+        else:
+            shutil.copy(pdb_file, coves_pdb_path)
+    # convert cif to pdb
+    elif os.path.exists(pdb_file.replace("pdb", "cif")):
+        cif_file = pdb_file.replace("pdb", "cif")
+        convert_cif_to_pdb(cif_file, coves_pdb_path)
 
     # delete and regen if exists
     lmdb_dout = os.path.join(coves_dir, lmdb_dir, lib)
