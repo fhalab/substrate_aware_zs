@@ -9,7 +9,9 @@ channels:
 dependencies:
   - python=3.9
   - biopython
+  - ipykernel
   - numpy
+  - pdbfixer
   - pip
   - pyg
   - pytorch=2.1.1           # for h100

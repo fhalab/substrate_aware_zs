@@ -243,7 +243,7 @@ class ESM(ZSData):
 
 
 def run_all_esm(
-    pattern: str = "data/meta/scale2parent/*",
+    pattern: str | list = "data/meta/scale2parent/*",
     scale_fit: str = "parent",
     esm_model_name: str = "esm2_t33_650M_UR50D",
     combo_col_name: str = "AAs",

@@ -87,6 +87,7 @@ dependencies:
     - propy3
     - pyfasta
     - pysam
+    - rdkit
     - sequence-models
     # - evcouplings==0.1.1 need to check if it is compatible with scikit-learn
 prefix: /disk2/fli/setup/miniconda3/
