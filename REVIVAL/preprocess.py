@@ -31,6 +31,7 @@ class LibData:
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
+        structure_dir: str = "data/structure",
     ) -> None:
         """
         Args:
@@ -47,6 +48,7 @@ class LibData:
         - seq_col_name, str: the column name for the full sequence
         - fit_col_name, str: the column name for the fitness
         - seq_dir, str: the directory for the parent sequence fasta files
+        - structure_dir, str: the directory for the structure files
         """
 
         self._input_csv = input_csv
@@ -57,6 +59,7 @@ class LibData:
         self._seq_col_name = seq_col_name
         self._fit_col_name = fit_col_name
         self._seq_dir = seq_dir
+        self._structure_dir = structure_dir
 
     @property
     def lib_name(self) -> dict:
@@ -116,6 +119,15 @@ class LibData:
     def parent_seq(self) -> str:
         """Return the parent sequence"""
         return read_parent_fasta(self.seq_file)
+
+    @property
+    def structure_file(self) -> str:
+        """Return the path to the structure file"""
+        # find out if extention is cif or pdb
+        if os.path.exists(os.path.join(self._structure_dir, f"{self.lib_name}.cif")):
+            return os.path.join(self._structure_dir, f"{self.lib_name}.cif")
+        else:
+            return os.path.join(self._structure_dir, f"{self.lib_name}.pdb")
 
 
 ######### Handling SSM input meta data #########
@@ -393,6 +405,7 @@ class ZSData(LibData):
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
+        structure_dir: str = "data/structure",
         zs_dir: str = "zs",
     ):
 
@@ -411,6 +424,7 @@ class ZSData(LibData):
             seq_col_name,
             fit_col_name,
             seq_dir,
+            structure_dir
         )
 
         self._mut_col_name = mut_col_name

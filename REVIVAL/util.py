@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import os
 
-from Bio import SeqIO
+from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
 # import pickle
 
@@ -161,3 +161,125 @@ def convert_cif_to_pdb(cif_file: str, pdb_file: str):
     io.save(pdb_file)
 
     print(f"Converted {cif_file} to {pdb_file}")
+
+
+def chop_pdb(
+    input_pdb: str, output_pdb: str, start_resid: int, end_resid: int, chain_id: str
+) -> None:
+    """
+    A function for chopping a pdb file to a specific chain and residue range
+
+    Args:
+    - input_pdb: str, path to the input pdb file
+    - output_pdb: str, path to the output pdb file
+    - start_resid: int, starting residue ID
+    - end_resid: int, ending residue ID
+    - chain_id: str, chain ID
+    """
+
+    # Initialize the parser and structure
+    parser = PDB.PDBParser(QUIET=True)
+    structure = parser.get_structure("structure", input_pdb)
+
+    # Initialize the writer
+    io = PDB.PDBIO()
+
+    # Define a select class to filter the residues in the specific chain
+    class ResidueSelect(PDB.Select):
+        def accept_residue(self, residue):
+            # Only accept residues in the specified chain with a residue ID greater than or equal to start_resid
+            if (
+                residue.parent.id == chain_id
+                and residue.id[1] >= start_resid
+                and residue.id[1] <= end_resid
+            ):
+                return True
+            return False
+
+    # Save the chopped structure to the output file
+    io.set_structure(structure)
+    io.save(output_pdb, ResidueSelect())
+
+    print(
+        f"Saved chopped structure starting from residue {start_resid} in chain {chain_id} to {output_pdb}"
+    )
+
+
+def pdb2seq(pdb_file_path: str, chain_id: str = "A") -> str:
+
+    """
+    A function for extracting chain in string format from pdb
+
+    Args:
+    - pdb_file_path: str,
+    - chain_id: str = "A"
+    """
+
+    chains = {
+        record.id: record.seq for record in SeqIO.parse(pdb_file_path, "pdb-atom")
+    }
+
+    return str(chains[[chain for chain in chains.keys() if chain_id in chain][0]])
+
+
+def find_missing_str(longer: str, shorter: str) -> [str, str]:
+    """
+    A function for finding the missing part of a string
+
+    Args:
+    - longer: str, longer string
+    - shorter: str, shorter string
+
+    Returns:
+    - part_before: str, part of the longer string before the shorter
+    - part_after: str, part of the longer string after the shorter
+    """
+    # Find the start index of the shorter in the longer string
+    start_index = longer.find(shorter)
+
+    # If the shorter is not found, return the longer string as the "missing" part
+    if start_index == -1:
+        return "", ""
+
+    # Find the end index of the shorter
+    end_index = start_index + len(shorter)
+
+    # Extract parts of the longer string that are not the shorter
+    part_before = longer[:start_index]
+    part_after = longer[end_index:]
+
+    return part_before, part_after
+
+
+def alignmutseq2pdbseq(mut_seq: str, pdb_seq: str) -> list[int]:
+    """
+    A function for aligning mutation sequence to pdb sequence and
+    return the indices of the aligned sequence so that the mutation
+    sequence can be trimmed to the lenght of the pdb sequence
+
+    Args:
+    - mut_seq: str, mutation sequence
+    - pdb_seq: str, pdb sequence
+
+    Returns:
+    - list[int], start and end indices of the aligned sequence
+    - pdb_seq: str, aligned pdb sequence
+    """
+
+    # Define a custom scoring function so that X is aligned with anything
+    def custom_match_function(x, y):
+        if x == "X" or y == "X":
+            return 2  # High score for aligning X with anything
+        elif x == y:
+            return 2  # Match score
+        else:
+            return -1  # Mismatch score
+
+    _, aligned_pdb_seq, _, _, _ = pairwise2.align.globalcs(
+        mut_seq, pdb_seq, custom_match_function, -0.5, -0.1
+    )[0]
+
+    return [
+        aligned_pdb_seq.find(aligned_pdb_seq.replace("-", "")[:1]),
+        aligned_pdb_seq.rfind(aligned_pdb_seq.replace("-", "")[-1]),
+    ], aligned_pdb_seq

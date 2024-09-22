@@ -1102,6 +1102,7 @@ def get_gvp_res_prefs(
 def run_coves(
     lib: str,
     data_dir: str = "data",
+    structure_dir: str = "structure",
     chain_number: str = "A",
     coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
@@ -1118,7 +1119,7 @@ def run_coves(
         os.path.join(data_dir, "seq", LIB_INFO_DICT[lib]["enzyme"] + ".fasta")
     )
 
-    pdb_file = os.path.join(data_dir, "structure", lib + ".pdb")
+    pdb_file = os.path.join(data_dir, structure_dir, lib + ".pdb")
 
     # create pdb directory for the wildtype
     coves_pdb_dir = checkNgen_folder(os.path.join(coves_dir, "input", lib))
