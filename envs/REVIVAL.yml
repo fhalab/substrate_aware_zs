@@ -1,8 +1,8 @@
 # For the general environment:
 # Install or update using
-# conda env update --file SSMuLA_2.yml --prune
+# conda env update --file REVIVAL.yml --prune
 
-name: SSMuLA_2
+name: REVIVAL
 channels:
   - pytorch
   - pyg
@@ -22,9 +22,6 @@ dependencies:
   - brokenaxes
   - cairosvg
   - colorcet
-  - dask                    # for faster large df handling
-  - datashader
-  - dssp                    # optional for graphein, required for computing secondary structural features
   - firefox
   - flake8
   - geckodriver
@@ -38,32 +35,25 @@ dependencies:
   - jupyterlab
   - jupyter_bokeh
   - matplotlib
-  - multipledispatch        # required by graphein
+  - multipledispatch
   - mypy
   - networkx
   - nodejs
-  - numba
   - numpy
   - openpyxl
   - pandas
   - panel
   - param
-  - pillow
+  - pdbfixer
   - pip
-  - plotly                  # required by graphein
-  - pydantic                # required by graphein
-  - pyreadr                 # for reading R data files
   - psutil
-  - pydantic                # required by graphein
   - pyg>=2.0.3
   - pytables
-  - python-wget             # required by graphein
   - pytorch=2.1.1           # for h100
   - pytorch-cuda=12.1       # change this as needed
   - pyviz_comms
   - pyyaml
   - requests
-  - rpy2                    # for reading R data files
   - scikit-learn            # might not be evcouplings compatible 
   - scipy
   - seaborn
@@ -71,22 +61,16 @@ dependencies:
   - tensorflow
   - tqdm
   - versioneer
-  - xarray                  # required by graphein
+  - xarray
 
   - pip:
-    - bioservices
-    - biovec
     - blackcellmagic
+    - chai_lab==0.0.1
+    - docko
     - fair-esm
-    - graphein
     - iqplot==0.3.1
-    - ninetysix             # Helps data processing and visualization
-    - ogb
+    - ninetysix
     - ordered-set
-    - outdated
-    - propy3
-    - pyfasta
-    - pysam
     - rdkit
     - sequence-models
     # - evcouplings==0.1.1 need to check if it is compatible with scikit-learn

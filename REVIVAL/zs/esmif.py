@@ -21,51 +21,9 @@ from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder
 
 
-
-
-def score_multichain_backbone(model, alphabet, pdbfile, seqfile, outpath, chain, nogpu):
-    if torch.cuda.is_available() and not nogpu:
-        model = model.cuda()
-        print("Transferred model to GPU")
-    structure = esm.inverse_folding.util.load_structure(pdbfile)
-    coords, native_seqs = esm.inverse_folding.multichain_util.extract_coords_from_complex(structure)
-    target_chain_id = chain
-    native_seq = native_seqs[target_chain_id]
-    print('Native sequence loaded from structure file:')
-    print(native_seq)
-    print('\n')
-
-    ll, _ = esm.inverse_folding.multichain_util.score_sequence_in_complex(
-        model, alphabet, coords, target_chain_id, native_seq)
-    print('Native sequence')
-    print(f'Log likelihood: {ll:.2f}')
-    print(f'Perplexity: {np.exp(-ll):.2f}')
-
-    print('\nScoring variant sequences from sequence file..\n')
-    infile = FastaFile()
-    infile.read(seqfile)
-    seqs = get_sequences(infile)
-    Path(outpath).parent.mkdir(parents=True, exist_ok=True)
-    with open(outpath, 'w') as fout:
-        fout.write('seqid,log_likelihood\n')
-        for header, seq in tqdm(seqs.items()):
-            ll, _ = esm.inverse_folding.multichain_util.score_sequence_in_complex(
-                model, alphabet, coords, target_chain_id, str(seq))
-            fout.write(header + ',' + str(ll) + '\n')
-    print(f'Results saved to {outpath}')
-
-
-def run_scoring(pdbfile, seqfile, outpath='output/sequence_scores.csv', chain='A', 
-                multichain_backbone=False, nogpu=False):
-    model, alphabet = esm.pretrained.esm_if1_gvp4_t16_142M_UR50()
-    model = model.eval()
-
-    if multichain_backbone:
-        score_multichain_backbone(model, alphabet, pdbfile, seqfile, outpath, chain, nogpu)
-
 class ESMIFData(ZSData):
-
-    def __init__(self,
+    def __init__(
+        self,
         input_csv: str,
         scale_fit: str = "parent",
         combo_col_name: str = "AAs",
@@ -95,14 +53,25 @@ class ESMIFData(ZSData):
             fit_col_name,
             seq_dir,
             structure_dir,
-            zs_dir
+            zs_dir,
         )
 
         self._esmif_dir = checkNgen_folder(os.path.join(self._zs_dir, esmif_dir))
-        self._esmif_mut_dir = checkNgen_folder(os.path.join(self._esmif_dir, esmif_mut_dir))
-        self._esmif_instruct_dir = checkNgen_folder(os.path.join(self._esmif_dir, esmif_instruct_dir))
-        self._esmif_score_dir = checkNgen_folder(os.path.join(self._esmif_dir, esmif_score_dir))
+        self._esmif_mut_dir = checkNgen_folder(
+            os.path.join(self._esmif_dir, esmif_mut_dir)
+        )
+        self._esmif_instruct_dir = checkNgen_folder(
+            os.path.join(self._esmif_dir, esmif_instruct_dir)
+        )
+        self._esmif_score_dir = checkNgen_folder(
+            os.path.join(self._esmif_dir, esmif_score_dir)
+        )
         self._chain_id = chain_id
+
+        print(f"Generating mut fasta file for {self.lib_name}...")
+        self._mut_csv2fasta()
+        print(f"Scoring mut file for {self.lib_name}...")
+        self._score_mut_file()
 
     def _mut_csv2fasta(self) -> None:
         """
@@ -118,7 +87,9 @@ class ESMIFData(ZSData):
 
         # TODO: dealt with seq not same length
         with open(self.esmif_mut_file, "w") as f:
-            for mut, seq in zip(self.df[self._var_col_name].values, self.df[self._seq_col_name].values):
+            for mut, seq in zip(
+                self.df[self._var_col_name].values, self.df[self._seq_col_name].values
+            ):
                 f.write(f">{mut}\n{seq}\n")
 
     def _score_mut_file(self) -> None:
@@ -132,36 +103,42 @@ class ESMIFData(ZSData):
         if torch.cuda.is_available():
             model = model.cuda()
             print("Transferred model to GPU")
-        coords, native_seq = esm.inverse_folding.util.load_coords(self.structure_file, self._chain_id)
-        print(f'Native sequence loaded from structure file:\n{native_seq}\n')
+        coords, native_seq = esm.inverse_folding.util.load_coords(
+            self.structure_file, self._chain_id
+        )
+        print(f"Native sequence loaded from structure file:\n{native_seq}\n")
 
         ll, _ = esm.inverse_folding.util.score_sequence(
-            model, alphabet, coords, native_seq)
-        print('Native sequence')
-        print(f'Log likelihood: {ll:.2f}')
-        print(f'Perplexity: {np.exp(-ll):.2f}')
+            model, alphabet, coords, native_seq
+        )
+        print("Native sequence")
+        print(f"Log likelihood: {ll:.2f}")
+        print(f"Perplexity: {np.exp(-ll):.2f}")
 
-        print('\nScoring variant sequences from sequence file..\n')
+        print("\nScoring variant sequences from sequence file..\n")
 
         infile = FastaFile()
         infile.read(self.esmif_mut_file)
         seqs = get_sequences(infile)
         Path(self.esmif_output_file).parent.mkdir(parents=True, exist_ok=True)
-        with open(self.esmif_output_file, 'w') as fout:
-            fout.write('seqid,log_likelihood\n')
+        with open(self.esmif_output_file, "w") as fout:
+            fout.write("seqid,log_likelihood\n")
             for header, seq in tqdm(seqs.items()):
                 ll, _ = esm.inverse_folding.util.score_sequence(
-                    model, alphabet, coords, str(seq))
-                fout.write(header + ',' + str(ll) + '\n')
-        print(f'Results saved to {self.esmif_output_file}')
-
+                    model, alphabet, coords, str(seq)
+                )
+                fout.write(header + "," + str(ll) + "\n")
+        print(f"Results saved to {self.esmif_output_file}")
 
     @property
     def esmif_instruct_file(self) -> str:
         """
         PDB file path to the esmif pdb file
         """
-        return os.path.join(self._esmif_instruct_dir, f"{self.lib_name}.{os.path.splitext(self.structure_file)[-1]}")
+        return os.path.join(
+            self._esmif_instruct_dir,
+            f"{self.lib_name}.{os.path.splitext(self.structure_file)[-1]}",
+        )
 
     @property
     def esmif_mut_file(self) -> str:
@@ -178,14 +155,10 @@ class ESMIFData(ZSData):
         return os.path.join(self._esmif_score_dir, f"{self.lib_name}.csv")
 
 
-
-def run_esmif_input_file(
-    pattern: str | list = "data/meta/scale2parent/*.csv",
-    kwargs: dict = {}
-    ):
+def run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {}):
     """
-    Run the esmif input file function for all libraries
-    
+    Run the esmif scoring for all libraries
+
     Args:
     - pattern: str | list: the pattern for the input csv files
     """
@@ -196,9 +169,5 @@ def run_esmif_input_file(
         lib_list = deepcopy(pattern)
 
     for lib in lib_list:
-        print(f"Running gen mut file for {lib}...")
-        ESMIFData(input_csv=lib, **kwargs)._mut_csv2fasta()
-        print(f"Scoring mut file for {lib}...")
-        ESMIFData(input_csv=lib, **kwargs)._score_mut_file()
-
-
+        print(f"Running ESMIF for {lib}...")
+        ESMIFData(input_csv=lib, **kwargs)

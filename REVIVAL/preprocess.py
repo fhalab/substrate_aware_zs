@@ -32,6 +32,7 @@ class LibData:
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
+        mut_fasta_dir: str = "data/mut_fasta",
     ) -> None:
         """
         Args:
@@ -49,6 +50,7 @@ class LibData:
         - fit_col_name, str: the column name for the fitness
         - seq_dir, str: the directory for the parent sequence fasta files
         - structure_dir, str: the directory for the structure files
+        - mut_fasta_dir, str: the directory for the mutated fasta files
         """
 
         self._input_csv = input_csv
@@ -60,6 +62,7 @@ class LibData:
         self._fit_col_name = fit_col_name
         self._seq_dir = seq_dir
         self._structure_dir = structure_dir
+        self._mut_fasta_dir = mut_fasta_dir
 
     @property
     def lib_name(self) -> dict:
