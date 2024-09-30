@@ -63,15 +63,16 @@ class ChaiData(ZSData):
             var,
             seq,
         ) in self.df[[self._var_col_name, self._seq_col_name]].values:
+
+            print(f"Running chai for {var} saving to {self._chai_struct_subdir}...")
+
             run_chai(
                 label=var,
                 seq=seq,
                 smiles=self.lib_info["substrate-smiles"]
                 + "."
                 + ".".join(self.lib_info["cofactor-smiles"]),
-                output_dir=checkNgen_folder(
-                    os.path.join(self._chai_struct_subdir, var)
-                ),
+                output_dir=self._chai_struct_subdir,
             )
 
 

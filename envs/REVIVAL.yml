@@ -73,5 +73,5 @@ dependencies:
     - ordered-set
     - rdkit
     - sequence-models
-    # - evcouplings==0.1.1 need to check if it is compatible with scikit-learn
+    # https://github.com/debbiemarkslab/EVcouplings/archive/develop.zip install after the environment is created
 prefix: /disk2/fli/setup/miniconda3/

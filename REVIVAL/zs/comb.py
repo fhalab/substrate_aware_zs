@@ -32,7 +32,7 @@ class ZSComb(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         comb_dir: str = "comb",
-        zs_subdir_list: list = ["esm/output"],
+        zs_subdir_list: list = ["esm/output", "esmif/output"],
     ):
 
         super().__init__(
