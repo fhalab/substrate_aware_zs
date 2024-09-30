@@ -30,6 +30,7 @@ class LibData:
         var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        protein_name: str = "",
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
         mut_fasta_dir: str = "data/mut_fasta",
@@ -60,6 +61,7 @@ class LibData:
         self._var_col_name = var_col_name
         self._seq_col_name = seq_col_name
         self._fit_col_name = fit_col_name
+        self._protein_name = protein_name
         self._seq_dir = seq_dir
         self._structure_dir = structure_dir
         self._mut_fasta_dir = mut_fasta_dir
@@ -79,7 +81,10 @@ class LibData:
         """
         Returns the protein name
         """
-        return self.lib_info["enzyme"]
+        if self._protein_name != "":
+            return self._protein_name
+        else:
+            return self.lib_info["enzyme"]
 
     @property
     def parent_aa(self) -> str:
@@ -148,6 +153,7 @@ class ProcessData(LibData):
         var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        protein_name: str = "",
         seq_dir: str = "data/seq",
         output_dir: str = "data/meta",
     ) -> None:
@@ -172,6 +178,7 @@ class ProcessData(LibData):
             var_col_name,
             seq_col_name,
             fit_col_name,
+            protein_name,
             seq_dir,
         )
 
@@ -407,6 +414,7 @@ class ZSData(LibData):
         pos_col_name: str = "pos",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        protein_name: str = "",
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
         zs_dir: str = "zs",
@@ -426,6 +434,7 @@ class ZSData(LibData):
             var_col_name,
             seq_col_name,
             fit_col_name,
+            protein_name,
             seq_dir,
             structure_dir
         )
@@ -474,7 +483,9 @@ class ZSData(LibData):
             axis=1,
         )
 
-        return df.copy()
+        # filter out stop codon if any
+ 
+        return df[~df[self._var_col_name].str.contains("\*")].copy()
 
     @property
     def max_n_mut(self) -> int:

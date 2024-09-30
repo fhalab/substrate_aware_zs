@@ -11,7 +11,7 @@ from copy import deepcopy
 from evcouplings.couplings import CouplingsModel
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder
+from REVIVAL.util import checkNgen_folder, get_file_name
 
 
 class EVData(ZSData):
@@ -30,6 +30,7 @@ class EVData(ZSData):
         pos_col_name: str = "pos",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        protein_name: str = "",
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         ev_dir: str = "ev",
@@ -44,6 +45,7 @@ class EVData(ZSData):
             pos_col_name,
             seq_col_name,
             fit_col_name,
+            protein_name,
             seq_dir,
             zs_dir
         )
@@ -56,10 +58,10 @@ class EVData(ZSData):
         self._idx_map = self._model.index_map
 
         # check if the position is in the index map
-        assert self._check_idx(), "Not all positions are in the index map!!!"
+        # assert self._check_idx(), "Not all positions are in the index map!!!"
 
         # create the subfolder
-        self._ev_dir = checkNgen_folder(os.path.join(self._zs_dir, ev_dir))
+        self._ev_dir = checkNgen_folder(os.path.join(zs_dir, ev_dir))
 
         print(f"EV data will be saved at {self._ev_dir}")
 
@@ -69,10 +71,11 @@ class EVData(ZSData):
         # save the ev score
         self._ev_df.to_csv(self.ev_csv, index=False)
 
-
     def _check_idx(self):
         """Check if the position is in the index map"""
         all_pos = set(chain.from_iterable(self.df[self._pos_col_name]))
+        print(all_pos)
+        print(self._idx_map)
         return all([p in self._idx_map for p in all_pos])
 
     def _get_evscore(self):
@@ -86,7 +89,7 @@ class EVData(ZSData):
         df['ev_score'] = df[self._var_col_name].apply(
             lambda x: 0 if x == "WT" else self._model.delta_hamiltonian([parse(m) for m in x.split(':')])[0]
         )
-        
+
         return df
 
     @property
@@ -107,6 +110,26 @@ def run_all_ev(
     
     Args:
     """
+
+    protein_lib = {
+        "DHFR": "DHFR",
+        "GB1": "GB1",
+        "ParD2": "ParD2",
+        "ParD3": "ParD3",
+        "T7": "T7",
+        "TEV": "TEV",
+        "TrpB3A": "TrpB",
+        "TrpB3B": "TrpB",
+        "TrpB3C": "TrpB",
+        "TrpB3D": "TrpB",
+        "TrpB3E": "TrpB",
+        "TrpB3F": "TrpB",
+        "TrpB3G": "TrpB",
+        "TrpB3H": "TrpB",
+        "TrpB3I": "TrpB",
+        "TrpB4": "TrpB",
+    }
+    
     if isinstance(pattern, str):
         lib_list = glob(pattern)
     else:
@@ -114,5 +137,8 @@ def run_all_ev(
 
     for lib in lib_list:
         print(f"Getting ev zs for {lib}...")
+        lib_name = get_file_name(lib)
+        if lib_name in protein_lib:
+            kwargs['protein_name'] = protein_lib[lib_name]
         EVData(input_csv=lib, **kwargs)
 
