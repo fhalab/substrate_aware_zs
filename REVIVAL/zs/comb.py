@@ -32,7 +32,7 @@ class ZSComb(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         comb_dir: str = "comb",
-        zs_subdir_list: list = ["esm/output", "esmif/output"],
+        zs_subdir_list: list = ["ev", "esm/output", "esmif/output"],
     ):
 
         super().__init__(
@@ -63,10 +63,12 @@ class ZSComb(ZSData):
         for zs_path in self.zs_paths:
             zs_df = pd.read_csv(zs_path)
             common_cols = list(set(df.columns) & set(zs_df.columns))
+            print(f"Combining {zs_path} on {common_cols}...")
             df = pd.merge(
                 df,
                 zs_df,
                 on=common_cols,
+                how="outer"
             )
 
         df.to_csv(self.zs_comb_path, index=False)
@@ -108,7 +110,7 @@ def run_all_combzs(
     seq_dir: str = "data/seq",
     zs_dir: str = "zs",
     comb_dir: str = "comb",
-    zs_subdir_list: list = ["esm/output"],
+    zs_subdir_list: list = ["ev", "esm/output", "esmif/output"],
 ):
 
     """
@@ -121,7 +123,7 @@ def run_all_combzs(
 
     for p in path_list:
 
-        print(f"Running ESM for {p}...")
+        print(f"Running zs comb for {p}...")
 
         ZSComb(
             input_csv=p,

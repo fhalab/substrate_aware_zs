@@ -122,7 +122,7 @@ class ESMIFData(ZSData):
         seqs = get_sequences(infile)
         Path(self.esmif_output_file).parent.mkdir(parents=True, exist_ok=True)
         with open(self.esmif_output_file, "w") as fout:
-            fout.write("seqid,log_likelihood\n")
+            fout.write(f"{self._var_col_name},esmif_score\n")
             for header, seq in tqdm(seqs.items()):
                 ll, _ = esm.inverse_folding.util.score_sequence(
                     model, alphabet, coords, str(seq)
