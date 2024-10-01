@@ -71,6 +71,13 @@ class ZSComb(ZSData):
                 how="outer"
             )
 
+        # if esm_score for WT is missing, fill with 0
+        if "esm_score" in df.columns:
+           
+            if df.loc[df[self._var_col_name] == "WT", "esm_score"].isnull().values.any():
+                print("WT row esm_score is missing. Filling with 0...")
+                df.loc[df[self._var_col_name] == "WT", "esm_score"] = 0
+
         df.to_csv(self.zs_comb_path, index=False)
 
         return df.copy()

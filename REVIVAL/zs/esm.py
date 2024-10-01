@@ -94,6 +94,9 @@ class ESM(ZSData):
         # generate esm score
         self._esm_df = self._run_esm()
 
+        # if the esm score for the WT is empty then update the esm score to 0
+
+
         # save the esm score df
         self._esm_df.to_csv(self._esm_path, index=False)
 
@@ -220,6 +223,11 @@ class ESM(ZSData):
         """
 
         df_n_list = []
+
+        # TODO test
+        wt_df = self.df[self.df[self._var_col_name] == "WT"].copy()
+        wt_df.loc[:, "esm_score"] = 0
+        df_n_list.append(wt_df)
 
         # Get the n mutant scores
         for i in list(range(self.max_n_mut + 1))[1:]:
