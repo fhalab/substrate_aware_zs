@@ -34,6 +34,6 @@ if __name__ == "__main__":
         "zs_dir": "SSMuLA-zs",
         "ev_dir": "ev",
     }
-    run_all_ev("data/SSMuLA/*", kwargs=kwargs)
+    run_all_ev("data/SSMuLA/TEV*", kwargs=kwargs)
 
     f.close()

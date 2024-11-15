@@ -1107,7 +1107,7 @@ def run_coves(
     coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/results",
+    dout: str = "zs/coves/output",
     n_ave: int = 100,
 ):
     """
@@ -1180,7 +1180,7 @@ def run_all_coves(
     coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/results",
+    dout: str = "zs/coves/output",
     n_ave: int = 100,
 ):
     """
@@ -1344,8 +1344,9 @@ def format_coves_mutations(muts: str, positions: list) -> str:
 
 def append_coves_scores(
     lib: str,
-    ev_esm_dir: str = "ev_esm2",
-    coves_dir: str = "coves/100",
+    var_col_name: str = "var",
+    input_dir: str = "data/meta/scale2parent",
+    coves_dir: str = "zs/coves/output/100",
     chain_number: str = "A",
     t: float = 0.1,
 ) -> pd.DataFrame:
@@ -1355,7 +1356,8 @@ def append_coves_scores(
 
     Args:
     - lib, str: library name
-    - ev_esm_dir, str: directory with ev_esm scores
+    - var_col_name, str: column name for variant
+    - input_dir, str: directory with input
     - coves_dir, str: directory with CoVES scores
     - t, float: temperature
 
@@ -1363,7 +1365,7 @@ def append_coves_scores(
     - pd.DataFrame: with CoVES scores
     """
 
-    df = pd.read_csv(f"{ev_esm_dir}/{lib}/{lib}.csv")
+    df = pd.read_csv(f"{input_dir}/{lib}.csv")
 
     # scoring with CoVES
     coves_df = f"{coves_dir}/{lib}_{chain_number}.csv"
@@ -1378,7 +1380,7 @@ def append_coves_scores(
     ].copy()
 
     # Apply the function to the dataframe
-    df["verbose_muts"] = df["muts"].apply(
+    df["verbose_muts"] = df[var_col_name].apply(
         format_coves_mutations, positions=sliced_df_gvp["wt_pos"].unique()
     )
 
@@ -1392,15 +1394,15 @@ def append_coves_scores(
     checkNgen_folder(processed_folder)
 
     # save the dataframe
-    df[["muts", "coves_score"]].to_csv(f"{processed_folder}/{lib}.csv", index=False)
+    df[[var_col_name, "coves_score"]].to_csv(f"{processed_folder}/{lib}.csv", index=False)
 
     return df
 
 
 def append_all_coves_scores(
-    libs: list | str = "ev_esm2/*",
-    ev_esm_dir: str = "ev_esm2",
-    coves_dir: str = "coves/100",
+    libs: list | str = "data/meta/scale2parent/*",
+    input_dir: str = "data/meta/scale2parent",
+    coves_dir: str = "zs/coves/output/100",
     t: float = 0.1,
 ) -> pd.DataFrame:
 
@@ -1409,7 +1411,7 @@ def append_all_coves_scores(
 
     Args:
     - lib_list, list: list of libraries
-    - ev_esm_dir, str: directory with ev_esm scores
+    - input_dir, str: directory with ev_esm scores
     - coves_dir, str: directory with CoVES scores
     - t, float: temperature
 
@@ -1424,4 +1426,4 @@ def append_all_coves_scores(
 
     for lib in lib_list:
         print(f"Processing CoVES scores for {lib}...")
-        append_coves_scores(lib, ev_esm_dir=ev_esm_dir, coves_dir=coves_dir, t=t)
+        append_coves_scores(lib=get_file_name(lib), input_dir=input_dir, coves_dir=coves_dir, t=t)

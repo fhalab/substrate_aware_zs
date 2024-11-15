@@ -78,7 +78,7 @@ class ZSComb(ZSData):
                 print("WT row esm_score is missing. Filling with 0...")
                 df.loc[df[self._var_col_name] == "WT", "esm_score"] = 0
 
-        df.to_csv(self.zs_comb_path, index=False)
+        df.dropna().to_csv(self.zs_comb_path, index=False)
 
         return df.copy()
         
@@ -117,7 +117,7 @@ def run_all_combzs(
     seq_dir: str = "data/seq",
     zs_dir: str = "zs",
     comb_dir: str = "comb",
-    zs_subdir_list: list = ["ev", "esm/output", "esmif/output"],
+    zs_subdir_list: list = ["ev", "esm/output", "esmif/output", "coves/output/100_processed", "triad/processed_output"],
 ):
 
     """

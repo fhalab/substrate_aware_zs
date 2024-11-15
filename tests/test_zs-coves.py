@@ -5,7 +5,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.coves import run_all_coves
+from REVIVAL.zs.coves import run_all_coves, append_all_coves_scores
 from REVIVAL.util import checkNgen_folder
 
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
@@ -18,7 +18,8 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_coves(pattern="data/lib/*")
+    # run_all_coves(pattern="data/lib/*")
+    append_all_coves_scores(coves_dir="zs/coves/output-no_sub/100")
 
     f.close()
 
@@ -30,7 +31,14 @@ if __name__ == "__main__":
         coves_dir="zs/coves",
         lmdb_dir: str = "lmdb",
         model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-        dout: str = "zs/coves/results",
+        dout: str = "zs/coves/output",
         n_ave: int = 100,
     )
+
+    append_all_coves_scores(
+        libs: list | str = "data/meta/scale2parent/*",
+        input_dir: str = "data/meta/scale2parent",
+        coves_dir: str = "zs/coves/output/100",
+        t: float = 0.1,
+    ) 
     """

@@ -18,7 +18,16 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_esm(pattern="data/meta/scale2parent/*")
+    # run_all_esm(pattern="data/meta/scale2parent/*")
+
+    kwargs = {
+        "scale_fit": "max",
+        "var_col_name": "muts",
+        "zs_dir": "SSMuLA-zs",
+        "esm_dir": "esm",
+    }
+    run_all_esm("data/SSMuLA/*", kwargs=kwargs)
+
 
     f.close()
 
