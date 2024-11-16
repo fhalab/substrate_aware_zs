@@ -43,17 +43,17 @@ class ESMIFData(ZSData):
     ):
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            seq_dir,
-            structure_dir,
-            zs_dir,
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            seq_dir=seq_dir,
+            structure_dir=structure_dir,
+            zs_dir=zs_dir,
         )
 
         self._esmif_dir = checkNgen_folder(os.path.join(self._zs_dir, esmif_dir))
@@ -103,6 +103,7 @@ class ESMIFData(ZSData):
         if torch.cuda.is_available():
             model = model.cuda()
             print("Transferred model to GPU")
+        print(f"in esmifdata self._structure_dir: {self._structure_dir}")
         coords, native_seq = esm.inverse_folding.util.load_coords(
             self.structure_file, self._chain_id
         )

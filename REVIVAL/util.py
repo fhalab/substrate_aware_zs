@@ -108,6 +108,27 @@ def get_chain_ids(pdb_file_path: str) -> list:
     return list(chain_ids)
 
 
+def get_chain(input_file_path: str, output_file_path: str, chain_id: str):
+
+    """
+    Get the chain given ID
+    """
+
+    # Parse the input PDB file
+    parser = PDBParser()
+    structure = parser.get_structure("protein", input_file_path)
+
+    # Iterate over the chains and replace the original chain ID with the modified chain ID
+    for model in structure:
+        for chain in model:
+            if chain.id == chain_id:
+                io = PDBIO()
+                io.set_structure(chain)
+                io.save(output_file_path)
+
+    print(f"Chain {chain_id} has been saved to {output_file_path}")
+
+
 def modify_PDB_chain(input_file_path: str, output_file_path: str, original_chain_id: str, modified_chain_id: str):
     """
     Modify chain ID in a PDB file and save it to a new file.

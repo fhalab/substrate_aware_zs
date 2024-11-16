@@ -66,6 +66,8 @@ class LibData:
         self._structure_dir = structure_dir
         self._mut_fasta_dir = mut_fasta_dir
 
+        print(f"in libdata self._structure_dir: {self._structure_dir}")
+
     @property
     def lib_name(self) -> dict:
         """Return the library name"""
@@ -227,8 +229,6 @@ class ProcessData(LibData):
 
         mut_name = ""
         mut_num = 0
-        mut_list = []
-        pos_list = []
 
         for i, (mut, wt) in enumerate(zip(muts, self.parent_aa)):
             # get wt aa + mut position from ie
@@ -383,7 +383,7 @@ def preprocess_all(
 
     """
 
-    for input_csv in tqdm(glob(input_pattern)):
+    for input_csv in tqdm(sorted(glob(input_pattern))):
 
         ProcessData(
             input_csv=input_csv,
@@ -425,24 +425,37 @@ class ZSData(LibData):
             ie ['A', 'D']
         - pos_col_name, str: the column name for the positions
             ie [39, 40]
+
+        input_csv: str,
+        scale_fit: str,
+        combo_col_name: str = "AAs",
+        var_col_name: str = "var",
+        seq_col_name: str = "seq",
+        fit_col_name: str = "fitness",
+        protein_name: str = "",
+        seq_dir: str = "data/seq",
+        structure_dir: str = "data/structure",
+        mut_fasta_dir: str = "data/mut_fasta",
         """
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            seq_col_name,
-            fit_col_name,
-            protein_name,
-            seq_dir,
-            structure_dir
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            protein_name=protein_name,
+            seq_dir=seq_dir,
+            structure_dir=structure_dir
         )
 
         self._mut_col_name = mut_col_name
         self._pos_col_name = pos_col_name
 
         self._zs_dir = checkNgen_folder(zs_dir)
+
+        print(f"in zsdata self._structure_dir: {self._structure_dir}")
 
     def _append_mut_dets(self, combo: str) -> tuple:
 
