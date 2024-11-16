@@ -143,10 +143,10 @@ def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"
         ]
     )
 
-    for subfolder in glob(f"{mut_structure_dir}/*"):
+    for subfolder in sorted(glob(f"{mut_structure_dir}/*")):
         var = os.path.basename(subfolder)
         
-        for rep_npz in glob(f"{subfolder}/*.npz"):
+        for rep_npz in sorted(glob(f"{subfolder}/*.npz")):
 
             npz = np.load(rep_npz)
 

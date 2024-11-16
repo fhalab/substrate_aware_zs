@@ -14,6 +14,7 @@ import numpy as np
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder
 
+
 class ZSComb(ZSData):
     """
     Combine multiple zs scores
@@ -32,7 +33,14 @@ class ZSComb(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         comb_dir: str = "comb",
-        zs_subdir_list: list = ["ev", "esm/output", "esmif/output"],
+        zs_subdir_list: list = [
+            "ev",
+            "esm/output",
+            "esmif/output",
+            "coves/output/100_processed",
+            "triad/processed_output",
+            "chai/output",
+        ],
     ):
 
         super().__init__(
@@ -45,7 +53,7 @@ class ZSComb(ZSData):
             seq_col_name,
             fit_col_name,
             seq_dir,
-            zs_dir
+            zs_dir,
         )
 
         self._comb_dir = checkNgen_folder(os.path.join(zs_dir, comb_dir))
@@ -61,27 +69,38 @@ class ZSComb(ZSData):
 
         df = self.input_df.copy()
         for zs_path in self.zs_paths:
+
             zs_df = pd.read_csv(zs_path)
+
+            # take average over replicates for chai
+            if "chai" in zs_path:
+
+                zs_df = (
+                    zs_df[zs_df["has_inter_chain_clashes"] == False]
+                    .groupby("var")
+                    .mean(numeric_only=True)
+                    .drop(columns=["rep"])
+                    .reset_index()
+                )
+
             common_cols = list(set(df.columns) & set(zs_df.columns))
             print(f"Combining {zs_path} on {common_cols}...")
-            df = pd.merge(
-                df,
-                zs_df,
-                on=common_cols,
-                how="outer"
-            )
+            df = pd.merge(df, zs_df, on=common_cols, how="outer")
 
         # if esm_score for WT is missing, fill with 0
         if "esm_score" in df.columns:
-           
-            if df.loc[df[self._var_col_name] == "WT", "esm_score"].isnull().values.any():
+
+            if (
+                df.loc[df[self._var_col_name] == "WT", "esm_score"]
+                .isnull()
+                .values.any()
+            ):
                 print("WT row esm_score is missing. Filling with 0...")
                 df.loc[df[self._var_col_name] == "WT", "esm_score"] = 0
 
         df.dropna().to_csv(self.zs_comb_path, index=False)
 
         return df.copy()
-        
 
     @property
     def zs_opts(self) -> list:
@@ -95,7 +114,12 @@ class ZSComb(ZSData):
         """
         Return the list of zs paths
         """
-        return deepcopy([os.path.join(self._zs_dir, f, self.lib_name + ".csv") for f in self._zs_subdir_list])
+        return deepcopy(
+            [
+                os.path.join(self._zs_dir, f, self.lib_name + ".csv")
+                for f in self._zs_subdir_list
+            ]
+        )
 
     @property
     def zs_comb_path(self) -> str:
@@ -117,7 +141,14 @@ def run_all_combzs(
     seq_dir: str = "data/seq",
     zs_dir: str = "zs",
     comb_dir: str = "comb",
-    zs_subdir_list: list = ["ev", "esm/output", "esmif/output", "coves/output/100_processed", "triad/processed_output"],
+    zs_subdir_list: list = [
+        "ev",
+        "esm/output",
+        "esmif/output",
+        "coves/output/100_processed",
+        "triad/processed_output",
+        "chai/output",
+    ],
 ):
 
     """
@@ -144,5 +175,5 @@ def run_all_combzs(
             seq_dir=seq_dir,
             zs_dir=zs_dir,
             comb_dir=comb_dir,
-            zs_subdir_list=zs_subdir_list
+            zs_subdir_list=zs_subdir_list,
         )
