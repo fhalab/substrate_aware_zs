@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 from glob import glob
 from copy import deepcopy
+from tqdm import tqdm
 from pathlib import Path
 
 import numpy as np
@@ -73,7 +74,7 @@ class ChaiData(ZSData):
         for (
             var,
             seq,
-        ) in self.df[[self._var_col_name, self._seq_col_name]].values:
+        ) in tqdm(self.df[[self._var_col_name, self._seq_col_name]].values):
 
             output_subdir = os.path.join(self._chai_struct_subdir, var)
 
@@ -151,12 +152,13 @@ class ChaiData(ZSData):
                     renamed_scores_files.append(renamed_output_file)
 
             else:
+                print(f"{var} exists and ifrerun {self._ifrerun}...")
                 renamed_output_files = glob(f"{output_subdir}/*.cif") + glob(
                     f"{output_subdir}/*.pdb"
                 )
                 renamed_scores_files = glob(f"{output_subdir}/*.npz")
 
-            return renamed_output_files, renamed_scores_files
+        return renamed_output_files, renamed_scores_files
 
             # run_chai(
             #     label=var,
@@ -186,7 +188,7 @@ def run_gen_chai_structure(
     pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {}
 ):
     """
-    Run the triad gen mut file function for all libraries
+    Run the chai gen mut file function for all libraries
 
     Args:
     - pattern: str | list: the pattern for the input csv files
@@ -198,7 +200,7 @@ def run_gen_chai_structure(
         lib_list = deepcopy(pattern)
 
     for lib in lib_list:
-        print(f"Running triad gen mut file for {lib}...")
+        print(f"Running chai gen mut file for {lib}...")
         ChaiData(input_csv=lib, **kwargs)
 
 
