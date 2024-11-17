@@ -8,10 +8,62 @@ from itertools import chain
 from glob import glob
 from copy import deepcopy
 
+from tqdm import tqdm
+
 from evcouplings.couplings import CouplingsModel
 
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder, get_file_name
+
+
+EV_META = {
+    "PfTrpB": {
+        "recommended": {
+            "bitscore": 0.1,
+            "sequences": 74795,
+            "seqs_per_l": 262.4,
+            "quality": 10,
+        },
+        "chosen": {
+            "bitscore": 0.3,
+            "sequences": 5996,
+            "seqs_per_l": 15.7,
+            "quality": 10,
+        },
+        "other_2": {
+            "bitscore": 0.5,
+            "sequences": 5935,
+            "seqs_per_l": 15.6,
+            "quality": 10,
+        },
+        "other_3": {
+            "bitscore": 0.7,
+            "sequences": 4647,
+            "seqs_per_l": 12.2,
+            "quality": 10,
+        },
+    },
+    "Rma": {
+        "recommended": {
+            "bitscore": 0.3,
+            "sequences": 79025,
+            "seqs_per_l": 987.8,
+            "quality": 10,
+        },
+        "chosen": {
+            "bitscore": 0.5,
+            "sequences": 3042,
+            "seqs_per_l": 33.1,
+            "quality": 10,
+        },
+        "other_3": {
+            "bitscore": 0.7,
+            "sequences": 1940,
+            "seqs_per_l": 21.1,
+            "quality": 10,
+        },
+    },
+}
 
 
 class EVData(ZSData):
@@ -37,17 +89,17 @@ class EVData(ZSData):
     ):
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            protein_name,
-            seq_dir,
-            zs_dir
+            input_csv=input_csv,
+            scale_fit= scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            protein_name=protein_name,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir,
         )
 
         self._ev_model_path = os.path.join(ev_model_dir, self.protein_name + ".model")
@@ -95,7 +147,7 @@ class EVData(ZSData):
     @property
     def ev_csv(self) -> str:
         """
-        A property for the triad csv
+        A property for the ev csv
         """
         return os.path.join(self._ev_dir, f"{self.lib_name}.csv")
 
@@ -111,34 +163,12 @@ def run_all_ev(
     Args:
     """
 
-    protein_lib = {
-        "DHFR": "DHFR",
-        "GB1": "GB1",
-        "ParD2": "ParD2",
-        "ParD3": "ParD3",
-        "T7": "T7",
-        "TEV": "TEV",
-        "TrpB3A": "TrpB",
-        "TrpB3B": "TrpB",
-        "TrpB3C": "TrpB",
-        "TrpB3D": "TrpB",
-        "TrpB3E": "TrpB",
-        "TrpB3F": "TrpB",
-        "TrpB3G": "TrpB",
-        "TrpB3H": "TrpB",
-        "TrpB3I": "TrpB",
-        "TrpB4": "TrpB",
-    }
-    
     if isinstance(pattern, str):
         lib_list = glob(pattern)
     else:
         lib_list = deepcopy(pattern)
 
-    for lib in lib_list:
+    for lib in tqdm(lib_list):
         print(f"Getting ev zs for {lib}...")
-        lib_name = get_file_name(lib)
-        if lib_name in protein_lib:
-            kwargs['protein_name'] = protein_lib[lib_name]
         EVData(input_csv=lib, **kwargs)
 

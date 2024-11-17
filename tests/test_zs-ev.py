@@ -26,14 +26,14 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # run_all_ev("data/meta/scale2parent/*.csv")
-    kwargs = {
-        "scale_fit": "max",
-        "var_col_name": "muts",
-        "ev_model_dir": "data/SSMuLA_ev",
-        "zs_dir": "SSMuLA-zs",
-        "ev_dir": "ev",
-    }
-    run_all_ev("data/SSMuLA/TEV*", kwargs=kwargs)
+    run_all_ev("data/meta/not_scaled/*.csv")
+    # kwargs = {
+    #     "scale_fit": "max",
+    #     "var_col_name": "muts",
+    #     "ev_model_dir": "data/SSMuLA_ev",
+    #     "zs_dir": "SSMuLA-zs",
+    #     "ev_dir": "ev",
+    # }
+    # run_all_ev("data/SSMuLA/TEV*", kwargs=kwargs)
 
     f.close()
