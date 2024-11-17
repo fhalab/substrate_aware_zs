@@ -42,16 +42,16 @@ class ESM(ZSData):
     ):
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            seq_dir,
-            zs_dir
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir,
         )
 
         self._esm_model_name = esm_model_name
@@ -226,7 +226,10 @@ class ESM(ZSData):
 
         # TODO test
         wt_df = self.df[self.df[self._var_col_name] == "WT"].copy()
-        wt_df.loc[:, "esm_score"] = 0
+        # add if wt_df is not empty
+        if not wt_df.empty:
+            wt_df.loc[:, "esm_score"] = 0
+
         df_n_list.append(wt_df)
 
         # Get the n mutant scores

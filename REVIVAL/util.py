@@ -8,12 +8,16 @@ import os
 
 from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
+
+from rdkit import Chem
+
 # import pickle
 
 # import numpy as np
 # import pandas as pd
 
 # from sklearn.metrics import ndcg_score
+
 
 def checkNgen_folder(folder_path: str) -> str:
 
@@ -67,7 +71,7 @@ def read_parent_fasta(fasta_path: str) -> str:
 
     """
     Read the parent fasta file
-    
+
     Args:
     - fasta_path: str, the path to the fasta file
 
@@ -77,7 +81,7 @@ def read_parent_fasta(fasta_path: str) -> str:
 
     # Parse the fasta file
     sequences = list(SeqIO.parse(fasta_path, "fasta"))
-    
+
     # Assert that there is exactly one sequence in the file
     assert len(sequences) == 1, "FASTA file contains more than one sequence."
 
@@ -85,13 +89,12 @@ def read_parent_fasta(fasta_path: str) -> str:
     return str(sequences[0].seq)
 
 
-
 def get_chain_ids(pdb_file_path: str) -> list:
     """
     Extract chain IDs from a given PDB file.
 
     Args:
-    - pdb_file_path (str): The path to the PDB file.
+    - pdb_file_path, str: The path to the PDB file.
 
     Returns:
     - list: A list of chain IDs in the PDB file.
@@ -108,15 +111,22 @@ def get_chain_ids(pdb_file_path: str) -> list:
     return list(chain_ids)
 
 
-def get_chain(input_file_path: str, output_file_path: str, chain_id: str):
+def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: str):
 
     """
     Get the chain given ID
     """
 
-    # Parse the input PDB file
-    parser = PDBParser()
-    structure = parser.get_structure("protein", input_file_path)
+    # check if cif # TODO test
+    if os.path.splitext(input_file_path)[-1] == ".cif":
+        structure = convert_cif_to_pdb(
+            cif_file=input_file_path, pdb_file="", ifsave=False
+        )
+
+    else:
+        # Parse the input PDB file
+        parser = PDBParser()
+        structure = parser.get_structure("protein", input_file_path)
 
     # Iterate over the chains and replace the original chain ID with the modified chain ID
     for model in structure:
@@ -129,7 +139,12 @@ def get_chain(input_file_path: str, output_file_path: str, chain_id: str):
     print(f"Chain {chain_id} has been saved to {output_file_path}")
 
 
-def modify_PDB_chain(input_file_path: str, output_file_path: str, original_chain_id: str, modified_chain_id: str):
+def modify_PDB_chain(
+    input_file_path: str,
+    output_file_path: str,
+    original_chain_id: str,
+    modified_chain_id: str,
+):
     """
     Modify chain ID in a PDB file and save it to a new file.
 
@@ -155,10 +170,12 @@ def modify_PDB_chain(input_file_path: str, output_file_path: str, original_chain
     io.set_structure(structure)
     io.save(output_file_path)
 
-    print(f"Chain {original_chain_id} has been replaced with {modified_chain_id} in {output_file_path}")
+    print(
+        f"Chain {original_chain_id} has been replaced with {modified_chain_id} in {output_file_path}"
+    )
 
 
-def convert_cif_to_pdb(cif_file: str, pdb_file: str):
+def convert_cif_to_pdb(cif_file: str, pdb_file: str = "", ifsave: bool = True):
     """
     Converts a CIF file to PDB format while preserving as much structural data as possible.
 
@@ -168,9 +185,9 @@ def convert_cif_to_pdb(cif_file: str, pdb_file: str):
     """
     # Create a CIF parser object
     parser = MMCIFParser(QUIET=True)
-    
+
     # Parse the CIF file
-    structure = parser.get_structure('structure', cif_file)
+    structure = parser.get_structure("structure", cif_file)
 
     # Create a PDBIO object to write the structure to PDB format
     io = PDBIO()
@@ -178,10 +195,13 @@ def convert_cif_to_pdb(cif_file: str, pdb_file: str):
     # Set the structure to write
     io.set_structure(structure)
 
-    # Save the structure to the PDB file
-    io.save(pdb_file)
+    if ifsave:
+        # Save the structure to the PDB file
+        io.save(pdb_file)
 
-    print(f"Converted {cif_file} to {pdb_file}")
+        print(f"Converted {cif_file} to {pdb_file}")
+    else:
+        return structure
 
 
 def chop_pdb(
@@ -304,3 +324,34 @@ def alignmutseq2pdbseq(mut_seq: str, pdb_seq: str) -> list[int]:
         aligned_pdb_seq.find(aligned_pdb_seq.replace("-", "")[:1]),
         aligned_pdb_seq.rfind(aligned_pdb_seq.replace("-", "")[-1]),
     ], aligned_pdb_seq
+
+
+def er2ee(er: str) -> float:
+
+    """
+    Convert enantiomeric ratio to enantiomeric excess
+    > 99.9:0.1 is considered as 99.8% ee
+    """
+
+    pdt1, pdt2 = map(
+        float, er.replace(">", "").split(":")
+    )  # Split the ratio into major and minor components
+    return (pdt1 - pdt2) / (pdt1 + pdt2) * 100  # Apply the EE formula
+
+
+def canonicalize_smiles(smiles_string: str) -> str:
+
+    """
+    A function to canonicalize a SMILES string.
+
+    Args:
+    - smiles_string (str): The input SMILES string.
+
+    Returns:
+    - str: The canonicalized SMILES string.
+    """
+
+    molecule = Chem.MolFromSmiles(smiles_string)
+    if molecule:
+        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
+        return canonical_smiles

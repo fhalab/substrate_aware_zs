@@ -14,7 +14,7 @@ from itertools import product
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name
+from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
 
 
 class TriadData(ZSData):
@@ -31,27 +31,35 @@ class TriadData(ZSData):
         zs_dir: str = "zs",
         triad_dir: str = "triad",
         triad_mut_dir: str = "mut_file",
+        triad_struct_dir: str = "struct_file",
+        withsub: bool = True,
         chain_id: str = "A",
     ):
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            seq_dir,
-            zs_dir
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            withsub=withsub,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir
         )
 
         self._triad_dir = checkNgen_folder(os.path.join(self._zs_dir, triad_dir))
         self._triad_mut_dir = checkNgen_folder(os.path.join(self._triad_dir, triad_mut_dir))
+        self._triad_struct_dir = checkNgen_folder(os.path.join(self._triad_dir, triad_struct_dir))
+
         self._chain_id = chain_id
 
         self._mut_list = self._generate_mut_file()
+
+        self._get_chain_structure()
+
 
     def _generate_mut_file(self) -> None:
 
@@ -81,7 +89,11 @@ class TriadData(ZSData):
                 mut_list.append("+".join(mut_char_list) + "\n")
 
         # check before saving
-        assert len(mut_list) == self.df_length - 1
+        # if parent is in the dataframe
+        if self.parent_aa in self.df[self._combo_col_name].tolist():
+            assert len(mut_list) == self.df_length - 1
+        else:
+            assert len(mut_list) == self.df_length
 
         print(f"Generated {self.mut_path}...")
 
@@ -90,6 +102,42 @@ class TriadData(ZSData):
             f.writelines(mut_list)
 
         return mut_list
+
+    def _get_chain_structure(self) -> str:
+
+        """
+        A function to get the chain structure
+        """
+
+        print(f"Getting chain {self._chain_id} structure for {self.instruct_file}...")
+
+        return get_chain_structure(
+            input_file_path=self.instruct_file, 
+            output_file_path=self.triad_instruct_file, 
+            chain_id=self._chain_id)
+
+    @property
+    def instruct_file(self) -> str:
+        """
+        PDB file path to the esmif pdb file
+        """
+
+        return os.path.join(
+            self._structure_dir,
+            f"{self.zs_struct_name}{os.path.splitext(self.structure_file)[-1]}",
+        )
+
+    @property
+    def triad_instruct_file(self) -> str:
+        
+        """
+        PDB file path to the triad pdb file
+        """
+
+        return os.path.join(
+            self._triad_struct_dir,
+            f"{self.zs_struct_name}.pdb",
+        )
 
     @property
     def prefixes(self) -> list:

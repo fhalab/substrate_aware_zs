@@ -17,7 +17,7 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    preprocess_all(scale_fit="parent")
+    preprocess_all(scale_fit="none")
 
     f.close()
 

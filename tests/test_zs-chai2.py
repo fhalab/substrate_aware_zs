@@ -13,7 +13,7 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
     # log outputs
     f = open(
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     #     "data/meta/scale2parent/PfTrpB-7methyl.csv",
     #     "data/meta/scale2parent/PfTrpB-56chloro.csv",
     #     "data/meta/scale2parent/PfTrpB-5cyano.csv",
-        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
     ])
 
     # parse_all_chai_scores(chai_struct_dir= "zs/chai/mut_structure")

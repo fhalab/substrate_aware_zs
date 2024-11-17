@@ -7,14 +7,17 @@ from __future__ import annotations
 import os
 from glob import glob
 from copy import deepcopy
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-from docko.chai import run_chai
+import torch
+
+from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name
+from REVIVAL.util import checkNgen_folder, get_file_name, canonicalize_smiles
 
 
 class ChaiData(ZSData):
@@ -32,6 +35,8 @@ class ChaiData(ZSData):
         zs_dir: str = "zs",
         chai_dir: str = "chai",
         chai_struct_dir: str = "mut_structure",
+        ifrerun: bool = False,
+        torch_device: str = "cuda",
     ):
 
         super().__init__(
@@ -55,6 +60,9 @@ class ChaiData(ZSData):
             os.path.join(self._chai_struct_dir, self.lib_name)
         )
 
+        self._ifrerun = ifrerun
+        self._torch_device = torch_device
+
         self._gen_chai_structure()
 
     def _gen_chai_structure(self):
@@ -67,16 +75,111 @@ class ChaiData(ZSData):
             seq,
         ) in self.df[[self._var_col_name, self._seq_col_name]].values:
 
-            print(f"Running chai for {var} saving to {self._chai_struct_subdir}...")
+            output_subdir = os.path.join(self._chai_struct_subdir, var)
 
-            run_chai(
-                label=var,
-                seq=seq,
-                smiles=self.lib_info["substrate-smiles"]
-                + "."
-                + ".".join(self.lib_info["cofactor-smiles"]),
-                output_dir=self._chai_struct_subdir,
+            # Need to clean up the sequence
+            seq = seq.strip().replace("*", "").replace(" ", "").upper()
+
+            input_fasta = f">protein|{self.lib_name}_{var}\n{seq}\n"
+
+            # todo confirm substrate and cofactor smiles exists
+            smile_dets = (
+                self.lib_info["substrate"] + "_" + "-".join(self.lib_info["cofactor"])
             )
+            join_smile = (
+                self.lib_info["substrate-smiles"]
+                + "."
+                + ".".join(self.lib_info["cofactor-smiles"])
+            )
+
+            smiles = canonicalize_smiles(join_smile)
+            # now add substrate
+            input_fasta += f">ligand|{smile_dets}\n{join_smile}\n"
+
+            # only rerun if the flag is set and the output folder doies not exists
+            if self._ifrerun or not os.path.exists(output_subdir):
+
+                output_subdir = Path(checkNgen_folder(output_subdir))
+
+                fasta_path = Path(f"{output_subdir}/{var}.fasta")
+                fasta_path.write_text(input_fasta)
+
+                print(f"Running chai for {var}...")
+
+                output_paths = run_inference(
+                    fasta_file=fasta_path,
+                    output_dir=output_subdir,
+                    # 'default' setup
+                    num_trunk_recycles=3,
+                    num_diffn_timesteps=200,
+                    seed=42,
+                    device=torch.device(self._torch_device),
+                    use_esm_embeddings=True,
+                )
+
+                renamed_output_files = []
+
+                # get name of the output cif or pdb files
+                output_strcut_files = sorted(
+                    glob(f"{output_subdir}/*.cif") + glob(f"{output_subdir}/*.pdb")
+                )
+
+                # rename the output files cif or pdb files
+                for output_strcut_file in output_strcut_files:
+                    renamed_output_file = output_strcut_file.replace(
+                        "pred.model_idx", var
+                    )
+                    os.rename(
+                        output_strcut_file,
+                        renamed_output_file,
+                    )
+                    renamed_output_files.append(renamed_output_file)
+
+                renamed_scores_files = []
+
+                # for npz files do the same
+                output_scores_files = sorted(glob(f"{output_subdir}/*.npz"))
+
+                for output_scores_file in output_scores_files:
+                    renamed_output_file = output_scores_file.replace(
+                        "scores.model_idx", var
+                    )
+                    os.rename(
+                        output_scores_file,
+                        renamed_output_file,
+                    )
+                    renamed_scores_files.append(renamed_output_file)
+
+            else:
+                renamed_output_files = glob(f"{output_subdir}/*.cif") + glob(
+                    f"{output_subdir}/*.pdb"
+                )
+                renamed_scores_files = glob(f"{output_subdir}/*.npz")
+
+            return renamed_output_files, renamed_scores_files
+
+            # run_chai(
+            #     label=var,
+            #     seq=seq,
+            #     smiles=,
+            #     output_dir=self._chai_struct_subdir,
+            # )
+
+            # #
+
+            # # rename all the cif and npz files
+            # for file in glob(f"{subfoler}/*.cif"):
+            #     new_file = file.replace("pred.model_idx", var)
+            #     os.rename(file, new_file)
+
+            # for file in glob(f"{subfoler}/*.npz"):
+            #     new_file = file.replace("scores.model_idx", var)
+            #     os.rename(file, new_file)
+
+            # # then rename the whole subfolder if the lib name is repeated in the subfolder name
+            # if self.lib_name in subfoler:
+            # new_subfolder = os.path.join(os.path.dirname(subfoler), var_name)
+            # os.rename(subfoler, new_subfolder)
 
 
 def run_gen_chai_structure(
@@ -145,7 +248,7 @@ def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"
 
     for subfolder in sorted(glob(f"{mut_structure_dir}/*")):
         var = os.path.basename(subfolder)
-        
+
         for rep_npz in sorted(glob(f"{subfolder}/*.npz")):
 
             npz = np.load(rep_npz)
@@ -174,7 +277,7 @@ def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/mut_structure"):
     """
     A function to parse all the chai scores for all libraries
     """
-    
+
     for lib in glob(f"{chai_struct_dir}/*"):
         print(f"Parsing chai scores for {lib}...")
         parse_chai_scores(lib)

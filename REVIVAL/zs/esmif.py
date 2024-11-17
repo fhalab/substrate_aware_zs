@@ -18,7 +18,7 @@ import esm
 import esm.inverse_folding
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder
+from REVIVAL.util import checkNgen_folder, pdb2seq, find_missing_str, alignmutseq2pdbseq
 
 
 class ESMIFData(ZSData):
@@ -34,6 +34,7 @@ class ESMIFData(ZSData):
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
+        withsub: bool = True,
         zs_dir: str = "zs",
         esmif_dir: str = "esmif",
         esmif_mut_dir: str = "mut_file",
@@ -51,6 +52,7 @@ class ESMIFData(ZSData):
             pos_col_name=pos_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
+            withsub=withsub,
             seq_dir=seq_dir,
             structure_dir=structure_dir,
             zs_dir=zs_dir,
@@ -60,12 +62,14 @@ class ESMIFData(ZSData):
         self._esmif_mut_dir = checkNgen_folder(
             os.path.join(self._esmif_dir, esmif_mut_dir)
         )
+
         self._esmif_instruct_dir = checkNgen_folder(
             os.path.join(self._esmif_dir, esmif_instruct_dir)
         )
         self._esmif_score_dir = checkNgen_folder(
             os.path.join(self._esmif_dir, esmif_score_dir)
         )
+
         self._chain_id = chain_id
 
         print(f"Generating mut fasta file for {self.lib_name}...")
@@ -85,12 +89,44 @@ class ESMIFData(ZSData):
 
         print(f"Writing to {self.esmif_mut_file}...")
 
-        # TODO: dealt with seq not same length
-        with open(self.esmif_mut_file, "w") as f:
-            for mut, seq in zip(
-                self.df[self._var_col_name].values, self.df[self._seq_col_name].values
-            ):
-                f.write(f">{mut}\n{seq}\n")
+        pdb_seq = pdb2seq(self.esmif_instruct_file, self._chain_id)
+
+        # TODO clean up and improve
+        if len(self.parent_seq) < len(pdb_seq):
+            print("PDB seq is longer than fasta")
+            part_before, part_after = find_missing_str(longer=pdb_seq, shorter=self.parent_seq)
+            with open(self.esmif_mut_file, "w") as f:
+                for mut, seq in zip(self.df[self._var_col_name].values, self.df[self._seq_col_name].values):
+                    f.write(f">{mut}\n{part_before+seq+part_after}\n")
+        elif len(self.parent_seq) == len(pdb_seq):
+            print("PDB seq length is equal to fasta")
+            with open(self.esmif_mut_file, "w") as f:
+                for mut, seq in zip(
+                    self.df[self._var_col_name].values, self.df[self._seq_col_name].values
+                ):
+                    f.write(f">{mut}\n{seq}\n")
+        else:
+            print("Fasta seq is longer than PDB")
+            index_list, aligned_pdb_seq = alignmutseq2pdbseq(mut_seq=self.parent_seq, pdb_seq=pdb_seq)
+
+            start_index, end_index = index_list
+
+            # there might be seq with X from pdb
+            # Step 1: Find all indices of 'X' in pdb_seq
+            x_indices = [i for i, letter in enumerate(aligned_pdb_seq) if letter == "X"]
+
+            with open(self.esmif_mut_file, "w") as f:
+                for mut, seq in zip(self.df[self._var_col_name].values, self.df[self._seq_col_name].values):
+                    # Step 2: Modify the original seq by replacing characters at the found indices with 'X'
+                    if len(x_indices) > 0 and x_indices[-1] > start_index:
+                        start_index = x_indices[-1] + 1
+                        # seq_list = list(seq)  # Convert the sequence to a list to allow mutation
+                        # for idx in x_indices:
+                        #     seq_list[idx] = 'X'
+
+                        # # Convert the modified list back to a string
+                        # seq = ''.join(seq_list)
+                    f.write(f">{mut}\n{seq[start_index:end_index+1]}\n")
 
     def _score_mut_file(self) -> None:
 
@@ -103,9 +139,9 @@ class ESMIFData(ZSData):
         if torch.cuda.is_available():
             model = model.cuda()
             print("Transferred model to GPU")
-        print(f"in esmifdata self._structure_dir: {self._structure_dir}")
+
         coords, native_seq = esm.inverse_folding.util.load_coords(
-            self.structure_file, self._chain_id
+            self.esmif_instruct_file, self._chain_id
         )
         print(f"Native sequence loaded from structure file:\n{native_seq}\n")
 
@@ -131,14 +167,17 @@ class ESMIFData(ZSData):
                 fout.write(header + "," + str(ll) + "\n")
         print(f"Results saved to {self.esmif_output_file}")
 
+    
+    # TODO add if need processing
     @property
     def esmif_instruct_file(self) -> str:
         """
         PDB file path to the esmif pdb file
         """
+
         return os.path.join(
-            self._esmif_instruct_dir,
-            f"{self.lib_name}.{os.path.splitext(self.structure_file)[-1]}",
+            self._structure_dir, #TODO update if need processing
+            f"{self.zs_struct_name}{os.path.splitext(self.structure_file)[-1]}",
         )
 
     @property

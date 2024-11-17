@@ -13,8 +13,8 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from REVIVAL.util import checkNgen_folder, get_file_name, read_parent_fasta
-from REVIVAL.global_param import LIB_INFO_DICT
+from REVIVAL.global_param import LIB_INFO_DICT, APPEND_INFO_COLS
+from REVIVAL.util import checkNgen_folder, get_file_name, read_parent_fasta, er2ee
 
 
 class LibData:
@@ -30,6 +30,7 @@ class LibData:
         var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        selectivity_col_name: str = "er",
         protein_name: str = "",
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
@@ -49,7 +50,9 @@ class LibData:
         - var_col_name, str: the column name for the variants
             ie 'V39D:D40G'
         - seq_col_name, str: the column name for the full sequence
-        - fit_col_name, str: the column name for the fitness
+        - fit_col_name, str: the column name for the fitness or yield
+        - selectivity_col_name, str: the column name for the er of the enatiomer
+        - protein_name, str: the protein name
         - seq_dir, str: the directory for the parent sequence fasta files
         - structure_dir, str: the directory for the structure files
         - mut_fasta_dir, str: the directory for the mutated fasta files
@@ -62,6 +65,7 @@ class LibData:
         self._var_col_name = var_col_name
         self._seq_col_name = seq_col_name
         self._fit_col_name = fit_col_name
+        self._selectivity_col_name = selectivity_col_name
         self._protein_name = protein_name
         self._seq_dir = seq_dir
         self._structure_dir = structure_dir
@@ -113,7 +117,7 @@ class LibData:
             return self.max_fitness
         else:
             return 1
-    
+
     @property
     def n_site(self) -> int:
         """Return the number of sites"""
@@ -163,6 +167,7 @@ class LibData:
 
 ######### Handling SSM input meta data #########
 
+
 class ProcessData(LibData):
     """
     A parent class to process the data
@@ -176,6 +181,7 @@ class ProcessData(LibData):
         var_col_name: str = "var",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        selectivity_col_name: str = "er",
         protein_name: str = "",
         seq_dir: str = "data/seq",
         output_dir: str = "data/meta",
@@ -191,7 +197,10 @@ class ProcessData(LibData):
         - var_col_name, str: the column name for the variants
         - seq_col_name, str: the column name for the full sequence
         - fit_col_name, str: the column name for the fitness
+        - selectivity_col_name, str: the column name for the er of the enatiomer
+        - protein_name, str: the protein name
         - seq_dir, str: the directory for the parent sequence fasta files
+        - output_dir, str: the output directory
         """
 
         super().__init__(
@@ -201,6 +210,7 @@ class ProcessData(LibData):
             var_col_name=var_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
+            selectivity_col_name=selectivity_col_name,
             protein_name=protein_name,
             seq_dir=seq_dir,
         )
@@ -342,7 +352,6 @@ class ProcessData(LibData):
 
             return "".join(seq_list)
 
-
     def _process(self) -> pd.DataFrame:
 
         """
@@ -354,6 +363,17 @@ class ProcessData(LibData):
         # scale the fitness
         df[self._fit_col_name] = df[self._fit_col_name] / self.norm_fit_factor
 
+        # convert er to ee
+        if ("er" in self._selectivity_col_name.lower()) and (
+            self._selectivity_col_name in df.columns
+        ):
+            df["ee"] = df[self._selectivity_col_name].apply(er2ee)
+            # drop the er column
+            df.drop(self._selectivity_col_name, axis=1, inplace=True)
+
+        # if there are multiple entries for the same combo name, take the mean
+        df = df.groupby(self._combo_col_name).mean().reset_index()
+
         # append muts column for none SSM data
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
@@ -364,10 +384,12 @@ class ProcessData(LibData):
 
         # add full seq from fasta file by modifying self.parent_seq with the mutations
         if self._seq_col_name not in df.columns and self._combo_col_name in df.columns:
-            df.loc[:, self._seq_col_name] = df[self._var_col_name].apply(lambda x: self._mut2seq(x))
+            df.loc[:, self._seq_col_name] = df[self._var_col_name].apply(
+                lambda x: self._mut2seq(x)
+            )
 
         # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
-        for col in ["enzyme", "substrate", "substrate-smiles", "cofactor", "cofactor-smiles", "product-smiles"]:
+        for col in APPEND_INFO_COLS:
             if col in self.lib_info:
                 append_info = self.lib_info[col]
                 # if the content is a list, convert it to a string
@@ -388,7 +410,7 @@ class ProcessData(LibData):
 
     @property
     def processed_df(self) -> pd.DataFrame:
-        
+
         """Return the output dataframe"""
 
         return self._processed_df
@@ -401,6 +423,7 @@ def preprocess_all(
     var_col_name: str = "var",
     seq_col_name: str = "seq",
     fit_col_name: str = "fitness",
+    selectivity_col_name: str = "er",
     seq_dir: str = "data/seq",
     output_dir: str = "data/meta",
 ) -> None:
@@ -431,12 +454,14 @@ def preprocess_all(
             var_col_name=var_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
+            selectivity_col_name=selectivity_col_name,
             seq_dir=seq_dir,
             output_dir=output_dir,
         )._process()
 
 
 ######### Handling ZS data #########
+
 
 class ZSData(LibData):
 
@@ -455,6 +480,7 @@ class ZSData(LibData):
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         protein_name: str = "",
+        withsub: bool = True,
         seq_dir: str = "data/seq",
         structure_dir: str = "data/structure",
         zs_dir: str = "zs",
@@ -487,11 +513,12 @@ class ZSData(LibData):
             fit_col_name=fit_col_name,
             protein_name=protein_name,
             seq_dir=seq_dir,
-            structure_dir=structure_dir
+            structure_dir=structure_dir,
         )
 
         self._mut_col_name = mut_col_name
         self._pos_col_name = pos_col_name
+        self._withsub = withsub
 
         self._zs_dir = checkNgen_folder(zs_dir)
 
@@ -535,7 +562,7 @@ class ZSData(LibData):
         )
 
         # filter out stop codon if any
- 
+
         return df[~df[self._var_col_name].str.contains("\*")].copy()
 
     @property
@@ -547,3 +574,14 @@ class ZSData(LibData):
 
         return self.df["n_mut"].max()
 
+    @property
+    def zs_struct_name(self) -> str:
+
+        """
+        Get the name of the structure file
+        """
+
+        if self._withsub:
+            return self.lib_name
+        else:
+            return self.lib_info["enzyme"]

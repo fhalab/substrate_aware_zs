@@ -1103,6 +1103,7 @@ def run_coves(
     lib: str,
     data_dir: str = "data",
     structure_dir: str = "structure",
+    withsub: bool = True,
     chain_number: str = "A",
     coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
@@ -1112,6 +1113,18 @@ def run_coves(
 ):
     """
     pdb_din has to be directory of pdb files
+
+    Args:
+    - lib, str: name of the library
+    - data_dir, str: "data" for the fitness
+    - structure_dir, str: "structure"
+    - withsub, bool: if use the holo or generated structure
+    - chain_number, str: chain number
+    - coves_dir, str: directory of coves
+    - lmdb_dir, str: directory of lmdb
+    - model_weight_path, str: path to the model weight
+    - dout, str: output directory
+    - n_ave, int: number of average
     """
 
     start = timeit.default_timer()
@@ -1119,7 +1132,10 @@ def run_coves(
         os.path.join(data_dir, "seq", LIB_INFO_DICT[lib]["enzyme"] + ".fasta")
     )
 
-    pdb_file = os.path.join(data_dir, structure_dir, lib + ".pdb")
+    if withsub:
+        pdb_file = os.path.join(data_dir, structure_dir, lib + ".pdb")
+    else:
+        pdb_file = os.path.join(data_dir, structure_dir, LIB_INFO_DICT[lib]["enzyme"] + ".pdb")
 
     # create pdb directory for the wildtype
     coves_pdb_dir = checkNgen_folder(os.path.join(coves_dir, "input", lib))
@@ -1176,6 +1192,8 @@ def run_coves(
 def run_all_coves(
     pattern="data/lib/*",
     data_dir: str = "data",
+    structure_dir: str = "structure",
+    withsub: bool = True,
     chain_number: str = "A",
     coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
@@ -1184,13 +1202,14 @@ def run_all_coves(
     n_ave: int = 100,
 ):
     """
-    lib: str,
     data_dir: str = "data",
+    structure_dir: str = "structure",
+    withsub: bool = True,
     chain_number: str = "A",
-    coves_dir = "zs/coves",
+    coves_dir="zs/coves",
     lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/results",
+    dout: str = "zs/coves/output",
     n_ave: int = 100,
     """
 
@@ -1205,6 +1224,8 @@ def run_all_coves(
         run_coves(
             lib=lib,
             data_dir=data_dir,
+            structure_dir=structure_dir,
+            withsub=withsub,
             chain_number=chain_number,
             coves_dir=coves_dir,
             lmdb_dir=lmdb_dir,
@@ -1212,7 +1233,6 @@ def run_all_coves(
             dout=checkNgen_folder(dout),
             n_ave=n_ave,
         )
-
 
 ############ for recombining the mutations ############
 # TODO - NEED UPDATE IN/OUT DIR
