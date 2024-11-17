@@ -35,6 +35,7 @@ class LibData:
         structure_dir: str = "data/structure",
         mut_fasta_dir: str = "data/mut_fasta",
     ) -> None:
+
         """
         Args:
         - input_csv, str: path to the input csv file,
@@ -66,8 +67,6 @@ class LibData:
         self._structure_dir = structure_dir
         self._mut_fasta_dir = mut_fasta_dir
 
-        print(f"in libdata self._structure_dir: {self._structure_dir}")
-
     @property
     def lib_name(self) -> dict:
         """Return the library name"""
@@ -93,6 +92,28 @@ class LibData:
         """Return the parent amino acid"""
         return "".join(list(self.lib_info[self._combo_col_name].values()))
 
+    @property
+    def parent_fitness(self) -> float:
+        """Return the parent fitness"""
+        return self.input_df[self.input_df[self._combo_col_name] == self.parent_aa][
+            self._fit_col_name
+        ].values[0]
+
+    @property
+    def max_fitness(self) -> float:
+        """Return the max fitness"""
+        return self.input_df[self._fit_col_name].max()
+
+    @property
+    def norm_fit_factor(self) -> float:
+        """Return the normalization factor"""
+        if self._scale_fit == "parent":
+            return self.parent_fitness
+        elif self._scale_fit == "max":
+            return self.max_fitness
+        else:
+            return 1
+    
     @property
     def n_site(self) -> int:
         """Return the number of sites"""
@@ -174,14 +195,14 @@ class ProcessData(LibData):
         """
 
         super().__init__(
-            input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            seq_col_name,
-            fit_col_name,
-            protein_name,
-            seq_dir,
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            protein_name=protein_name,
+            seq_dir=seq_dir,
         )
 
         self._output_subdir = checkNgen_folder(
@@ -190,7 +211,10 @@ class ProcessData(LibData):
 
         print(f"Processing {self._input_csv} with {self._scale_fit}...")
 
+        self._processed_df = self._process()
+
         # save the output csv
+        self._processed_df.to_csv(self.output_csv, index=False)
         print(f"Saving to {self.output_csv} ...")
 
     def _split_aa(self, df: pd.DataFrame) -> pd.DataFrame:
@@ -327,6 +351,9 @@ class ProcessData(LibData):
 
         df = self.input_df.copy()
 
+        # scale the fitness
+        df[self._fit_col_name] = df[self._fit_col_name] / self.norm_fit_factor
+
         # append muts column for none SSM data
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
@@ -340,12 +367,17 @@ class ProcessData(LibData):
             df.loc[:, self._seq_col_name] = df[self._var_col_name].apply(lambda x: self._mut2seq(x))
 
         # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
-        for col in ["enzyme", "substrate", "substrate-smiles", "cofactor", "cofactor-smiles"]:
+        for col in ["enzyme", "substrate", "substrate-smiles", "cofactor", "cofactor-smiles", "product-smiles"]:
             if col in self.lib_info:
-                df[col] = self.lib_info[col]
+                append_info = self.lib_info[col]
+                # if the content is a list, convert it to a string
+                if isinstance(append_info, list):
+                    df[col] = ".".join(append_info)
+                else:
+                    df[col] = self.lib_info[col]
 
         # save the output csv
-        df.to_csv(self.output_csv, index=False)
+        return df
 
     @property
     def output_csv(self) -> str:
@@ -353,6 +385,13 @@ class ProcessData(LibData):
         """Return the path to the output csv"""
 
         return os.path.join(self._output_subdir, os.path.basename(self._input_csv))
+
+    @property
+    def processed_df(self) -> pd.DataFrame:
+        
+        """Return the output dataframe"""
+
+        return self._processed_df
 
 
 def preprocess_all(
@@ -400,6 +439,7 @@ def preprocess_all(
 ######### Handling ZS data #########
 
 class ZSData(LibData):
+
     """
     A class for generating ZS scores
     """
@@ -454,8 +494,6 @@ class ZSData(LibData):
         self._pos_col_name = pos_col_name
 
         self._zs_dir = checkNgen_folder(zs_dir)
-
-        print(f"in zsdata self._structure_dir: {self._structure_dir}")
 
     def _append_mut_dets(self, combo: str) -> tuple:
 

@@ -3,6 +3,10 @@ data
 data/
 data/*
 
+data2add
+data2add/
+data2add/*
+
 logs
 logs/
 logs/*
