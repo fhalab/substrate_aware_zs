@@ -18,7 +18,7 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_esm(pattern="data/meta/not_scaled/Rma*")
+    run_all_esm(pattern="data/meta/not_scaled/Par*")
 
     f.close()
 

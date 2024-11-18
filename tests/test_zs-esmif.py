@@ -28,7 +28,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_esmif("data/meta/scale2parent/5DW0*", kwargs={"structure_dir": "data/structure"})
-    run_esmif("data/meta/not_scaled/Rma*", kwargs={"structure_dir": "data/structure", "withsub": False})
+    run_esmif("data/meta/not_scaled/Par*", kwargs={"structure_dir": "data/structure"})
 
     """
     run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {})

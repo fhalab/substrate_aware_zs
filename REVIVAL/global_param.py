@@ -242,6 +242,8 @@ LIB_INFO_DICT = deepcopy(
             ], # heme b taken from pdb
             "product": "1,2-disubstituted cyclopropanes cis",
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
+            "product2": "1,2-disubstituted cyclopropanes trans",
+            "product2-smiles": "COC1=CC=C([C@@H]2[C@@H](C(OCC)=O)C2)C=C1",
             "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
             "AAs": {1: "W", 2: "Y", 3: "L", 4: "Q", 5: "F"}, # W56, Y57, L59, Q60, and F89; WYLQF
             "family": "ParPgb",

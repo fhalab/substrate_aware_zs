@@ -9,7 +9,6 @@ import os
 from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
 
-from rdkit import Chem
 
 # import pickle
 
@@ -338,20 +337,3 @@ def er2ee(er: str) -> float:
     )  # Split the ratio into major and minor components
     return (pdt1 - pdt2) / (pdt1 + pdt2) * 100  # Apply the EE formula
 
-
-def canonicalize_smiles(smiles_string: str) -> str:
-
-    """
-    A function to canonicalize a SMILES string.
-
-    Args:
-    - smiles_string (str): The input SMILES string.
-
-    Returns:
-    - str: The canonicalized SMILES string.
-    """
-
-    molecule = Chem.MolFromSmiles(smiles_string)
-    if molecule:
-        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
-        return canonical_smiles

@@ -15,10 +15,30 @@ import pandas as pd
 
 import torch
 
+from rdkit import Chem
+
 from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name, canonicalize_smiles
+from REVIVAL.util import checkNgen_folder, get_file_name
+
+
+def canonicalize_smiles(smiles_string: str) -> str:
+
+    """
+    A function to canonicalize a SMILES string.
+
+    Args:
+    - smiles_string (str): The input SMILES string.
+
+    Returns:
+    - str: The canonicalized SMILES string.
+    """
+
+    molecule = Chem.MolFromSmiles(smiles_string)
+    if molecule:
+        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
+        return canonical_smiles
 
 
 class ChaiData(ZSData):
