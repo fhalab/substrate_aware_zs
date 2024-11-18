@@ -22,7 +22,7 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_parse_triad_results("data/meta/scale2parent/*.csv")
+    run_parse_triad_results("data/meta/not_scaled/Par*.csv")
 
     """run_parse_triad_results(
     pattern: str | list = "data/meta/scale2parent/*.csv"

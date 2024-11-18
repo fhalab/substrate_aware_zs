@@ -18,14 +18,14 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_esm(pattern="data/meta/not_scaled/Par*")
+    run_all_esm(pattern="data/meta/not_scaled/P*")
 
     f.close()
 
 
 """
 run_all_esm(
-    pattern: str = "data/meta/scale2parent/*",
+    pattern: str = "data/meta/not_scaled/*",
     scale_fit: str = "parent",
     esm_model_name: str = "esm2_t33_650M_UR50D",
     combo_col_name: str = "AAs",

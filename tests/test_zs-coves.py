@@ -18,8 +18,8 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_coves(pattern="data/lib/Par*", withsub=False)
-    # append_all_coves_scores(coves_dir="zs/coves/output-no_sub/100")
+    # run_all_coves(pattern="data/lib/Par*", withsub=False)
+    append_all_coves_scores(libs="data/meta/not_scaled/*",coves_dir="zs/coves/output/100")
 
     f.close()
 

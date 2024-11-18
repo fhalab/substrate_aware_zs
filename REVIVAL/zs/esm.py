@@ -7,6 +7,7 @@ from __future__ import annotations
 import os
 from glob import glob
 from copy import deepcopy
+from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
@@ -254,8 +255,8 @@ class ESM(ZSData):
 
 
 def run_all_esm(
-    pattern: str | list = "data/meta/scale2parent/*",
-    scale_fit: str = "parent",
+    pattern: str | list = "data/meta/not_scaled/*",
+    scale_fit: str = "none",
     esm_model_name: str = "esm2_t33_650M_UR50D",
     combo_col_name: str = "AAs",
     var_col_name: str = "var",
@@ -278,7 +279,7 @@ def run_all_esm(
     else:
         path_list = deepcopy(pattern)
 
-    for p in path_list:
+    for p in tqdm(path_list):
 
         print(f"Running ESM for {p}...")
 

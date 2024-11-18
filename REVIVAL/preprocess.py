@@ -367,7 +367,7 @@ class ProcessData(LibData):
         if ("er" in self._selectivity_col_name.lower()) and (
             self._selectivity_col_name in df.columns
         ):
-            df["ee"] = df[self._selectivity_col_name].apply(er2ee)
+            df["selectivity"] = df[self._selectivity_col_name].apply(er2ee)
             # drop the er column
             df.drop(self._selectivity_col_name, axis=1, inplace=True)
 

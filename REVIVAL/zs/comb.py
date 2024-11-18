@@ -39,7 +39,7 @@ class ZSComb(ZSData):
             "esmif/output",
             "coves/output/100_processed",
             "triad/processed_output",
-            "chai/output",
+            # "chai/output",
         ],
     ):
 
@@ -68,6 +68,10 @@ class ZSComb(ZSData):
         """
 
         df = self.input_df.copy()
+
+        # add hamming distance first
+        df["hd"] = -1 * df["n_mut"]
+
         for zs_path in self.zs_paths:
 
             zs_df = pd.read_csv(zs_path)
@@ -76,7 +80,7 @@ class ZSComb(ZSData):
             if "chai" in zs_path:
 
                 zs_df = (
-                    zs_df[zs_df["has_inter_chain_clashes"] == False]
+                    zs_df[~zs_df["has_inter_chain_clashes"]]
                     .groupby("var")
                     .mean(numeric_only=True)
                     .drop(columns=["rep"])
@@ -147,7 +151,7 @@ def run_all_combzs(
         "esmif/output",
         "coves/output/100_processed",
         "triad/processed_output",
-        "chai/output",
+        # "chai/output",
     ],
 ):
 

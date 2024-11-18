@@ -17,6 +17,32 @@ from REVIVAL.util import checkNgen_folder, get_file_name
 
 
 EV_META = {
+    "ParLQ": {
+        "recommended": {
+            "bitscore": 0.1,
+            "sequences": 15086,
+            "seqs_per_l": 123.7,
+            "quality": 10,
+        },
+        "chosen": {
+            "bitscore": 0.7,
+            "sequences": 343,
+            "seqs_per_l": 1.8,
+            "quality": 8,
+        },
+        "other_2": {
+            "bitscore": 0.3,
+            "sequences": 875,
+            "seqs_per_l": 5.4,
+            "quality": 6,
+        },
+        "other_3": {
+            "bitscore": 0.5,
+            "sequences": 343,
+            "seqs_per_l": 1.8,
+            "quality": 8,
+        },
+    },
     "PfTrpB": {
         "recommended": {
             "bitscore": 0.1,
@@ -63,6 +89,7 @@ EV_META = {
             "quality": 10,
         },
     },
+
 }
 
 
@@ -153,7 +180,7 @@ class EVData(ZSData):
 
     
 def run_all_ev(
-    pattern: str | list = "data/meta/scale2parent/*.csv",
+    pattern: str | list = "data/meta/not_scaled/*.csv",
     kwargs: dict = {}
     ):
 
