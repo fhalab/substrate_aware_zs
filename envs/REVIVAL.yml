@@ -62,6 +62,7 @@ dependencies:
   - tqdm
   - versioneer
   - xarray
+  - xlrd
 
   - pip:
     - blackcellmagic

@@ -231,6 +231,22 @@ LIB_INFO_DICT = deepcopy(
             "family": "cyt c",
             "project": "MODIFY",
         },
+        "ParLQ": {
+            "enzyme": "ParLQ",
+            "substrate": "4-vinylanisole",
+            "substrate-smiles": "C=CC1=CC=C(OC)C=C1",
+            "cofactor": ["ethyl diazoacetate (EDA)", "heme b"],
+            "cofactor-smiles": [
+                "[N-]=[N+]=CC(OCC)=O",
+                "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O"
+            ], # heme b taken from pdb
+            "product": "1,2-disubstituted cyclopropanes cis",
+            "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
+            "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
+            "AAs": {1: "W", 2: "Y", 3: "L", 4: "Q", 5: "F"}, # W56, Y57, L59, Q60, and F89; WYLQF
+            "family": "ParPgb",
+            "project": "ALDE",
+        },        
     }
 )
 

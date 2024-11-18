@@ -37,6 +37,7 @@ if __name__ == "__main__":
     #     "data/meta/scale2parent/PfTrpB-56chloro.csv",
     #     "data/meta/scale2parent/PfTrpB-5cyano.csv",
         "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
     ])
 
     # parse_all_chai_scores(chai_struct_dir= "zs/chai/mut_structure")
