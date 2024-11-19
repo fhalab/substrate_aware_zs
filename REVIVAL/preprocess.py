@@ -352,6 +352,34 @@ class ProcessData(LibData):
 
             return "".join(seq_list)
 
+    def _append_active_cutoff(self, df) -> pd.DataFrame:
+
+        """
+        Calculate the cutoff for active mutants based on
+        1.96 standard deviations above the mean fitness of all stop-codon-containing sequences
+
+        Returns:
+        - pd.DataFrame: input dataframe with active column
+        """
+
+        if "active_cutoff" in self.lib_info:
+            fit_cutoff = self.lib_info["active_cutoff"]
+
+        elif df[self._var_col_name].str.contains("\*").any():
+
+            stop_df = df[df[self._var_col_name].str.contains("\*")]
+            avg_stop = stop_df[self._fit_col_name].mean()
+            std_stop = stop_df[self._fit_col_name].std()
+            fit_cutoff = 1.96 * std_stop + avg_stop
+
+        else:
+            return df
+
+        # Apply the lambda functions to the DataFrame
+        df["active"] = df[self._fit_col_name] > fit_cutoff
+
+        return df
+
     def _process(self) -> pd.DataFrame:
 
         """
@@ -372,7 +400,12 @@ class ProcessData(LibData):
             df.drop(self._selectivity_col_name, axis=1, inplace=True)
 
         # if there are multiple entries for the same combo name, take the mean
-        df = df.groupby(self._combo_col_name).mean().reset_index()
+        if self._combo_col_name in df.columns:
+            # drop stop codon containing rows
+            df = df.groupby(self._combo_col_name).mean().reset_index()
+
+        elif self._var_col_name in df.columns:
+            df = df.groupby(self._var_col_name).mean().reset_index()
 
         # append muts column for none SSM data
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
@@ -383,10 +416,13 @@ class ProcessData(LibData):
             df = self._split_aa(df).copy()
 
         # add full seq from fasta file by modifying self.parent_seq with the mutations
-        if self._seq_col_name not in df.columns and self._combo_col_name in df.columns:
+        if self._seq_col_name not in df.columns and self._var_col_name in df.columns:
             df.loc[:, self._seq_col_name] = df[self._var_col_name].apply(
                 lambda x: self._mut2seq(x)
             )
+
+        # add active column
+        df = self._append_active_cutoff(df).copy()
 
         # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
         for col in APPEND_INFO_COLS:

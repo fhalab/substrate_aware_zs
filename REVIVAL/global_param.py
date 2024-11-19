@@ -14,6 +14,36 @@ from REVIVAL.util import get_file_name
 
 LIB_INFO_DICT = deepcopy(
     {
+        
+        "amiE-acetamide": {
+            "enzyme": "amiE",
+            "substrate": "acetamide",
+            "substrate-smiles": "CC(N)=O",
+            "product": "acetic acid",
+            "product-smiles": "CC(O)=O",
+            "family": "amiE",
+            "project": "multi-substrate_DMS",
+        },
+        "amiE-isobutyramide": {
+            "enzyme": "amiE",
+            "substrate": "isobutyramide",
+            "substrate-smiles": "O=C(N)C(C)C",
+            "product": "isobutyric acid",
+            "product-smiles": "O=C(O)C(C)C",
+            "family": "amiE",
+            "project": "multi-substrate_DMS",
+        },
+        "amiE-propionamide": {
+            "enzyme": "amiE",
+            "substrate": "propionamide",
+            "substrate-smiles": "O=C(N)CC",
+            "product": "propionic acid",
+            "product-smiles": "O=C(O)CC",
+            "family": "amiE",
+            "project": "multi-substrate_DMS",
+        },
+        
+        
         "5DW0": {
             "enzyme": "PfTrpB",
             "cofactor": ["PLS", "Na+"],
