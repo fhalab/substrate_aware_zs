@@ -307,12 +307,6 @@ class ProcessData(LibData):
             "", "WT"
         )
 
-        # add mut number
-        df_appended["n_mut"] = df_appended[self._var_col_name].str.split(":").str.len()
-
-        # change WT n_mut to 0
-        df_appended.loc[df_appended[self._var_col_name] == "WT", "n_mut"] = 0
-
         return df_appended.copy()
 
     def _mut2seq(self, muts: str) -> str:
@@ -411,6 +405,12 @@ class ProcessData(LibData):
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
 
+        # add mut number
+        df["n_mut"] = df[self._var_col_name].str.split(":").str.len()
+
+        # change WT n_mut to 0
+        df.loc[df[self._var_col_name] == "WT", "n_mut"] = 0
+
         # split the amino acids for SSM data
         if "AA1" not in df.columns and self._combo_col_name in df.columns:
             df = self._split_aa(df).copy()
@@ -423,6 +423,9 @@ class ProcessData(LibData):
 
         # add active column
         df = self._append_active_cutoff(df).copy()
+
+        # drop stop codon containing rows
+        df = df[~df[self._var_col_name].str.contains("\*")].copy()
 
         # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
         for col in APPEND_INFO_COLS:
@@ -558,13 +561,13 @@ class ZSData(LibData):
 
         self._zs_dir = checkNgen_folder(zs_dir)
 
-    def _append_mut_dets(self, combo: str) -> tuple:
+    def _append_mut_dets(self, var: str) -> tuple:
 
         """
         Append mut details from the combo column
 
         Args:
-        - combo, str: the variants sequence
+        - var, str: the variants sequence
 
         Returns:
         - list: the list of mutated AA
@@ -574,12 +577,14 @@ class ZSData(LibData):
         mut_list = []
         pos_list = []
 
-        for i, (mut, wt) in enumerate(zip(combo, self.parent_aa)):
+        if var == "WT":
+            return mut_list, pos_list
+            
+        for v in var.split(":"):
 
-            if mut != wt:
-                mut_list.append(mut)
-                # note the info dict positiosn is 1 indexed
-                pos_list.append(self.lib_info["positions"][i + 1])
+            mut_list.append(v[-1])
+            # note the info dict positiosn is 1 indexed
+            pos_list.append(int(v[1:-1]))
 
         return mut_list, pos_list
 
@@ -593,7 +598,7 @@ class ZSData(LibData):
         df = self.input_df.copy()
 
         df[[self._mut_col_name, self._pos_col_name]] = df.apply(
-            lambda x: pd.Series(self._append_mut_dets(x[self._combo_col_name])),
+            lambda x: pd.Series(self._append_mut_dets(x[self._var_col_name])),
             axis=1,
         )
 
