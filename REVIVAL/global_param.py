@@ -309,6 +309,49 @@ LIB_INFO_DICT = deepcopy(
     }
 )
 
+TmTrpB_LIBS = {
+        "TrpB3A": {
+            "positions": {1: 104, 2: 105, 3: 106},
+            "AAs": {1: "A", 2: "E", 3: "T"},
+        },
+        "TrpB3B": {
+            "positions": {1: 105, 2: 106, 3: 107},
+            "AAs": {1: "E", 2: "T", 3: "G"},
+        },
+        "TrpB3C": {
+            "positions": {1: 106, 2: 107, 3: 108},
+            "AAs": {1: "T", 2: "G", 3: "A"},
+        },
+        "TrpB3D": {
+            "positions": {1: 117, 2: 118, 3: 119},
+            "AAs": {1: "T", 2: "A", 3: "A"},
+        },
+        "TrpB3E": {
+            "positions": {1: 184, 2: 185, 3: 186},
+            "AAs": {1: "F", 2: "G", 3: "S"},
+        },
+        "TrpB3F": {
+            "positions": {1: 162, 2: 166, 3: 301},
+            "AAs": {1: "L", 2: "I", 3: "Y"},
+        },
+        "TrpB3G": {
+            "positions": {1: 227, 2: 228, 3: 301},
+            "AAs": {1: "V", 2: "S", 3: "Y"},
+        },
+        "TrpB3H": {
+            "positions": {1: 228, 2: 230, 3: 231},
+            "AAs": {1: "S", 2: "G", 3: "S"},
+        },
+        "TrpB3I": {
+            "positions": {1: 182, 2: 183, 3: 184},
+            "AAs": {1: "Y", 2: "V", 3: "F"},
+        },
+        "TrpB4": {
+            "positions": {1: 183, 2: 184, 3: 227, 4: 228},
+            "AAs": {1: "V", 2: "F", 3: "V", 4: "S"},
+        }
+    }
+
 APPEND_INFO_COLS = [
     "enzyme",
     "substrate",

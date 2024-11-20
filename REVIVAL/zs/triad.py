@@ -70,27 +70,17 @@ class TriadData(ZSData):
         # Loop over variants
         mut_list = []
 
-        for variant in self.df[self._combo_col_name].tolist():
+        for variant in self.df[self._var_col_name].tolist():
 
-            # Loop over each character in the variant
-            mut_char_list = []
-            for j, (var_char, wt_char) in enumerate(zip(variant, self.parent_aa)):
-
-                # If the var_char does not equal the wt_char, append
-                if var_char != wt_char:
-                    mut_char_list.append(self.prefixes[j] + var_char)
-
-            # If the mut_char_list has no entries, continue (this is wild type)
-            if len(mut_char_list) == 0:
+            if variant == "WT":
                 continue
 
             # Otherwise, append to mut_list
-            else:
-                mut_list.append("+".join(mut_char_list) + "\n")
+            mut_list.append("+".join([self._chain_id+v[1:] for v in variant.split(":")]) + "\n")
 
         # check before saving
         # if parent is in the dataframe
-        if self.parent_aa in self.df[self._combo_col_name].tolist():
+        if "WT" in self.df[self._var_col_name].tolist():
             assert len(mut_list) == self.df_length - 1
         else:
             assert len(mut_list) == self.df_length
@@ -191,16 +181,16 @@ class TriadResults(ZSData):
         """
 
         super().__init__(
-                        input_csv,
-            scale_fit,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            seq_dir,
-            zs_dir
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir
         )
 
         self._triad_rawouput_dir = checkNgen_folder(os.path.join(zs_dir, triad_dir, triad_rawouput_dir))
@@ -296,7 +286,7 @@ class TriadResults(ZSData):
 
 
 def run_traid_gen_mut_file(
-    pattern: str | list = "data/meta/scale2parent/*.csv",
+    pattern: str | list = "data/meta/not_scaled/*.csv",
     kwargs: dict = {}
     ):
     """
@@ -317,7 +307,7 @@ def run_traid_gen_mut_file(
 
 
 def run_parse_triad_results(
-    pattern: str | list = "data/meta/scale2parent/*.csv",
+    pattern: str | list = "data/meta/not_scaled/*.csv",
     kwargs: dict = {}
     ):
 

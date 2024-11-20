@@ -160,7 +160,7 @@ class ESM(ZSData):
 
         return self._logits[pos, mt_idx] - self._logits[pos, wt_idx]
 
-    def _get_esm_score(self, df, _sum: bool = False):
+    def _get_esm_score(self, df):
 
         """
         Run ESM model for all variants in the data set
@@ -176,32 +176,9 @@ class ESM(ZSData):
         score = np.zeros(len(df))
         wt_sequence = list(self.parent_seq)
 
-        if _sum:
-            for i, mut in enumerate(df[self._mut_col_name]):
-                s = np.zeros(len(mut))
-                for j, mt in enumerate(mut):
-                    if mt == "WT":
-                        score[i] = 0
-                        continue
-
-                    elif mt == "NA":
-                        score[i] = np.nan
-                        continue
-
-                    else:
-                        pos = (
-                            int(df[self._pos_col_name].iloc[i][j]) - 1
-                        )  # Position of the mutation with python indexing
-                        wt = wt_sequence[pos]
-                        s[j] = self._get_mutant_prob(mt=mt, wt=wt, pos=pos)
-
-                    score[i] += s.sum()
-
-        else:
-            for i, mut in enumerate(df[self._mut_col_name]):
-  
-                mt = mut[0]
-
+        for i, (mut_list, pos_list) in enumerate(zip(df[self._mut_col_name], df[self._pos_col_name])):
+            s = np.zeros(len(mut_list))
+            for j, mt in enumerate(mut_list):
                 if mt == "WT":
                     score[i] = 0
                     continue
@@ -211,9 +188,12 @@ class ESM(ZSData):
                     continue
 
                 else:
-                    pos = int(self.df[self._pos_col_name].iloc[i][0] - 1)
+                    # Position of the mutation with python indexing
+                    pos = int(pos_list[j]) - 1
                     wt = wt_sequence[pos]
-                    score[i] = self._get_mutant_prob(mt=mt, wt=wt, pos=pos)
+                    s[j] = self._get_mutant_prob(mt=mt, wt=wt, pos=pos)
+
+                score[i] += s.sum()
 
         return score
 
@@ -241,10 +221,7 @@ class ESM(ZSData):
                 assert "Data set is empty"
                 continue
 
-            if i == 1:
-                score_n = self._get_esm_score(df_n, _sum=False)
-            else:
-                score_n = self._get_esm_score(df_n, _sum=True)
+            score_n = self._get_esm_score(df_n)
 
             # Add column with number of mutations
             df_n.loc[:, "esm_score"] = score_n

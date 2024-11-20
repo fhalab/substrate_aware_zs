@@ -94,14 +94,16 @@ class LibData:
     @property
     def parent_aa(self) -> str:
         """Return the parent amino acid"""
-        return "".join(list(self.lib_info[self._combo_col_name].values()))
+        return "".join(self.lib_info.get(self._combo_col_name, {}).values())
 
     @property
     def parent_fitness(self) -> float:
         """Return the parent fitness"""
-        return self.input_df[self.input_df[self._combo_col_name] == self.parent_aa][
-            self._fit_col_name
-        ].values[0]
+        if self.parent_aa:
+            parent_row = self.input_df[self.input_df[self._combo_col_name] == self.parent_aa]
+        parent_row = self.input_df[self.input_df[self._var_col_name] == "WT"]
+            
+        return parent_row[self._fit_col_name].values[0]
 
     @property
     def max_fitness(self) -> float:
