@@ -17,6 +17,32 @@ from REVIVAL.util import checkNgen_folder, get_file_name
 
 
 EV_META = {
+    "DHFR": {
+        "recommended": {
+            "bitscore": 0.7,
+            "sequences": 16042,
+            "seqs_per_l": 103.5,
+            "quality": 10,
+        },
+        "other_1": {
+            "bitscore": 0.1,
+            "sequences": 59494,
+            "seqs_per_l": 491.7,
+            "quality": 10,
+        },
+        "other_2": {
+            "bitscore": 0.3,
+            "sequences": 17758,
+            "seqs_per_l": 114.6,
+            "quality": 10,
+        },
+        "other_3": {
+            "bitscore": 0.5,
+            "sequences": 17132,
+            "seqs_per_l": 111.2,
+            "quality": 10,
+        },
+    },
     "ParLQ": {
         "recommended": {
             "bitscore": 0.1,
@@ -69,6 +95,32 @@ EV_META = {
             "quality": 10,
         },
     },
+    "TmTrpB": {
+        "recommended": {
+            "bitscore": 0.1,
+            "sequences": 73656,
+            "seqs_per_l": 256.6,
+            "quality": 10,
+        },
+        "chosen": {
+            "bitscore": 0.3,
+            "sequences": 5816,
+            "seqs_per_l": 15.4,
+            "quality": 10,
+        },
+        "other_2": {
+            "bitscore": 0.5,
+            "sequences": 5566,
+            "seqs_per_l": 14.8,
+            "quality": 10,
+        },
+        "other_3": {
+            "bitscore": 0.7,
+            "sequences": 4476,
+            "seqs_per_l": 11.8,
+            "quality": 10,
+        },
+    },
     "Rma": {
         "recommended": {
             "bitscore": 0.3,
@@ -89,7 +141,6 @@ EV_META = {
             "quality": 10,
         },
     },
-
 }
 
 
@@ -117,7 +168,7 @@ class EVData(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit= scale_fit,
+            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,
@@ -160,13 +211,15 @@ class EVData(ZSData):
     def _get_evscore(self):
 
         df = deepcopy(self.df)
-        
+
         def parse(x):
             # (self.target_positions[j], self.wt_aas[j], mut_char)
             return (int(x[1:-1]), x[0], x[-1])
 
-        df['ev_score'] = df[self._var_col_name].apply(
-            lambda x: 0 if x == "WT" else self._model.delta_hamiltonian([parse(m) for m in x.split(':')])[0]
+        df["ev_score"] = df[self._var_col_name].apply(
+            lambda x: 0
+            if x == "WT"
+            else self._model.delta_hamiltonian([parse(m) for m in x.split(":")])[0]
         )
 
         return df
@@ -178,15 +231,12 @@ class EVData(ZSData):
         """
         return os.path.join(self._ev_dir, f"{self.lib_name}.csv")
 
-    
-def run_all_ev(
-    pattern: str | list = "data/meta/not_scaled/*.csv",
-    kwargs: dict = {}
-    ):
+
+def run_all_ev(pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}):
 
     """
     Run the ev mutation scores for all the libraries
-    
+
     Args:
     """
 
@@ -198,4 +248,3 @@ def run_all_ev(
     for lib in tqdm(lib_list):
         print(f"Getting ev zs for {lib}...")
         EVData(input_csv=lib, **kwargs)
-

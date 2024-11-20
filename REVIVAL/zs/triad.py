@@ -2,15 +2,14 @@
 A script for preprocessing the data for the triad and extract energies
 """
 
-import re
 import os
 
 from copy import deepcopy
 from glob import glob
+from tqdm import tqdm
 
 import pandas as pd
 import numpy as np
-from itertools import product
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
@@ -18,7 +17,8 @@ from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
 
 
 class TriadData(ZSData):
-    def __init__(self,
+    def __init__(
+        self,
         input_csv: str,
         scale_fit: str = "parent",
         combo_col_name: str = "AAs",
@@ -47,19 +47,22 @@ class TriadData(ZSData):
             fit_col_name=fit_col_name,
             withsub=withsub,
             seq_dir=seq_dir,
-            zs_dir=zs_dir
+            zs_dir=zs_dir,
         )
 
         self._triad_dir = checkNgen_folder(os.path.join(self._zs_dir, triad_dir))
-        self._triad_mut_dir = checkNgen_folder(os.path.join(self._triad_dir, triad_mut_dir))
-        self._triad_struct_dir = checkNgen_folder(os.path.join(self._triad_dir, triad_struct_dir))
+        self._triad_mut_dir = checkNgen_folder(
+            os.path.join(self._triad_dir, triad_mut_dir)
+        )
+        self._triad_struct_dir = checkNgen_folder(
+            os.path.join(self._triad_dir, triad_struct_dir)
+        )
 
         self._chain_id = chain_id
 
         self._mut_list = self._generate_mut_file()
 
         self._get_chain_structure()
-
 
     def _generate_mut_file(self) -> None:
 
@@ -70,20 +73,23 @@ class TriadData(ZSData):
         # Loop over variants
         mut_list = []
 
-        for variant in self.df[self._var_col_name].tolist():
+        for variant in tqdm(self.df[self._var_col_name].tolist()):
 
             if variant == "WT":
                 continue
 
             # Otherwise, append to mut_list
-            mut_list.append("+".join([self._chain_id+v[1:] for v in variant.split(":")]) + "\n")
+            mut_list.append(
+                "+".join([f"{self._chain_id}_{v[1:]}" for v in variant.split(":")])
+                + "\n"
+            )
 
         # check before saving
         # if parent is in the dataframe
         if "WT" in self.df[self._var_col_name].tolist():
-            assert len(mut_list) == self.df_length - 1
+            assert len(mut_list) == len(self.df) - 1
         else:
-            assert len(mut_list) == self.df_length
+            assert len(mut_list) == len(self.df)
 
         print(f"Generated {self.mut_path}...")
 
@@ -102,9 +108,10 @@ class TriadData(ZSData):
         print(f"Getting chain {self._chain_id} structure for {self.instruct_file}...")
 
         return get_chain_structure(
-            input_file_path=self.instruct_file, 
-            output_file_path=self.triad_instruct_file, 
-            chain_id=self._chain_id)
+            input_file_path=self.instruct_file,
+            output_file_path=self.triad_instruct_file,
+            chain_id=self._chain_id,
+        )
 
     @property
     def instruct_file(self) -> str:
@@ -119,7 +126,7 @@ class TriadData(ZSData):
 
     @property
     def triad_instruct_file(self) -> str:
-        
+
         """
         PDB file path to the triad pdb file
         """
@@ -135,7 +142,8 @@ class TriadData(ZSData):
         A property for the prefixes
         """
         return [
-            f"{self._chain_id}_{pos}" for pos in LIB_INFO_DICT[self.lib_name]["positions"].values()
+            f"{self._chain_id}_{pos}"
+            for pos in LIB_INFO_DICT[self.lib_name]["positions"].values()
         ]
 
     @property
@@ -190,17 +198,20 @@ class TriadResults(ZSData):
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
             seq_dir=seq_dir,
-            zs_dir=zs_dir
+            zs_dir=zs_dir,
         )
 
-        self._triad_rawouput_dir = checkNgen_folder(os.path.join(zs_dir, triad_dir, triad_rawouput_dir))
-        self._triad_processed_dir = checkNgen_folder(os.path.join(zs_dir, triad_dir, triad_processed_dir))
+        self._triad_rawouput_dir = checkNgen_folder(
+            os.path.join(zs_dir, triad_dir, triad_rawouput_dir)
+        )
+        self._triad_processed_dir = checkNgen_folder(
+            os.path.join(zs_dir, triad_dir, triad_processed_dir)
+        )
 
         print(f"Parsing {self.triad_txt} and save to {self.triad_csv}...")
 
         # extract triad score into dataframe
         self._triad_df = self._get_triad_score()
-
 
     def _get_triad_score(self) -> float:
 
@@ -261,7 +272,9 @@ class TriadResults(ZSData):
         # Get the order
         all_results["Triad_rank"] = np.arange(1, len(all_results) + 1)
 
-        return all_results[["AAs", "Triad_score", "Triad_rank"]].to_csv(self.triad_csv, index=False)
+        return all_results[["AAs", "Triad_score", "Triad_rank"]].to_csv(
+            self.triad_csv, index=False
+        )
 
     @property
     def triad_txt(self) -> str:
@@ -269,7 +282,7 @@ class TriadResults(ZSData):
         A property for the triad txt
         """
         return os.path.join(self._triad_rawouput_dir, f"{self.lib_name}.txt")
-    
+
     @property
     def triad_csv(self) -> str:
         """
@@ -286,12 +299,11 @@ class TriadResults(ZSData):
 
 
 def run_traid_gen_mut_file(
-    pattern: str | list = "data/meta/not_scaled/*.csv",
-    kwargs: dict = {}
-    ):
+    pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}
+):
     """
     Run the triad gen mut file function for all libraries
-    
+
     Args:
     - pattern: str | list: the pattern for the input csv files
     """
@@ -307,13 +319,12 @@ def run_traid_gen_mut_file(
 
 
 def run_parse_triad_results(
-    pattern: str | list = "data/meta/not_scaled/*.csv",
-    kwargs: dict = {}
-    ):
+    pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}
+):
 
     """
     Run the parse triad results function for all libraries
-    
+
     Args:
     """
     if isinstance(pattern, str):

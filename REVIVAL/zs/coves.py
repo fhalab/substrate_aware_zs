@@ -1395,9 +1395,13 @@ def append_coves_scores(
     # normalize scores for each position to be probabilities and log_probabilities at a given site
     # the temperature controls the relative weighting of this normalization
     df_gvp_pred = add_p_col_df_gvp_log(df_gvp_pred, t=t)
-    sliced_df_gvp = df_gvp_pred[
-        df_gvp_pred["pos"].isin(list(LIB_INFO_DICT[lib]["positions"].values()))
-    ].copy()
+
+    if "positions" in LIB_INFO_DICT[lib]:
+        pos_list = list(LIB_INFO_DICT[lib]["positions"].values())
+    # dms
+    pos_list = df_gvp_pred["pos"].unique()
+
+    sliced_df_gvp = df_gvp_pred[df_gvp_pred["pos"].isin(pos_list)].copy()
 
     # Apply the function to the dataframe
     df["verbose_muts"] = df[var_col_name].apply(
@@ -1444,6 +1448,6 @@ def append_all_coves_scores(
     else:
         lib_list = deepcopy(libs)
 
-    for lib in lib_list:
+    for lib in tqdm.tqdm(lib_list):
         print(f"Processing CoVES scores for {lib}...")
         append_coves_scores(lib=get_file_name(lib), input_dir=input_dir, coves_dir=coves_dir, t=t)

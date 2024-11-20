@@ -14,7 +14,6 @@ from REVIVAL.util import get_file_name
 
 LIB_INFO_DICT = deepcopy(
     {
-        
         "amiE-acetamide": {
             "enzyme": "amiE",
             "substrate": "acetamide",
@@ -63,9 +62,54 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "indole",
             "substrate-smiles": "C12=C(C=CN2)C=CC=C1",
             "cofactor": ["PLP-dependent aminoacrylate", "K+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[K+]"],
-            "positions": {1: 104, 2: 105, 3: 106, 4: 107, 5: 108, 6: 117, 7: 118, 8: 119, 9: 162, 10: 166, 11: 182, 12: 183, 13: 184, 14: 185, 15: 186, 16: 227, 17: 228, 18: 230, 19: 231, 20: 301},
-            "AAs": {1: "A", 2: "E", 3: "T", 4: "G", 5: "A", 6: "T", 7: "A", 8: "A", 9: "L", 10: "I", 11: "Y", 12: "V", 13: "F", 14: "G", 15: "S", 16: "V", 17: "S", 18: "G", 19: "S", 20: "Y"},
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[K+]",
+            ],
+            "positions": {
+                1: 104,
+                2: 105,
+                3: 106,
+                4: 107,
+                5: 108,
+                6: 117,
+                7: 118,
+                8: 119,
+                9: 162,
+                10: 166,
+                11: 182,
+                12: 183,
+                13: 184,
+                14: 185,
+                15: 186,
+                16: 227,
+                17: 228,
+                18: 230,
+                19: 231,
+                20: 301,
+            },
+            "AAs": {
+                1: "A",
+                2: "E",
+                3: "T",
+                4: "G",
+                5: "A",
+                6: "T",
+                7: "A",
+                8: "A",
+                9: "L",
+                10: "I",
+                11: "Y",
+                12: "V",
+                13: "F",
+                14: "G",
+                15: "S",
+                16: "V",
+                17: "S",
+                18: "G",
+                19: "S",
+                20: "Y",
+            },
             "family": "TrpB",
             "project": "SSMuLA",
         },
@@ -85,7 +129,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "4bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C(=C1)Br",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(Br)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -100,7 +147,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "5bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Br",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Br)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -126,7 +176,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "7bromo",
             "substrate-smiles": "C1=CC2=C(C(=C1)Br)NC=C2",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(Br)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -141,7 +194,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "5chloro",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Cl",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -156,7 +212,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "6chloro",
             "substrate-smiles": "C1=CC(=CC2=C1C=CN2)Cl",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -171,7 +230,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "56chloro",
             "substrate-smiles": "ClC(C=C1NC=CC1=C2)=C2Cl",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -186,7 +248,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "4cyano",
             "substrate-smiles": "C1=CC(=C2C=CNC2=C1)C#N",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(C#N)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -201,7 +266,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "5cyano",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1C#N",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(C=C23)C#N)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -216,7 +284,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "5iodo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1I",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(I)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -231,7 +302,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "7iodo",
             "substrate-smiles": "C1=CC2=C(C(=C1)I)NC=C2",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(I)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -246,7 +320,10 @@ LIB_INFO_DICT = deepcopy(
             "substrate": "7methyl",
             "substrate-smiles": "CC1=CC=CC2=C1NC=C2",
             "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
-            "cofactor-smiles": ["[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C", "[Na+]"],
+            "cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "intermediate-smiles": [
                 "CC1=C2NC=C(C[C@H](\[NH+]=C\C3=C(COP([O-])([O-])=O)C=NC(C)=C3[O-])C([O-])=O)C2=CC=C1",
                 "[Na+]",
@@ -295,62 +372,68 @@ LIB_INFO_DICT = deepcopy(
             "cofactor": ["ethyl diazoacetate (EDA)", "heme b"],
             "cofactor-smiles": [
                 "[N-]=[N+]=CC(OCC)=O",
-                "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O"
-            ], # heme b taken from pdb
+                "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
+            ],  # heme b taken from pdb
             "product": "1,2-disubstituted cyclopropanes cis",
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
             "product2": "1,2-disubstituted cyclopropanes trans",
             "product2-smiles": "COC1=CC=C([C@@H]2[C@@H](C(OCC)=O)C2)C=C1",
             "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
-            "AAs": {1: "W", 2: "Y", 3: "L", 4: "Q", 5: "F"}, # W56, Y57, L59, Q60, and F89; WYLQF
+            "AAs": {
+                1: "W",
+                2: "Y",
+                3: "L",
+                4: "Q",
+                5: "F",
+            },  # W56, Y57, L59, Q60, and F89; WYLQF
             "family": "ParPgb",
             "project": "ALDE",
-        },        
+        },
     }
 )
 
 TmTrpB_LIBS = {
-        "TrpB3A": {
-            "positions": {1: 104, 2: 105, 3: 106},
-            "AAs": {1: "A", 2: "E", 3: "T"},
-        },
-        "TrpB3B": {
-            "positions": {1: 105, 2: 106, 3: 107},
-            "AAs": {1: "E", 2: "T", 3: "G"},
-        },
-        "TrpB3C": {
-            "positions": {1: 106, 2: 107, 3: 108},
-            "AAs": {1: "T", 2: "G", 3: "A"},
-        },
-        "TrpB3D": {
-            "positions": {1: 117, 2: 118, 3: 119},
-            "AAs": {1: "T", 2: "A", 3: "A"},
-        },
-        "TrpB3E": {
-            "positions": {1: 184, 2: 185, 3: 186},
-            "AAs": {1: "F", 2: "G", 3: "S"},
-        },
-        "TrpB3F": {
-            "positions": {1: 162, 2: 166, 3: 301},
-            "AAs": {1: "L", 2: "I", 3: "Y"},
-        },
-        "TrpB3G": {
-            "positions": {1: 227, 2: 228, 3: 301},
-            "AAs": {1: "V", 2: "S", 3: "Y"},
-        },
-        "TrpB3H": {
-            "positions": {1: 228, 2: 230, 3: 231},
-            "AAs": {1: "S", 2: "G", 3: "S"},
-        },
-        "TrpB3I": {
-            "positions": {1: 182, 2: 183, 3: 184},
-            "AAs": {1: "Y", 2: "V", 3: "F"},
-        },
-        "TrpB4": {
-            "positions": {1: 183, 2: 184, 3: 227, 4: 228},
-            "AAs": {1: "V", 2: "F", 3: "V", 4: "S"},
-        }
-    }
+    "TrpB3A": {
+        "positions": {1: 104, 2: 105, 3: 106},
+        "AAs": {1: "A", 2: "E", 3: "T"},
+    },
+    "TrpB3B": {
+        "positions": {1: 105, 2: 106, 3: 107},
+        "AAs": {1: "E", 2: "T", 3: "G"},
+    },
+    "TrpB3C": {
+        "positions": {1: 106, 2: 107, 3: 108},
+        "AAs": {1: "T", 2: "G", 3: "A"},
+    },
+    "TrpB3D": {
+        "positions": {1: 117, 2: 118, 3: 119},
+        "AAs": {1: "T", 2: "A", 3: "A"},
+    },
+    "TrpB3E": {
+        "positions": {1: 184, 2: 185, 3: 186},
+        "AAs": {1: "F", 2: "G", 3: "S"},
+    },
+    "TrpB3F": {
+        "positions": {1: 162, 2: 166, 3: 301},
+        "AAs": {1: "L", 2: "I", 3: "Y"},
+    },
+    "TrpB3G": {
+        "positions": {1: 227, 2: 228, 3: 301},
+        "AAs": {1: "V", 2: "S", 3: "Y"},
+    },
+    "TrpB3H": {
+        "positions": {1: 228, 2: 230, 3: 231},
+        "AAs": {1: "S", 2: "G", 3: "S"},
+    },
+    "TrpB3I": {
+        "positions": {1: 182, 2: 183, 3: 184},
+        "AAs": {1: "Y", 2: "V", 3: "F"},
+    },
+    "TrpB4": {
+        "positions": {1: 183, 2: 184, 3: 227, 4: 228},
+        "AAs": {1: "V", 2: "F", 3: "V", 4: "S"},
+    },
+}
 
 APPEND_INFO_COLS = [
     "enzyme",

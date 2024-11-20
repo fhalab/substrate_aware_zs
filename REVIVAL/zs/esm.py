@@ -97,7 +97,6 @@ class ESM(ZSData):
 
         # if the esm score for the WT is empty then update the esm score to 0
 
-
         # save the esm score df
         self._esm_df.to_csv(self._esm_path, index=False)
 
@@ -176,7 +175,9 @@ class ESM(ZSData):
         score = np.zeros(len(df))
         wt_sequence = list(self.parent_seq)
 
-        for i, (mut_list, pos_list) in enumerate(zip(df[self._mut_col_name], df[self._pos_col_name])):
+        for i, (mut_list, pos_list) in enumerate(
+            zip(df[self._mut_col_name], df[self._pos_col_name])
+        ):
             s = np.zeros(len(mut_list))
             for j, mt in enumerate(mut_list):
                 if mt == "WT":
@@ -214,7 +215,7 @@ class ESM(ZSData):
         df_n_list.append(wt_df)
 
         # Get the n mutant scores
-        for i in list(range(self.max_n_mut + 1))[1:]:
+        for i in tqdm(list(range(self.max_n_mut + 1))[1:]):
             # Filter out n mutants
             df_n = self.df[self.df["n_mut"] == i].copy()
             if df_n.empty:  # Check if the DataFrame is empty after filtering

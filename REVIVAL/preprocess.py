@@ -139,7 +139,7 @@ class LibData:
         return pd.read_csv(self._input_csv)
 
     @property
-    def df_length(self):
+    def input_df_length(self):
         return len(self.input_df)
 
     @property
@@ -396,12 +396,29 @@ class ProcessData(LibData):
             df.drop(self._selectivity_col_name, axis=1, inplace=True)
 
         # if there are multiple entries for the same combo name, take the mean
-        if self._combo_col_name in df.columns:
-            # drop stop codon containing rows
-            df = df.groupby(self._combo_col_name).mean().reset_index()
 
-        elif self._var_col_name in df.columns:
-            df = df.groupby(self._var_col_name).mean().reset_index()
+        # groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
+
+        groupby_col = self._combo_col_name if self._combo_col_name in df.columns else self._var_col_name
+
+        # for trpb additioanl info
+        if "lib" in df.columns:
+            df = df.groupby(groupby_col).agg(
+                {
+                    self._fit_col_name: "mean",
+                    "lib": lambda x: ",".join(x)
+                }
+            ).reset_index()
+        else:
+            df = df.groupby(groupby_col).mean().reset_index()
+        
+
+        # if self._combo_col_name in df.columns:
+        #     # drop stop codon containing rows
+        #     df = df.groupby(self._combo_col_name).mean().reset_index()
+
+        # elif self._var_col_name in df.columns:
+        #     df = df.groupby(self._var_col_name).mean().reset_index()
 
         # append muts column for none SSM data
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
