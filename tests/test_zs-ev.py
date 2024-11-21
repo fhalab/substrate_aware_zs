@@ -27,7 +27,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_all_ev("data/meta/not_scaled/D*.csv")
-    run_all_ev("data/meta/not_scaled/TmT*.csv")
+    run_all_ev("data/meta/not_scaled/Pf*.csv")
     # kwargs = {
     #     "scale_fit": "max",
     #     "var_col_name": "muts",
