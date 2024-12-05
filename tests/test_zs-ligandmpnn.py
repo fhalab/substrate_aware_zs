@@ -6,11 +6,9 @@ HAVE TO use esmif.yml to run this.
 import sys
 import os
 
-from glob import glob
-
 from datetime import datetime
 
-from REVIVAL.zs.esmif import run_esmif
+from REVIVAL.zs.ligandmpnn import run_ligandmpnn
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -27,9 +25,8 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # run_esmif("data/meta/scale2parent/5DW0*", kwargs={"structure_dir": "data/structure"})
-    # run_esmif("data/meta/not_scaled/D*", kwargs={"structure_dir": "data/structure", "withsub": False})
-    run_esmif("data/meta/not_scaled/TmT*", kwargs={"structure_dir": "data/structure", "withsub": False})
+    #basedir is REVIVAL2
+    run_ligandmpnn(pattern=['data/single_substrate/DHFR/scale2max/DHFR.csv'], kwargs={'structure_dir':'data/single_substrate/structure', 'var_col_name':'muts', 'noise_levels':[20]})
 
     """
     run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {})
