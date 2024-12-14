@@ -11,6 +11,10 @@ logs
 logs/
 logs/*
 
+runs
+runs/
+runs/*
+
 results
 results/
 results/*
