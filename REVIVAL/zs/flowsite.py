@@ -22,6 +22,7 @@ class FlowsiteData(ZSData):
             combo_col_name: str = 'AAs',
             var_col_name: str = 'var',
             fit_col_name: str = 'fitness',
+            enzyme_col_name: str = 'enzyme', 
             substrate_col_name: str = 'substrate',
             cofactor_col_name: str = 'cofactor',
             substrate_smiles_col_name: str = 'substrate-smiles',
@@ -55,12 +56,12 @@ class FlowsiteData(ZSData):
           
         self.flowsite_dir = flowsite_dir
         self.inference_path = os.path.join(self.flowsite_dir, 'inference.py')
+        self.enzyme_col_name = enzyme_col_name,
         self.substrate_col_name = substrate_col_name
         self.cofactor_col_name = cofactor_col_name
         self.substrate_smiles_col_name = substrate_smiles_col_name
         self.cofactor_smiles_col_name = cofactor_smiles_col_name
         self.structure_dir = structure_dir
-        self.flowsite_dir = flowsite_dir
         self.results_dir = results_dir     
         self.num_inference = num_inference
         self.batch_size = batch_size
@@ -153,8 +154,8 @@ class FlowsiteData(ZSData):
         csv = csv[~csv.apply(lambda row: row.astype(str).str.contains(r"\*").any(), axis=1)].reset_index(drop=True)  # filters for stop codons, marked as '*'
         
         # find the name of the enzyme and substrate in the campaign
-        enzyme_name = csv['enzyme'][1] # assumes its the same enzyme for every variant
-        substrate_name = csv['substrate'][1] # assumes its the same enzyme for every variant
+        enzyme_name = csv[self.enzyme_col_name][1] # assumes its the same enzyme for every variant
+        substrate_name = csv[self.substrate_col_name][1] # assumes its the same enzyme for every variant
 
         # find enzyme structure file based on enzyme name and ligand name
         pdb = os.path.join(self.structure_dir, f'{enzyme_name}-{substrate_name}.pdb')
@@ -278,10 +279,3 @@ def run_flowsite(pattern: str | list = None, kwargs: dict = {}):
     for lib in lib_list:
         FlowsiteData(input_csv=lib, **kwargs) 
         
-run_flowsite(pattern='/disk2/lukas/EnzymeOracle/data/multi_substrate/meta/scale2parent/*.csv', 
-            kwargs={
-                'flowsite_dir': '/disk2/lukas/FlowSite',
-                'structure_dir': '../EnzymeOracle/data/multi_substrate/structure',
-                'results_dir': '/disk2/lukas/EnzymeOracle/data/results'
-                }
-            )
