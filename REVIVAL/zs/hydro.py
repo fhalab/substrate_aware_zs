@@ -311,7 +311,6 @@ class HydroData(ZSData):
         if self.variant_structures_available == True:
             self.run_plip(csv)
         
-
         # initializing score_df with active sites 
         rows = []
         for _, variant in tqdm(csv.iterrows(), desc=f'Creating comparison df, reading in campaign {os.path.basename(self._input_csv)}...'):
@@ -328,7 +327,6 @@ class HydroData(ZSData):
             else:
                 active_site_plip = {}
 
-
             gt_fitness = variant[self._fit_col_name]
             new_row = {'campaign_name': campaign_name, 'mutated_positions':[mutated_positions], 'active_site_radius':[active_site_radius], 'active_site_plip':[active_site_plip], 'gt_fitness':gt_fitness, 'ZS1':[0.], 'ZS2':[0.]}
             rows.append(new_row)
@@ -336,7 +334,6 @@ class HydroData(ZSData):
         score_df = pd.DataFrame(data=rows)
 
         mol = self.extract_ligands_to_mol(pdb)
-
 
         # add the two ZS scores to the score_df
         for n, row in tqdm(score_df.iterrows(), desc=f'Calulating ZS for variants...'):
@@ -365,15 +362,6 @@ class HydroData(ZSData):
                 ZS2 = 0
             score_df.at[n, 'ZS2'] = ZS2
 
-        """
-        gt = score_df['gt_fitness'].to_numpy()
-        ZS1 = score_df['ZS1'].to_numpy()
-        ZS2 = score_df['ZS2'].to_numpy()
-
-        rho1, _ = stats.spearmanr(gt, ZS1)
-        rho2, _ = stats.spearmanr(gt, ZS2)
-        """
-
         # save the score df
         score_df_path = os.path.join(self.results_dir, f'{os.path.basename(self._input_csv)[:-4]}_score_df.csv')
         score_df.to_csv(score_df_path)
@@ -390,14 +378,6 @@ def run_hydro(pattern: str | list = None, kwargs: dict = {}):
     for lib in lib_list:
         HydroData(input_csv=lib, **kwargs)
 
-
-run_hydro(pattern='/disk2/lukas/EnzymeOracle/data/multi_substrate/meta/scale2parent/*.csv', 
-            kwargs={'active_site_radius': 15,
-                'variant_structures_available': True,
-                'structure_dir': '../EnzymeOracle/data/multi_substrate/structure',
-                'results_dir': '/disk2/lukas/EnzymeOracle/data/results',
-                }
-            )
 
 
 
