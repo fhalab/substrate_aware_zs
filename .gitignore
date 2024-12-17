@@ -37,6 +37,8 @@ SSMuLA-zs/*
 *.idea
 *.npy
 
+temp_hetatm.pdb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
