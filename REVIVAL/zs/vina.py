@@ -4,13 +4,18 @@ A script for get docking scores from chai structures
 must use vina conda env
 """
 
+from concurrent.futures import ThreadPoolExecutor, as_completed
+
 import logging
 import subprocess
+
+import warnings
 
 import os
 import re
 from glob import glob
 from tqdm import tqdm
+from pathlib import Path
 
 from rdkit.Chem.MolStandardize.rdMolStandardize import Uncharger
 from pdbfixer import PDBFixer
@@ -21,15 +26,119 @@ from Bio.PDB import PDBParser, MMCIFParser, PDBIO, Select, MMCIFIO
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from pathlib import Path
-
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
 
 
-import warnings
-
 warnings.filterwarnings("ignore")
+
+
+def dock_task(
+    var_path,
+    lib_dict,
+    cofactor_list,
+    output_dir,
+    pH,
+    method,
+    size_x,
+    size_y,
+    size_z,
+    num_modes,
+    exhaustiveness,
+    rerun,
+):
+    """
+    Task to dock a single .cif file.
+    """
+    log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
+    if len(log_txt) > 0 and (rerun is False):
+        print(f"{var_path} already docked")
+        return
+
+    var_dir = (
+        os.path.normpath(
+            checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
+        )
+        + "/"
+    )
+
+    try:
+        dock(
+            pdb_path=var_path,
+            smiles=lib_dict["substrate-smiles"],
+            ligand_name=lib_dict["substrate"],
+            residues=list(lib_dict["positions"].values()),
+            cofactors=cofactor_list,
+            protein_dir=var_dir,
+            ligand_dir=var_dir,
+            output_dir=var_dir,
+            pH=pH,
+            method=method,
+            size_x=size_x,
+            size_y=size_y,
+            size_z=size_z,
+            num_modes=num_modes,
+            exhaustiveness=exhaustiveness,
+        )
+    except Exception as e:
+        print(f"Error in docking {var_path}: {e}")
+
+
+def dock_lib_parallel(
+    chai_dir: str,
+    cofactor_type: str,
+    vina_dir: str = "vina",
+    pH: float = 7.4,
+    method="vina",
+    size_x=15.0,
+    size_y=15.0,
+    size_z=15.0,
+    num_modes=9,
+    exhaustiveness=32,
+    rerun=False,
+    max_workers=8,  # Number of parallel workers
+):
+    """
+    A function to dock all generated chai structures and get scores in parallel.
+    """
+    output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
+    lib_dict = LIB_INFO_DICT[os.path.basename(chai_dir).replace("-plp", "")]
+    cofactor_list = [
+        (cofactor_smiles, cofactor, "B")
+        for cofactor_smiles, cofactor in zip(
+            lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
+        )
+    ]
+
+    print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
+    print(cofactor_list)
+
+    var_paths = sorted(glob(os.path.join(chai_dir, "*", "*.cif")))
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                dock_task,
+                var_path=var_path,
+                lib_dict=lib_dict,
+                cofactor_list=cofactor_list,
+                output_dir=output_dir,
+                pH=pH,
+                method=method,
+                size_x=size_x,
+                size_y=size_y,
+                size_z=size_z,
+                num_modes=num_modes,
+                exhaustiveness=exhaustiveness,
+                rerun=rerun,
+            )
+            for var_path in var_paths
+        ]
+        for future in tqdm(as_completed(futures), total=len(var_paths)):
+            try:
+                future.result()  # Raises an exception if the task failed
+            except Exception as e:
+                print(f"Task failed for {futures[future]}: {e}")
 
 
 def dock_lib(
@@ -84,7 +193,7 @@ def dock_lib(
 
     for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
         # ie zs/chai/mut_structure/PfTrpB-4bromo-plp/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
-        
+
         # check if the file is already docked
         log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
         if len(log_txt) > 0 and (rerun is False):
@@ -150,9 +259,7 @@ def dock(
     # Step 3: Process cofactors
     cofactor_pdbqts = []
     for cofactor_smiles, cofactor_name, cofactor_chainid in cofactors:
-        print(
-            f"Processing {cofactor_name}: {cofactor_smiles}"
-        )
+        print(f"Processing {cofactor_name}: {cofactor_smiles}")
         cofactor_pdbqt, _, _ = format_ligand(
             cofactor_smiles, cofactor_name, ligand_dir, pH, pdb_path, cofactor_chainid
         )
@@ -522,7 +629,6 @@ def clean_one_pdb(proteinFile, toFile, keep_chain="keep_all"):
     fixed_pdbFile = toFile
     # Remove then readd hydrogens
     remove_hydrogen_pdb(pdbFile, fixed_pdbFile)
-    print(fixed_pdbFile)
     fixer = PDBFixer(filename=fixed_pdbFile)
     fixer.removeHeterogens()
     fixer.findNonstandardResidues()

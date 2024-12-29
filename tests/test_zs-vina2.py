@@ -8,7 +8,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.vina import dock_lib
+from REVIVAL.zs.vina import dock_lib_parallel
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -26,17 +26,17 @@ if __name__ == "__main__":
     sys.stdout = f
 
     for chai_dir in [ 
-        "zs/chai/mut_structure/PfTrpB-4bromo-plp", 
-        # "zs/chai/mut_structure/PfTrpB-4cyano-plp",
-        # "zs/chai/mut_structure/PfTrpB-5chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-6chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-7bromo-plp",
-        # "zs/chai/mut_structure/PfTrpB-7indo-plp",
-        # "zs/chai/mut_structure/PfTrpB-7methyl-plp",
-        # "zs/chai/mut_structure/PfTrpB-56chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-5cyano-plp",
+        # "zs/chai/mut_structure/PfTrpB-4bromo-plp", 
+        "zs/chai/mut_structure/PfTrpB-4cyano-plp",
+        "zs/chai/mut_structure/PfTrpB-5chloro-plp",
+        "zs/chai/mut_structure/PfTrpB-6chloro-plp",
+        "zs/chai/mut_structure/PfTrpB-7bromo-plp",
+        "zs/chai/mut_structure/PfTrpB-7indo-plp",
+        "zs/chai/mut_structure/PfTrpB-7methyl-plp",
+        "zs/chai/mut_structure/PfTrpB-56chloro-plp",
+        "zs/chai/mut_structure/PfTrpB-5cyano-plp",
     ]:
-        dock_lib(chai_dir, "inactivated-cofactor")
+        dock_lib_parallel(chai_dir, "inactivated-cofactor")
 
 
     # def dock_lib(
