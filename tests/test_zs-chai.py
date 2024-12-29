@@ -13,7 +13,7 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
     # log outputs
     f = open(
@@ -25,20 +25,20 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # run_gen_chai_structure("data/meta/scale2parent/*.csv")
+    # run_gen_chai_structure("data/meta/not_scaled/*.csv")
     run_gen_chai_structure([ 
-    #     "data/meta/scale2parent/PfTrpB-4bromo.csv", 
-    #     "data/meta/scale2parent/PfTrpB-4cyano.csv",
-    #     "data/meta/scale2parent/PfTrpB-5chloro.csv",
-    #     "data/meta/scale2parent/PfTrpB-6chloro.csv",
-    #     "data/meta/scale2parent/PfTrpB-7bromo.csv",
-    #     "data/meta/scale2parent/PfTrpB-7indo.csv",
-    #     "data/meta/scale2parent/PfTrpB-7methyl.csv",
-    #     "data/meta/scale2parent/PfTrpB-56chloro.csv",
-    #     "data/meta/scale2parent/PfTrpB-5cyano.csv",
+        "data/meta/not_scaled/PfTrpB-4bromo.csv", 
+        "data/meta/not_scaled/PfTrpB-4cyano.csv",
+        "data/meta/not_scaled/PfTrpB-5chloro.csv",
+        "data/meta/not_scaled/PfTrpB-6chloro.csv",
+        "data/meta/not_scaled/PfTrpB-7bromo.csv",
+        "data/meta/not_scaled/PfTrpB-7indo.csv",
+        "data/meta/not_scaled/PfTrpB-7methyl.csv",
+        "data/meta/not_scaled/PfTrpB-56chloro.csv",
+        "data/meta/not_scaled/PfTrpB-5cyano.csv",
         # "data/meta/not_scaled/Rma-CB.csv",
         # "data/meta/not_scaled/Rma-CSi.csv",
-        "data/meta/not_scaled/ParLQ.csv",
+        # "data/meta/not_scaled/ParLQ.csv",
     ])
 
     # parse_all_chai_scores(chai_struct_dir= "zs/chai/mut_structure")
