@@ -23,17 +23,12 @@ from rdkit.Chem import AllChem
 
 from pathlib import Path
 
-from REVIVAL.preprocess import ZSData
 from REVIVAL.global_param import LIB_INFO_DICT
-from REVIVAL.util import (
-    checkNgen_folder,
-    get_file_name,
-    get_chain_structure
-)
-
+from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
 
 
 import warnings
+
 warnings.filterwarnings("ignore")
 
 
@@ -42,12 +37,13 @@ def dock_lib(
     cofactor_type: str,
     vina_dir: str = "vina",
     pH: float = 7.4,
-    method='vina',
+    method="vina",
     size_x=15.0,
-        size_y=15.0, 
-        size_z=15.0,
-        num_modes=9, # Dunno check vina docks using the defaut
-        exhaustiveness=32 
+    size_y=15.0,
+    size_z=15.0,
+    num_modes=9,  # Dunno check vina docks using the defaut
+    exhaustiveness=32,
+    rerun=False,
 ):
     """
     A function for dock all generated chai structures and get scores
@@ -70,6 +66,7 @@ def dock_lib(
     - size_z (float): The size in z for docking.
     - num_modes (int): The number of modes for docking.
     - exhaustiveness (int): The exhaustiveness for docking.
+    - rerun (bool): Whether to rerun the docking.
     """
 
     output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
@@ -77,33 +74,50 @@ def dock_lib(
     lib_dict = LIB_INFO_DICT[os.path.basename(chai_dir).replace("-plp", "")]
 
     cofactor_list = []
-    for cofactor_smiles, cofactor in zip(lib_dict[cofactor_type+"-smiles"], lib_dict[cofactor_type]):
+    for cofactor_smiles, cofactor in zip(
+        lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
+    ):
         cofactor_list.append((cofactor_smiles, cofactor, "B"))
 
     print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
     print(cofactor_list)
 
-    for var_path in sorted(glob(os.path.join(chai_dir, "*", "*.cif"))):
-        # ie /disk2/fli/REVIVAL2/zs/chai/mut_structure/PfTrpB-4bromo-plp/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
-        var_dir = os.path.normpath(checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))) + "/"
+    for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
+        # ie zs/chai/mut_structure/PfTrpB-4bromo-plp/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
         
-        dock(
-            pdb_path=var_path,
-            smiles=lib_dict["substrate-smiles"],
-            ligand_name=lib_dict["substrate"],
-            residues=list(lib_dict["positions"].values()),
-            cofactors=cofactor_list,
-            protein_dir=var_dir,
-            ligand_dir=var_dir,
-            output_dir=var_dir,
-            pH=pH,
-            method=method,
-            size_x=size_x,
-            size_y=size_y,
-            size_z=size_z,
-            num_modes=num_modes,
-            exhaustiveness=exhaustiveness,
+        # check if the file is already docked
+        log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
+        if len(log_txt) > 0 and (rerun is False):
+            print(f"{var_path} already docked")
+            continue
+
+        var_dir = (
+            os.path.normpath(
+                checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
+            )
+            + "/"
         )
+
+        try:
+            dock(
+                pdb_path=var_path,
+                smiles=lib_dict["substrate-smiles"],
+                ligand_name=lib_dict["substrate"],
+                residues=list(lib_dict["positions"].values()),
+                cofactors=cofactor_list,
+                protein_dir=var_dir,
+                ligand_dir=var_dir,
+                output_dir=var_dir,
+                pH=pH,
+                method=method,
+                size_x=size_x,
+                size_y=size_y,
+                size_z=size_z,
+                num_modes=num_modes,
+                exhaustiveness=exhaustiveness,
+            )
+        except Exception as e:
+            print(f"Error in docking {var_path}: {e}")
 
 
 def dock(
@@ -136,7 +150,9 @@ def dock(
     # Step 3: Process cofactors
     cofactor_pdbqts = []
     for cofactor_smiles, cofactor_name, cofactor_chainid in cofactors:
-        print(f"Processing {cofactor_name}: {cofactor_smiles} as chain {cofactor_chainid}")
+        print(
+            f"Processing {cofactor_name}: {cofactor_smiles}"
+        )
         cofactor_pdbqt, _, _ = format_ligand(
             cofactor_smiles, cofactor_name, ligand_dir, pH, pdb_path, cofactor_chainid
         )
@@ -193,7 +209,7 @@ def dock_vina(
         size_z=size_z,
         num_modes=num_modes,
         exhaustiveness=exhaustiveness,
-        cofactor_files=cofactor_files
+        cofactor_files=cofactor_files,
     )
 
     # Auxiliary files
@@ -203,14 +219,19 @@ def dock_vina(
     # Step 2: Perform docking
     cmd_list = [
         "vina",
-        "--config", conf_path,
-        "--out", docked_ligand_pdb,
-        "--seed", str(seed),
+        "--config",
+        conf_path,
+        "--out",
+        docked_ligand_pdb,
+        "--seed",
+        str(seed),
     ]
     if num_cpus is not None:
         cmd_list += ["--cpu", str(num_cpus)]
 
-    cmd_return = subprocess.run(cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    cmd_return = subprocess.run(
+        cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
+    )
     with open(vina_logfile, "w") as fout:
         fout.write(cmd_return.stdout.decode("utf-8"))
 
@@ -514,7 +535,7 @@ def clean_one_pdb(proteinFile, toFile, keep_chain="keep_all"):
         fixer.addMissingHydrogens()
     except Exception as e:
         print(f"Skipping addMissingHydrogens due to error: {e}")
-        
+
     if pdbFile[-3:] == "pdb":
         PDBFile.writeFile(
             fixer.topology, fixer.positions, open(fixed_pdbFile, "w"), keepIds=True
@@ -612,7 +633,14 @@ def protonate_smiles(smiles: str, pH: float) -> str:
     return output.strip()
 
 
-def format_ligand(smiles: str, name: str, ligand_dir: str, pH: float, full_pdb_path=None, chain_id=None):
+def format_ligand(
+    smiles: str,
+    name: str,
+    ligand_dir: str,
+    pH: float,
+    full_pdb_path=None,
+    chain_id=None,
+):
 
     """
     Check if the ligand exists already; if not, handle formatting. Special handling for ions.
@@ -646,8 +674,7 @@ def format_ligand(smiles: str, name: str, ligand_dir: str, pH: float, full_pdb_p
 
             # Convert PDB to PDBQT using Open Babel
             subprocess.run(
-                ["obabel", ion_pdb_file, "-O", ligand_pdbqt_file, "--metal"],
-                check=True
+                ["obabel", ion_pdb_file, "-O", ligand_pdbqt_file, "--metal"], check=True
             )
             # with open(ligand_pdbqt_file, "w") as fout:
             #     fout.write(f"ROOT\n")
@@ -670,17 +697,27 @@ def format_ligand(smiles: str, name: str, ligand_dir: str, pH: float, full_pdb_p
                 # Generate PDB file for the ion
                 pdb_file = os.path.join(this_ligand_dir, name + ".pdb")
                 print(f"from {full_pdb_path} to {pdb_file}")
-                get_chain_structure(input_file_path=full_pdb_path, output_file_path=pdb_file, chain_id=chain_id)
+                get_chain_structure(
+                    input_file_path=full_pdb_path,
+                    output_file_path=pdb_file,
+                    chain_id=chain_id,
+                )
 
-                processed_pdb_file = os.path.join(this_ligand_dir, name + "_processed.pdb")
+                processed_pdb_file = os.path.join(
+                    this_ligand_dir, name + "_processed.pdb"
+                )
 
-                with open(pdb_file, 'r') as infile, open(fe_pdb_file, 'w') as fe_out, open(processed_pdb_file, 'w') as ligand_out:
+                with open(pdb_file, "r") as infile, open(
+                    fe_pdb_file, "w"
+                ) as fe_out, open(processed_pdb_file, "w") as ligand_out:
                     for line in infile:
                         if line.startswith("HETATM") and "FE" in line:
                             fe_out.write(line)  # Write Fe atom to its PDB file
                         elif line.startswith("HETATM"):
                             # line = re.sub(r'LIG_C', 'LIG ', line)  # Replace "LIG_C" with "LIG"
-                            ligand_out.write(line)  # Write other atoms to ligand PDB file
+                            ligand_out.write(
+                                line
+                            )  # Write other atoms to ligand PDB file
                     # Add TER and END for valid PDB files
                     fe_out.write("TER\nEND\n")
                     ligand_out.write("TER\nEND\n")
@@ -688,8 +725,15 @@ def format_ligand(smiles: str, name: str, ligand_dir: str, pH: float, full_pdb_p
                 if os.path.isfile(fe_pdb_file):
                     # Convert PDB to PDBQT using Open Babel
                     subprocess.run(
-                        ["obabel", fe_pdb_file, "-O", fe_pdbqt_file, "--partialcharge", "gasteiger"],
-                        check=True
+                        [
+                            "obabel",
+                            fe_pdb_file,
+                            "-O",
+                            fe_pdbqt_file,
+                            "--partialcharge",
+                            "gasteiger",
+                        ],
+                        check=True,
                     )
 
                 mol = Chem.MolFromPDBFile(pdb_file, sanitize=True)
@@ -714,7 +758,10 @@ def format_ligand(smiles: str, name: str, ligand_dir: str, pH: float, full_pdb_p
                 )
 
         # Validate the output
-        if not os.path.isfile(ligand_pdbqt_file) or os.path.getsize(ligand_pdbqt_file) == 0:
+        if (
+            not os.path.isfile(ligand_pdbqt_file)
+            or os.path.getsize(ligand_pdbqt_file) == 0
+        ):
             raise ValueError(f"PDBQT file for {name} is empty or missing.")
     except Exception as e:
         print(f"Error preparing ligand/ion: {name} - {str(e)}")
@@ -755,4 +802,3 @@ def calculate_centroid(coords):
     )
 
     return centroid
-
