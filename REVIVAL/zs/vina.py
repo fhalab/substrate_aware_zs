@@ -51,7 +51,7 @@ def dock_lib_parallel(
     num_modes=9,
     exhaustiveness=32,
     rerun=False,
-    max_workers=32,  # Number of parallel workers
+    max_workers=24,  # Number of parallel workers
 ):
     """
     A function to dock all generated chai structures and get scores in parallel.
@@ -67,7 +67,7 @@ def dock_lib_parallel(
     ]
     lib_name = os.path.basename(chai_dir)
     for key in keys_to_remove:
-        lib_name = lib_name.replace(key, "")
+        lib_name = lib_name.replace("_"+key, "")
 
     lib_dict = LIB_INFO_DICT[lib_name]
 
@@ -126,10 +126,8 @@ def dock_task(
     """
     Task to dock a single .cif file.
     """
+    
     log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
-    if len(log_txt) > 0 and (rerun is False):
-        print(f"{var_path} already docked")
-        return
 
     var_dir = (
         os.path.normpath(
@@ -137,6 +135,13 @@ def dock_task(
         )
         + "/"
     )
+
+    if len(log_txt) > 0 and (rerun is False):
+        print(f"{var_path} already docked")
+        return
+    elif len(log_txt) == 0 and rerun is False:
+        print(f"{var_path} not docked yet or successful")
+        print("Rerun automatically set to True")
 
     try:
         dock(
@@ -160,103 +165,103 @@ def dock_task(
         print(f"Error in docking {var_path}: {e}")
 
 
-def dock_lib(
-    chai_dir: str,
-    cofactor_type: str,
-    vina_dir: str = "vina",
-    pH: float = 7.4,
-    method="vina",
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
-    num_modes=9,  # Dunno check vina docks using the defaut
-    exhaustiveness=32,
-    rerun=False,
-):
-    """
-    A function for dock all generated chai structures and get scores
+# def dock_lib(
+#     chai_dir: str,
+#     cofactor_type: str,
+#     vina_dir: str = "vina",
+#     pH: float = 7.4,
+#     method="vina",
+#     size_x=15.0,
+#     size_y=15.0,
+#     size_z=15.0,
+#     num_modes=9,  # Dunno check vina docks using the defaut
+#     exhaustiveness=32,
+#     rerun=False,
+# ):
+#     """
+#     A function for dock all generated chai structures and get scores
 
-    Args:
-    - chai_dir (str): The directory of chai structures.
-        ie. /disk2/fli/REVIVAL2/zs/chai/mut_structure/PfTrpB-4bromo
-            with the following structure:
-                I165A:I183A:Y301V
-                    I165A:I183A:Y301V_0.cif
-                    I165A:I183A:Y301V_0.npz
-                    ...
-    - cofactor_type (str): The type of cofactor based on LIB_INFO_DICT
-        ie. cofactor, inactivated-cofactor, etc.
-    - vina_dir (str): The directory to save the vina results.
-    - pH (float): The pH for docking.
-    - method (str): The docking method, either 'vina' or 'ad4'.
-    - size_x (float): The size in x for docking.
-    - size_y (float): The size in y for docking.
-    - size_z (float): The size in z for docking.
-    - num_modes (int): The number of modes for docking.
-    - exhaustiveness (int): The exhaustiveness for docking.
-    - rerun (bool): Whether to rerun the docking.
-    """
+#     Args:
+#     - chai_dir (str): The directory of chai structures.
+#         ie. /disk2/fli/REVIVAL2/zs/chai/mut_structure/PfTrpB-4bromo
+#             with the following structure:
+#                 I165A:I183A:Y301V
+#                     I165A:I183A:Y301V_0.cif
+#                     I165A:I183A:Y301V_0.npz
+#                     ...
+#     - cofactor_type (str): The type of cofactor based on LIB_INFO_DICT
+#         ie. cofactor, inactivated-cofactor, etc.
+#     - vina_dir (str): The directory to save the vina results.
+#     - pH (float): The pH for docking.
+#     - method (str): The docking method, either 'vina' or 'ad4'.
+#     - size_x (float): The size in x for docking.
+#     - size_y (float): The size in y for docking.
+#     - size_z (float): The size in z for docking.
+#     - num_modes (int): The number of modes for docking.
+#     - exhaustiveness (int): The exhaustiveness for docking.
+#     - rerun (bool): Whether to rerun the docking.
+#     """
 
-    output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
+#     output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
 
-    keys_to_remove = [
-        cofactor_type,
-        cofactor_type.replace("-cofactor", ""),
-        cofactor_type.replace("cofactor", ""),
-        "cofactor",
-        "-cofactor",
-    ]
-    lib_name = os.path.basename(chai_dir)
-    for key in keys_to_remove:
-        lib_name = lib_name.replace(key, "")
+#     keys_to_remove = [
+#         cofactor_type,
+#         cofactor_type.replace("-cofactor", ""),
+#         cofactor_type.replace("cofactor", ""),
+#         "cofactor",
+#         "-cofactor",
+#     ]
+#     lib_name = os.path.basename(chai_dir)
+#     for key in keys_to_remove:
+#         lib_name = lib_name.replace(key, "")
 
-    lib_dict = LIB_INFO_DICT[lib_name]
+#     lib_dict = LIB_INFO_DICT[lib_name]
 
-    cofactor_list = []
-    for cofactor_smiles, cofactor in zip(
-        lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
-    ):
-        cofactor_list.append((cofactor_smiles, cofactor, "B"))
+#     cofactor_list = []
+#     for cofactor_smiles, cofactor in zip(
+#         lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
+#     ):
+#         cofactor_list.append((cofactor_smiles, cofactor, "B"))
 
-    print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
-    print(cofactor_list)
+#     print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
+#     print(cofactor_list)
 
-    for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
-        # ie zs/chai/mut_structure/PfTrpB-4bromo_inactivated-cofactor/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
+#     for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
+#         # ie zs/chai/mut_structure/PfTrpB-4bromo_inactivated-cofactor/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
 
-        # check if the file is already docked
-        log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
-        if len(log_txt) > 0 and (rerun is False):
-            print(f"{var_path} already docked")
-            continue
+#         # check if the file is already docked
+#         log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
+#         if len(log_txt) > 0 and (rerun is False):
+#             print(f"{var_path} already docked")
+#             continue
 
-        var_dir = (
-            os.path.normpath(
-                checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
-            )
-            + "/"
-        )
+#         var_dir = (
+#             os.path.normpath(
+#                 checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
+#             )
+#             + "/"
+#         )
 
-        try:
-            dock(
-                pdb_path=var_path,
-                smiles=lib_dict["substrate-smiles"],
-                ligand_name=lib_dict["substrate"],
-                residues=list(lib_dict["positions"].values()),
-                cofactors=cofactor_list,
-                protein_dir=var_dir,
-                ligand_dir=var_dir,
-                output_dir=var_dir,
-                pH=pH,
-                method=method,
-                size_x=size_x,
-                size_y=size_y,
-                size_z=size_z,
-                num_modes=num_modes,
-                exhaustiveness=exhaustiveness,
-            )
-        except Exception as e:
-            print(f"Error in docking {var_path}: {e}")
+#         try:
+#             dock(
+#                 pdb_path=var_path,
+#                 smiles=lib_dict["substrate-smiles"],
+#                 ligand_name=lib_dict["substrate"],
+#                 residues=list(lib_dict["positions"].values()),
+#                 cofactors=cofactor_list,
+#                 protein_dir=var_dir,
+#                 ligand_dir=var_dir,
+#                 output_dir=var_dir,
+#                 pH=pH,
+#                 method=method,
+#                 size_x=size_x,
+#                 size_y=size_y,
+#                 size_z=size_z,
+#                 num_modes=num_modes,
+#                 exhaustiveness=exhaustiveness,
+#             )
+#         except Exception as e:
+#             print(f"Error in docking {var_path}: {e}")
 
 
 def dock(
@@ -1077,6 +1082,7 @@ class VinaResults(ZSData):
                             f"Multiple log files found for {variant}_{r}, using the first one."
                         )
                 else:
+                    print(f"No log file found for {variant}_{r}")
                     vina_score = np.nan  # Default value if the file does not exist
                 scores.append((variant, r, vina_score))
 

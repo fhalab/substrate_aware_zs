@@ -27,7 +27,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
     run_parse_vina_results(
-        pattern=["data/meta/not_scaled/PfTrpB-4cyano.csv"],
+        pattern="data/meta/not_scaled/PfTrpB-*.csv",
         cofactor_type="inactivated-cofactor",
     )
 

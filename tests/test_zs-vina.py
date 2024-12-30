@@ -5,10 +5,11 @@ Test the vina docking and extracting score.
 import sys
 import os
 
+from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.vina import dock_lib
+from REVIVAL.zs.vina import dock_lib_parallel
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -25,18 +26,16 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for chai_dir in [ 
-        "zs/chai/mut_structure/PfTrpB-4bromo-plp", 
-        # "zs/chai/mut_structure/PfTrpB-4cyano-plp",
-        # "zs/chai/mut_structure/PfTrpB-5chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-6chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-7bromo-plp",
-        # "zs/chai/mut_structure/PfTrpB-7indo-plp",
-        # "zs/chai/mut_structure/PfTrpB-7methyl-plp",
-        # "zs/chai/mut_structure/PfTrpB-56chloro-plp",
-        # "zs/chai/mut_structure/PfTrpB-5cyano-plp",
+
+    # for chai_dir in sorted(glob("zs/chai/mut_structure/*_inactivated-cofactor")):
+    for chai_dir in [
+        "zs/chai/mut_structure/PfTrpB-4bromo_cofactor",
+        "zs/chai/mut_structure/PfTrpB-4cyano_cofactor",
+        "zs/chai/mut_structure/PfTrpB-5chloro_cofactor",
+        "zs/chai/mut_structure/PfTrpB-6chloro_cofactor",
+        "zs/chai/mut_structure/PfTrpB-7bromo_cofactor",
     ]:
-        dock_lib(chai_dir, "inactivated-cofactor")
+        dock_lib_parallel(chai_dir, "cofactor")
 
 
     # def dock_lib(

@@ -61,7 +61,7 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "TmTrpB",
             "substrate": "indole",
             "substrate-smiles": "C12=C(C=CN2)C=CC=C1",
-            "cofactor": ["PLP-dependent aminoacrylate", "K+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "K+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[K+]",
@@ -138,7 +138,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -161,7 +161,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -184,7 +184,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -207,7 +207,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -230,7 +230,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -253,7 +253,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -276,7 +276,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -299,7 +299,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -322,7 +322,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -345,7 +345,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
@@ -368,7 +368,7 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
-            "cofactor": ["PLP-dependent aminoacrylate", "Na+"],
+            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
             "cofactor-smiles": [
                 "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
                 "[Na+]",
