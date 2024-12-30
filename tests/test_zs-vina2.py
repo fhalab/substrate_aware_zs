@@ -5,6 +5,7 @@ Test the vina docking and extracting score.
 import sys
 import os
 
+from glob import glob
 
 from datetime import datetime
 
@@ -26,15 +27,16 @@ if __name__ == "__main__":
     sys.stdout = f
 
     for chai_dir in [ 
-        # "zs/chai/mut_structure/PfTrpB-4bromo-plp", 
-        "zs/chai/mut_structure/PfTrpB-4cyano-plp",
-        "zs/chai/mut_structure/PfTrpB-5chloro-plp",
-        "zs/chai/mut_structure/PfTrpB-6chloro-plp",
-        "zs/chai/mut_structure/PfTrpB-7bromo-plp",
-        "zs/chai/mut_structure/PfTrpB-7indo-plp",
-        "zs/chai/mut_structure/PfTrpB-7methyl-plp",
-        "zs/chai/mut_structure/PfTrpB-56chloro-plp",
-        "zs/chai/mut_structure/PfTrpB-5cyano-plp",
+        "zs/chai/mut_structure/PfTrpB-4bromo_inactivated-cofactor", 
+        "zs/chai/mut_structure/PfTrpB-4cyano_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-5chloro_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-5bromo_inactivated-cofactor", 
+        "zs/chai/mut_structure/PfTrpB-6chloro_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-7bromo_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-7iodo_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-7methyl_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-56chloro_inactivated-cofactor",
+        "zs/chai/mut_structure/PfTrpB-5cyano_inactivated-cofactor",
     ]:
         dock_lib_parallel(chai_dir, "inactivated-cofactor")
 

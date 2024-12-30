@@ -5,6 +5,7 @@ must use vina conda env
 """
 
 from concurrent.futures import ThreadPoolExecutor, as_completed
+from typing import Union
 
 import logging
 import subprocess
@@ -16,6 +17,10 @@ import re
 from glob import glob
 from tqdm import tqdm
 from pathlib import Path
+from copy import deepcopy
+
+import numpy as np
+import pandas as pd
 
 from rdkit.Chem.MolStandardize.rdMolStandardize import Uncharger
 from pdbfixer import PDBFixer
@@ -27,10 +32,81 @@ from rdkit import Chem
 from rdkit.Chem import AllChem
 
 from REVIVAL.global_param import LIB_INFO_DICT
+from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
 
 
 warnings.filterwarnings("ignore")
+
+
+def dock_lib_parallel(
+    chai_dir: str,
+    cofactor_type: str,
+    vina_dir: str = "vina",
+    pH: float = 7.4,
+    method="vina",
+    size_x=15.0,
+    size_y=15.0,
+    size_z=15.0,
+    num_modes=9,
+    exhaustiveness=32,
+    rerun=False,
+    max_workers=32,  # Number of parallel workers
+):
+    """
+    A function to dock all generated chai structures and get scores in parallel.
+    """
+    output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
+
+    keys_to_remove = [
+        cofactor_type,
+        cofactor_type.replace("-cofactor", ""),
+        cofactor_type.replace("cofactor", ""),
+        "cofactor",
+        "-cofactor",
+    ]
+    lib_name = os.path.basename(chai_dir)
+    for key in keys_to_remove:
+        lib_name = lib_name.replace(key, "")
+
+    lib_dict = LIB_INFO_DICT[lib_name]
+
+    cofactor_list = [
+        (cofactor_smiles, cofactor, "B")
+        for cofactor_smiles, cofactor in zip(
+            lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
+        )
+    ]
+
+    print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
+    print(cofactor_list)
+
+    var_paths = sorted(glob(os.path.join(chai_dir, "*", "*.cif")))
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                dock_task,
+                var_path=var_path,
+                lib_dict=lib_dict,
+                cofactor_list=cofactor_list,
+                output_dir=output_dir,
+                pH=pH,
+                method=method,
+                size_x=size_x,
+                size_y=size_y,
+                size_z=size_z,
+                num_modes=num_modes,
+                exhaustiveness=exhaustiveness,
+                rerun=rerun,
+            )
+            for var_path in var_paths
+        ]
+        for future in tqdm(as_completed(futures), total=len(var_paths)):
+            try:
+                future.result()  # Raises an exception if the task failed
+            except Exception as e:
+                print(f"Task failed for {futures[future]}: {e}")
 
 
 def dock_task(
@@ -84,63 +160,6 @@ def dock_task(
         print(f"Error in docking {var_path}: {e}")
 
 
-def dock_lib_parallel(
-    chai_dir: str,
-    cofactor_type: str,
-    vina_dir: str = "vina",
-    pH: float = 7.4,
-    method="vina",
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
-    num_modes=9,
-    exhaustiveness=32,
-    rerun=False,
-    max_workers=8,  # Number of parallel workers
-):
-    """
-    A function to dock all generated chai structures and get scores in parallel.
-    """
-    output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
-    lib_dict = LIB_INFO_DICT[os.path.basename(chai_dir).replace("-plp", "")]
-    cofactor_list = [
-        (cofactor_smiles, cofactor, "B")
-        for cofactor_smiles, cofactor in zip(
-            lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
-        )
-    ]
-
-    print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
-    print(cofactor_list)
-
-    var_paths = sorted(glob(os.path.join(chai_dir, "*", "*.cif")))
-
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
-        futures = [
-            executor.submit(
-                dock_task,
-                var_path=var_path,
-                lib_dict=lib_dict,
-                cofactor_list=cofactor_list,
-                output_dir=output_dir,
-                pH=pH,
-                method=method,
-                size_x=size_x,
-                size_y=size_y,
-                size_z=size_z,
-                num_modes=num_modes,
-                exhaustiveness=exhaustiveness,
-                rerun=rerun,
-            )
-            for var_path in var_paths
-        ]
-        for future in tqdm(as_completed(futures), total=len(var_paths)):
-            try:
-                future.result()  # Raises an exception if the task failed
-            except Exception as e:
-                print(f"Task failed for {futures[future]}: {e}")
-
-
 def dock_lib(
     chai_dir: str,
     cofactor_type: str,
@@ -180,7 +199,18 @@ def dock_lib(
 
     output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
 
-    lib_dict = LIB_INFO_DICT[os.path.basename(chai_dir).replace("-plp", "")]
+    keys_to_remove = [
+        cofactor_type,
+        cofactor_type.replace("-cofactor", ""),
+        cofactor_type.replace("cofactor", ""),
+        "cofactor",
+        "-cofactor",
+    ]
+    lib_name = os.path.basename(chai_dir)
+    for key in keys_to_remove:
+        lib_name = lib_name.replace(key, "")
+
+    lib_dict = LIB_INFO_DICT[lib_name]
 
     cofactor_list = []
     for cofactor_smiles, cofactor in zip(
@@ -192,7 +222,7 @@ def dock_lib(
     print(cofactor_list)
 
     for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
-        # ie zs/chai/mut_structure/PfTrpB-4bromo-plp/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
+        # ie zs/chai/mut_structure/PfTrpB-4bromo_inactivated-cofactor/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
 
         # check if the file is already docked
         log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
@@ -908,3 +938,197 @@ def calculate_centroid(coords):
     )
 
     return centroid
+
+
+###### extract docking scores ######
+
+
+def extract_lowest_energy(file_path: str):
+    with open(file_path, "r") as file:
+        lines = file.readlines()
+
+    for i, line in enumerate(lines):
+        if "mode |   affinity | dist from best mode" in line:
+            table_start = i + 3  # Skip to the actual table
+            break
+
+    energies = []
+    for line in lines[table_start:]:
+        if line.strip() == "":  # End of the table
+            break
+        parts = line.split()
+        try:
+            energies.append(float(parts[1]))  # Affinity is in the second column
+        except ValueError:
+            pass  # Skip invalid lines
+
+    return min(energies)
+
+
+class VinaResults(ZSData):
+    def __init__(
+        self,
+        input_csv: str,
+        scale_fit: str = "not_scaled",
+        combo_col_name: str = "AAs",
+        var_col_name: str = "var",
+        mut_col_name: str = "mut",
+        pos_col_name: str = "pos",
+        seq_col_name: str = "seq",
+        fit_col_name: str = "fitness",
+        seq_dir: str = "data/seq",
+        zs_dir: str = "zs",
+        vina_dir: str = "vina",
+        vina_raw_dir: str = "",
+        vina_score_dir: str = "score",
+        num_rep: int = 5,
+        cofactor_type: str = "",
+        withsub: bool = True,
+    ):
+
+        """
+        A class to extract Vina docking energy.
+
+        Args:
+        - input_csv (str): The input CSV file, with `var_col_name` column
+            ie. /disk2/fli/REVIVAL2/data/meta/not_scaled/PfTrpB-4bromo.csv
+        - scale_fit (str): The scaling of the fitness values.
+        - combo_col_name (str): The column name for the combo.
+        - var_col_name (str): The column name for the variant.
+        - mut_col_name (str): The column name for the mutation.
+        - pos_col_name (str): The column name for the position.
+        - seq_col_name (str): The column name for the sequence.
+        - fit_col_name (str): The column name for the fitness.
+        - seq_dir (str): The directory for the sequences.
+        - zs_dir (str): The directory for the ZS data.
+        - vina_dir (str): The directory for the Vina data.
+        - vina_raw_dir (str): The directory for the raw Vina data.
+        - vina_score_dir (str): The directory for the Vina score data.
+        - num_rep (int): The number of replicates.
+        - cofactor_type (str): The type of cofactor based on LIB_INFO_DICT.
+            ie "" for simple cofacoctor, "inactivated" for inactivated cofactor, etc.
+        - withsub (bool): Whether the zs includes info of the substrate.
+        """
+
+        super().__init__(
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            withsub=withsub,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir,
+        )
+
+        self._cofactor_append = f"_{cofactor_type}" if cofactor_type else ""
+        self._vina_lib_name = f"{self.lib_name}{self._cofactor_append}"
+
+        self._vina_dir = os.path.join(self._zs_dir, vina_dir, vina_raw_dir)
+        self._vina_score_dir = checkNgen_folder(
+            os.path.join(self._zs_dir, vina_dir, vina_score_dir)
+        )
+        self._vina_lib_dir = os.path.join(self._vina_dir, self._vina_lib_name)
+
+        self._num_rep = num_rep
+
+        # for each row of the input csv, we will have a vina subfolder
+        # ie I165A:I183A:Y301V_0 where 0 is the replicate number
+        # with in the folder, there should be a file ends with _log.txt
+        # which contains the docking energy
+        # that can be extracted with extract_lowest_energy
+        print(f"Extract vina score from {self._vina_lib_dir}")
+        self._vina_df = self._extract_vina_score()
+
+        # save the vina data
+        print(f"Save vina score to {self.vina_df_path}")
+        self._vina_df.to_csv(self.vina_df_path, index=False)
+
+    def _extract_vina_score(self):
+
+        """
+        Extract the Vina data from the Vina log files.
+        """
+
+        df = self.input_df.copy()
+
+        # # init the vina score columns with nan
+        # for r in range(self._num_rep):
+        #     df[f"vina_{r}"] = np.nan
+
+        # Get the list of variants
+        variants = df[self._var_col_name].unique()
+
+        # Precompute scores
+        scores = []
+        for variant in tqdm(variants):
+            for r in range(self._num_rep):
+                vina_log_files = glob(
+                    os.path.join(self._vina_lib_dir, f"{variant}_{r}", "*_log.txt")
+                )
+
+                if len(vina_log_files) >= 1 and os.path.isfile(vina_log_files[0]):
+                    vina_score = extract_lowest_energy(vina_log_files[0])
+                    if len(vina_log_files) > 1:
+                        print(
+                            f"Multiple log files found for {variant}_{r}, using the first one."
+                        )
+                else:
+                    vina_score = np.nan  # Default value if the file does not exist
+                scores.append((variant, r, vina_score))
+
+        # Create a DataFrame from scores
+        scores_df = pd.DataFrame(
+            scores, columns=[self._var_col_name, "rep", "vina_score"]
+        )
+
+        # Pivot the scores DataFrame to match the original DataFrame structure
+        scores_pivot = scores_df.pivot(
+            index=self._var_col_name, columns="rep", values="vina_score"
+        )
+        scores_pivot.columns = [f"vina_{r}" for r in scores_pivot.columns]
+
+        # Merge scores into the original DataFrame
+        df = df.merge(scores_pivot, on=self._var_col_name, how="left")
+
+        # take average of the replicates for each variant ignore nan when taking average
+        df["vina"] = df[[f"vina_{r}" for r in range(self._num_rep)]].mean(axis=1)
+
+        # add rank where the most negative score means rank 1
+        df["vina_rank"] = df["vina"].rank(ascending=False)
+
+        return df
+
+    @property
+    def vina_df(self):
+        return self._vina_df
+
+    @property
+    def vina_df_path(self):
+        return os.path.join(self._vina_score_dir, f"{self._vina_lib_name}.csv")
+
+
+def run_parse_vina_results(
+    pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
+    cofactor_type: str = "",
+    kwargs: dict = {},
+):
+
+    """
+    Run the parse vina results function for all libraries
+
+    Args:
+    """
+    if isinstance(pattern, str):
+        lib_list = glob(pattern)
+    else:
+        lib_list = deepcopy(pattern)
+
+    print(lib_list)
+
+    for lib in lib_list:
+        print(f"Running parse vina results for {lib}...")
+        VinaResults(input_csv=lib, cofactor_type=cofactor_type, **kwargs)
