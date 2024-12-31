@@ -42,12 +42,14 @@ warnings.filterwarnings("ignore")
 def dock_lib_parallel(
     chai_dir: str,
     cofactor_type: str,
+    residues: list = None,
+    substrate_chain_ids: list = "B",
     vina_dir: str = "vina",
     pH: float = 7.4,
     method="vina",
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
     rerun=False,
@@ -91,6 +93,8 @@ def dock_lib_parallel(
                 lib_dict=lib_dict,
                 cofactor_list=cofactor_list,
                 output_dir=output_dir,
+                residues=residues,
+                substrate_chain_ids=substrate_chain_ids,
                 pH=pH,
                 method=method,
                 size_x=size_x,
@@ -114,14 +118,16 @@ def dock_task(
     lib_dict,
     cofactor_list,
     output_dir,
-    pH,
-    method,
-    size_x,
-    size_y,
-    size_z,
-    num_modes,
-    exhaustiveness,
-    rerun,
+    residues: list = None,
+    substrate_chain_ids: list = "B",
+    pH=7.4,
+    method="vina",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
+    num_modes=9,
+    exhaustiveness=32,
+    rerun=False,
 ):
     """
     Task to dock a single .cif file.
@@ -148,7 +154,8 @@ def dock_task(
             pdb_path=var_path,
             smiles=lib_dict["substrate-smiles"],
             ligand_name=lib_dict["substrate"],
-            residues=list(lib_dict["positions"].values()),
+            residues=residues,
+            substrate_chain_ids=substrate_chain_ids,
             cofactors=cofactor_list,
             protein_dir=var_dir,
             ligand_dir=var_dir,
@@ -169,16 +176,17 @@ def dock(
     pdb_path: str,
     smiles: str,
     ligand_name: str,
-    residues: list,
     cofactors: list,  # List of (smiles, name) tuples for cofactors
     protein_dir: str,
     ligand_dir: str,
     output_dir: str,
     pH: float,
     method: str,
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
+    residues: list = None,
+    substrate_chain_ids: list = "B",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
 ):
@@ -203,12 +211,14 @@ def dock(
 
     if method in ["vina", "ad4"]:
         affinities = dock_vina(
+            input_pdb_path=pdb_path,
             ligand_pdbqt=ligand_pdbqt,
             protein_pdbqt=protein_pdbqt,
             ligand_name=ligand_name,
             protein_name=protein_name,
             output_dir=output_dir,
             residues=residues,
+            substrate_chain_ids=substrate_chain_ids,
             size_x=size_x,
             size_y=size_y,
             size_z=size_z,
@@ -222,15 +232,17 @@ def dock(
 
 
 def dock_vina(
+    input_pdb_path: str,
     ligand_pdbqt: str,
     protein_pdbqt: str,
     ligand_name: str,
     protein_name: str,
     output_dir: str,
-    residues: list,
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
+    residues: list = None,
+    substrate_chain_ids: list = "B",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
     method="vina",
@@ -243,10 +255,12 @@ def dock_vina(
 
     # Step 1: Create config file
     make_config_for_vina(
-        protein_pdbqt,
-        ligand_pdbqt,
-        residues,
-        conf_path,
+        input_pdb_path=input_pdb_path,
+        protein_pdbqt=protein_pdbqt,
+        ligand_pdbqt=ligand_pdbqt,
+        conf_path=conf_path,
+        residues=residues,
+        substrate_chain_ids=substrate_chain_ids,
         size_x=size_x,
         size_y=size_y,
         size_z=size_z,
@@ -287,28 +301,38 @@ def dock_vina(
 
 
 def make_config_for_vina(
-    pdb_file: str,
-    ligand_file: str,
-    residues: list,
-    output_file: str,
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
+    input_pdb_path: str,
+    protein_pdbqt: str,
+    ligand_pdbqt: str,
+    conf_path: str,
+    residues: list = None,
+    substrate_chain_ids: list = "B",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
     cofactor_files: list = None,
 ):
     """Create the config file for Vina, including cofactors if specified."""
-    coords = []
-    for position in residues:
-        _, coordinates = get_coordinates_without_chain_id(pdb_file, int(position))
-        if coordinates is not None:
-            coords.append(coordinates)
-    coords = calculate_centroid(coords)
 
-    with open(output_file, "w") as fout:
-        fout.write(f"receptor = {pdb_file}\n")
-        fout.write(f"ligand = {ligand_file}\n")
+    if residues is None:
+        coords = calculate_chain_centroid(
+            input_file=input_pdb_path, chain_ids=substrate_chain_ids
+        )
+    else:
+        coords = []
+        for position in residues:
+            _, coordinates = get_coordinates_without_chain_id(
+                input_pdb_path, int(position)
+            )
+            if coordinates is not None:
+                coords.append(coordinates)
+        coords = calculate_centroid(coords)
+
+    with open(conf_path, "w") as fout:
+        fout.write(f"receptor = {protein_pdbqt}\n")
+        fout.write(f"ligand = {ligand_pdbqt}\n")
         fout.write(f"center_x = {coords[0]}\n")
         fout.write(f"center_y = {coords[1]}\n")
         fout.write(f"center_z = {coords[2]}\n")
@@ -878,6 +902,49 @@ def calculate_centroid(coords):
     )
 
     return centroid
+
+
+def calculate_chain_centroid(input_file, chain_ids):
+    """
+    Calculate the geometric center (centroid) of all atoms in the specified chain(s).
+
+    Args:
+        input_file (str): Path to the input PDB or CIF file.
+        chain_ids (list of str): List of chain IDs to calculate the centroid for.
+
+    Returns:
+        tuple: The XYZ coordinates of the centroid.
+    """
+    # Determine the file type
+    file_extension = os.path.splitext(input_file)[-1].lower()
+    if file_extension == ".cif":
+        parser = MMCIFParser(QUIET=True)
+    elif file_extension == ".pdb":
+        parser = PDBParser(QUIET=True)
+    else:
+        raise ValueError(
+            "Unsupported file format. Only PDB and CIF files are supported."
+        )
+
+    # Parse the structure
+    structure = parser.get_structure("protein", input_file)
+
+    coordinates = []
+    chain_ids = [cid.upper() for cid in chain_ids]  # Ensure chain IDs are uppercase
+
+    for model in structure:
+        for chain in model:
+            if chain.id.upper() in chain_ids:
+                for residue in chain:
+                    for atom in residue:
+                        coordinates.append(atom.coord)
+
+    # Calculate centroid
+    if coordinates:
+        centroid = np.mean(coordinates, axis=0)
+        return np.array(centroid).flatten()
+    else:
+        raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
 
 
 ###### extract docking scores ######

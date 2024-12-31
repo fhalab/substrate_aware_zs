@@ -26,18 +26,20 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-
-    # for chai_dir in sorted(glob("zs/chai/mut_structure/*_inactivated-cofactor")):
     for chai_dir in [
         "zs/chai/mut_structure/PfTrpB-4bromo_cofactor",
         "zs/chai/mut_structure/PfTrpB-4cyano_cofactor",
         "zs/chai/mut_structure/PfTrpB-5bromo_cofactor",
         "zs/chai/mut_structure/PfTrpB-5chloro_cofactor",
+        "zs/chai/mut_structure/PfTrpB-5cyano_cofactor",
+        "zs/chai/mut_structure/PfTrpB-5iodo_cofactor",
         "zs/chai/mut_structure/PfTrpB-6chloro_cofactor",
         "zs/chai/mut_structure/PfTrpB-7bromo_cofactor",
     ]:
         dock_lib_parallel(chai_dir, "cofactor")
 
+    for chai_dir in sorted(glob("zs/chai/mut_structure/*_inactivated-cofactor")):
+        dock_lib_parallel(chai_dir, "inactivated-cofactor")
 
     # def dock_lib(
     #     chai_dir: str,
