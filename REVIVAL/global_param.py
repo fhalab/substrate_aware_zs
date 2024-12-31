@@ -149,6 +149,11 @@ LIB_INFO_DICT = deepcopy(
             ],
             "positions": {1: 165, 2: 183, 3: 301},
             "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            "ditances": {
+                "C-C":(("B", 1, "LIG", "C_7", False), ("B", 1, "LIG", "C_9", False)),
+                "GLU-NH_1":(("A", 104, "GLU", "OE1", False), ("B", 1, "LIG", "N_1", True)),
+                "GLU-NH_2":(("A", 104, "GLU", "OE2", False), ("B", 1, "LIG", "N_1", True)),
+                }, # if need to add H
             "family": "TrpB",
             "project": "multi-substrate",
         },
