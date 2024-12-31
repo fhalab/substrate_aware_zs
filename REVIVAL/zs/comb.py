@@ -39,7 +39,7 @@ class ZSComb(ZSData):
             "esmif/output",
             "coves/output/100_processed",
             "triad/processed_output",
-            # "chai/output",
+            "chai/output",
         ],
     ):
 
@@ -151,7 +151,7 @@ def run_all_combzs(
         "esmif/output",
         "coves/output/100_processed",
         "triad/processed_output",
-        # "chai/output",
+        "chai/output",
     ],
 ):
 

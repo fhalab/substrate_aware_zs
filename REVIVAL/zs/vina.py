@@ -45,9 +45,9 @@ def dock_lib_parallel(
     vina_dir: str = "vina",
     pH: float = 7.4,
     method="vina",
-    size_x=15.0,
-    size_y=15.0,
-    size_z=15.0,
+    size_x=30.0,
+    size_y=30.0,
+    size_z=30.0,
     num_modes=9,
     exhaustiveness=32,
     rerun=False,
@@ -67,7 +67,7 @@ def dock_lib_parallel(
     ]
     lib_name = os.path.basename(chai_dir)
     for key in keys_to_remove:
-        lib_name = lib_name.replace("_"+key, "")
+        lib_name = lib_name.replace("_" + key, "")
 
     lib_dict = LIB_INFO_DICT[lib_name]
 
@@ -126,7 +126,7 @@ def dock_task(
     """
     Task to dock a single .cif file.
     """
-    
+
     log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
 
     var_dir = (
@@ -165,105 +165,6 @@ def dock_task(
         print(f"Error in docking {var_path}: {e}")
 
 
-# def dock_lib(
-#     chai_dir: str,
-#     cofactor_type: str,
-#     vina_dir: str = "vina",
-#     pH: float = 7.4,
-#     method="vina",
-#     size_x=15.0,
-#     size_y=15.0,
-#     size_z=15.0,
-#     num_modes=9,  # Dunno check vina docks using the defaut
-#     exhaustiveness=32,
-#     rerun=False,
-# ):
-#     """
-#     A function for dock all generated chai structures and get scores
-
-#     Args:
-#     - chai_dir (str): The directory of chai structures.
-#         ie. /disk2/fli/REVIVAL2/zs/chai/mut_structure/PfTrpB-4bromo
-#             with the following structure:
-#                 I165A:I183A:Y301V
-#                     I165A:I183A:Y301V_0.cif
-#                     I165A:I183A:Y301V_0.npz
-#                     ...
-#     - cofactor_type (str): The type of cofactor based on LIB_INFO_DICT
-#         ie. cofactor, inactivated-cofactor, etc.
-#     - vina_dir (str): The directory to save the vina results.
-#     - pH (float): The pH for docking.
-#     - method (str): The docking method, either 'vina' or 'ad4'.
-#     - size_x (float): The size in x for docking.
-#     - size_y (float): The size in y for docking.
-#     - size_z (float): The size in z for docking.
-#     - num_modes (int): The number of modes for docking.
-#     - exhaustiveness (int): The exhaustiveness for docking.
-#     - rerun (bool): Whether to rerun the docking.
-#     """
-
-#     output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
-
-#     keys_to_remove = [
-#         cofactor_type,
-#         cofactor_type.replace("-cofactor", ""),
-#         cofactor_type.replace("cofactor", ""),
-#         "cofactor",
-#         "-cofactor",
-#     ]
-#     lib_name = os.path.basename(chai_dir)
-#     for key in keys_to_remove:
-#         lib_name = lib_name.replace(key, "")
-
-#     lib_dict = LIB_INFO_DICT[lib_name]
-
-#     cofactor_list = []
-#     for cofactor_smiles, cofactor in zip(
-#         lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
-#     ):
-#         cofactor_list.append((cofactor_smiles, cofactor, "B"))
-
-#     print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
-#     print(cofactor_list)
-
-#     for var_path in tqdm(sorted(glob(os.path.join(chai_dir, "*", "*.cif")))):
-#         # ie zs/chai/mut_structure/PfTrpB-4bromo_inactivated-cofactor/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
-
-#         # check if the file is already docked
-#         log_txt = glob(os.path.join(output_dir, get_file_name(var_path), "*_log.txt"))
-#         if len(log_txt) > 0 and (rerun is False):
-#             print(f"{var_path} already docked")
-#             continue
-
-#         var_dir = (
-#             os.path.normpath(
-#                 checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
-#             )
-#             + "/"
-#         )
-
-#         try:
-#             dock(
-#                 pdb_path=var_path,
-#                 smiles=lib_dict["substrate-smiles"],
-#                 ligand_name=lib_dict["substrate"],
-#                 residues=list(lib_dict["positions"].values()),
-#                 cofactors=cofactor_list,
-#                 protein_dir=var_dir,
-#                 ligand_dir=var_dir,
-#                 output_dir=var_dir,
-#                 pH=pH,
-#                 method=method,
-#                 size_x=size_x,
-#                 size_y=size_y,
-#                 size_z=size_z,
-#                 num_modes=num_modes,
-#                 exhaustiveness=exhaustiveness,
-#             )
-#         except Exception as e:
-#             print(f"Error in docking {var_path}: {e}")
-
-
 def dock(
     pdb_path: str,
     smiles: str,
@@ -275,9 +176,9 @@ def dock(
     output_dir: str,
     pH: float,
     method: str,
-    size_x=5.0,
-    size_y=5.0,
-    size_z=5.0,
+    size_x=30.0,
+    size_y=30.0,
+    size_z=30.0,
     num_modes=9,
     exhaustiveness=32,
 ):
@@ -327,9 +228,9 @@ def dock_vina(
     protein_name: str,
     output_dir: str,
     residues: list,
-    size_x=5.0,
-    size_y=5.0,
-    size_z=5.0,
+    size_x=30.0,
+    size_y=30.0,
+    size_z=30.0,
     num_modes=9,
     exhaustiveness=32,
     method="vina",
@@ -390,9 +291,9 @@ def make_config_for_vina(
     ligand_file: str,
     residues: list,
     output_file: str,
-    size_x=5.0,
-    size_y=5.0,
-    size_z=5.0,
+    size_x=30.0,
+    size_y=30.0,
+    size_z=30.0,
     num_modes=9,
     exhaustiveness=32,
     cofactor_files: list = None,
@@ -804,14 +705,14 @@ def format_ligand(
         if ("[" == smiles[0]) and ("]" == smiles[-1]):  # Detect ions
             element_smiles = re.search(r"\[([A-Za-z]+)", smiles).group(1)
             print(f"Handling ion: {name} as {element_smiles}")
+            print(f"extracting from {full_pdb_path}")
             # Generate PDB file for the ion
             ion_pdb_file = os.path.join(this_ligand_dir, name + ".pdb")
-            with open(ion_pdb_file, "w") as pdb_file:
-                pdb_file.write(
-                    f"ATOM      1  {element_smiles}   ION     1       0.000   0.000   0.000  1.00  0.00      {element_smiles}\n"
-                    "TER\n"
-                    "END\n"
-                )
+            extract_ions(
+                input_file_path=full_pdb_path,
+                output_file_path=ion_pdb_file,
+                ion=element_smiles,
+            )
 
             # Convert PDB to PDBQT using Open Babel
             subprocess.run(
@@ -909,6 +810,40 @@ def format_ligand(
         raise
 
     return ligand_pdbqt_file, fe_pdbqt_file, ligand_sdf_file
+
+
+def extract_ions(input_file_path, output_file_path, ion):
+    """
+    Extract lines starting with ATOM containing the specified ion from a PDB or CIF file.
+
+    Args:
+        input_file_path (str): Path to the input PDB or CIF file.
+        output_file_path (str): Path to save the extracted ion lines.
+        ion (str): Name of the ion to extract (e.g., "Na", "Cl").
+    """
+    is_cif = input_file_path.endswith(".cif")
+    ion_found = False
+
+    with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
+        for line in infile:
+            if line.startswith("ATOM") or line.startswith("HETATM"):
+                fields = line.split()
+                if len(fields) >= 4:
+                    atom_name = fields[2].strip()  # Atom name
+                    residue_name = fields[3].strip()  # Residue name
+                    if (
+                        atom_name.upper() == ion.upper()
+                        or residue_name.upper() == ion.upper()
+                    ):
+                        outfile.write(line)
+                        ion_found = True
+
+    if not ion_found:
+        print(f"No ions matching '{ion}' were found in the file.")
+    else:
+        print(
+            f"Ions matching '{ion}' were successfully extracted to {output_file_path}."
+        )
 
 
 def get_coordinates_without_chain_id(pdb_file, seq_position):
@@ -1104,7 +1039,7 @@ class VinaResults(ZSData):
         df["vina"] = df[[f"vina_{r}" for r in range(self._num_rep)]].mean(axis=1)
 
         # add rank where the most negative score means rank 1
-        df["vina_rank"] = df["vina"].rank(ascending=False)
+        df["vina_rank"] = df["vina"].rank(ascending=True)
 
         return df
 

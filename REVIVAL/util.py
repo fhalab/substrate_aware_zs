@@ -111,31 +111,44 @@ def get_chain_ids(pdb_file_path: str) -> list:
 
 
 def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: str):
-
     """
-    Get the chain given ID
-    """
+    Extract specified chains and save them to a new PDB file.
 
-    # check if cif # TODO test
+    Args:
+        input_file_path (str): Path to the input PDB or CIF file.
+        output_file_path (str): Path to save the output PDB file.
+        chain_id (str): String of chain IDs to extract.
+            ie. "A", "A,B", "A,B,C", etc.
+    """
+    # Check if input is a CIF file
     if os.path.splitext(input_file_path)[-1] == ".cif":
         structure = convert_cif_to_pdb(
             cif_file=input_file_path, pdb_file="", ifsave=False
         )
-
     else:
         # Parse the input PDB file
         parser = PDBParser()
         structure = parser.get_structure("protein", input_file_path)
 
-    # Iterate over the chains and replace the original chain ID with the modified chain ID
-    for model in structure:
-        for chain in model:
-            if chain.id == chain_id:
-                io = PDBIO()
-                io.set_structure(chain)
-                io.save(output_file_path)
+    # convert chain_id to a list
+    chain_ids = chain_id.split(",")
 
-    print(f"Chain {chain_id} has been saved to {output_file_path}")
+    # Initialize PDBIO for writing the output
+    io = PDBIO()
+
+    # Open the output file for writing
+    with open(output_file_path, "w") as fout:
+        for model in structure:
+            for chain in model:
+                if chain.id in chain_ids:
+                    # Save the chain to a temporary file-like object
+                    io.set_structure(chain)
+                    io.save(fout)  # Save chain to the output file
+                    fout.write("\n")  # Add a newline for separation
+
+    print(f"Chains {', '.join(chain_ids)} have been saved to {output_file_path}")
+
+
 
 
 def modify_PDB_chain(

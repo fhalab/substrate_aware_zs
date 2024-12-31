@@ -30,6 +30,11 @@ if __name__ == "__main__":
         pattern="data/meta/not_scaled/PfTrpB-*.csv",
         cofactor_type="inactivated-cofactor",
     )
+    
+    run_parse_vina_results(
+        pattern="data/meta/not_scaled/PfTrpB-4*.csv",
+        cofactor_type="cofactor",
+    )
 
     # def run_parse_vina_results(
     #     pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
