@@ -27,14 +27,14 @@ if __name__ == "__main__":
 
     # run_gen_chai_structure("data/meta/not_scaled/*.csv")
     run_gen_chai_structure([ 
-        # "data/meta/not_scaled/PfTrpB-4bromo.csv", 
-        # "data/meta/not_scaled/PfTrpB-4cyano.csv",
+        "data/meta/not_scaled/PfTrpB-4bromo.csv", 
+        "data/meta/not_scaled/PfTrpB-4cyano.csv",
         "data/meta/not_scaled/PfTrpB-5bromo.csv",
-        # "data/meta/not_scaled/PfTrpB-5chloro.csv",
+        "data/meta/not_scaled/PfTrpB-5chloro.csv",
         "data/meta/not_scaled/PfTrpB-5cyano.csv",
         "data/meta/not_scaled/PfTrpB-5iodo.csv",
-        # "data/meta/not_scaled/PfTrpB-6chloro.csv",
-        # "data/meta/not_scaled/PfTrpB-7bromo.csv",
+        "data/meta/not_scaled/PfTrpB-6chloro.csv",
+        "data/meta/not_scaled/PfTrpB-7bromo.csv",
         "data/meta/not_scaled/PfTrpB-7iodo.csv",
         "data/meta/not_scaled/PfTrpB-7methyl.csv",
         "data/meta/not_scaled/PfTrpB-56chloro.csv",
@@ -42,7 +42,7 @@ if __name__ == "__main__":
         # "data/meta/not_scaled/Rma-CB.csv",
         # "data/meta/not_scaled/Rma-CSi.csv",
         # "data/meta/not_scaled/ParLQ.csv",
-    ])
+    ], gen_opt="joint-cofactor-no-substrate")
 
     # parse_all_chai_scores(chai_struct_dir= "zs/chai/mut_structure")
 

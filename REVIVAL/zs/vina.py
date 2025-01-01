@@ -160,6 +160,7 @@ def dock_task(
 
     if len(log_txt) > 0 and (rerun is False):
         print(f"{var_path} already docked")
+        print(f"See {log_txt}")
         return
     elif len(log_txt) == 0 and rerun is False:
         print(f"{var_path} not docked yet or successful")

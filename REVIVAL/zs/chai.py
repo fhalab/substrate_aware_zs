@@ -56,6 +56,7 @@ class ChaiData(ZSData):
         zs_dir: str = "zs",
         chai_dir: str = "chai",
         chai_struct_dir: str = "mut_structure",
+        gen_opt: str = "joint",
         ifrerun: bool = False,
         torch_device: str = "cuda",
     ):
@@ -73,7 +74,9 @@ class ChaiData(ZSData):
             zs_dir,
         )
 
-        self._chai_dir = checkNgen_folder(os.path.join(self._zs_dir, chai_dir))
+        self._gen_opt = gen_opt
+
+        self._chai_dir = checkNgen_folder(os.path.join(self._zs_dir, f"{chai_dir}_{self._gen_opt}"))
         self._chai_struct_dir = checkNgen_folder(
             os.path.join(self._chai_dir, chai_struct_dir)
         )
@@ -103,19 +106,37 @@ class ChaiData(ZSData):
 
             input_fasta = f">protein|{self.lib_name}_{var}\n{seq}\n"
 
-            # todo confirm substrate and cofactor smiles exists
-            smile_dets = (
-                self.lib_info["substrate"] + "_" + "-".join(self.lib_info["cofactor"])
-            )
-            join_smile = (
-                self.lib_info["substrate-smiles"]
-                + "."
-                + ".".join(self.lib_info["cofactor-smiles"])
-            )
+            sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
+            sub_dets = self.lib_info["substrate"]
 
-            smiles = canonicalize_smiles(join_smile)
-            # now add substrate
-            input_fasta += f">ligand|{smile_dets}\n{join_smile}\n"
+            cofactor_smiles = canonicalize_smiles(".".join(self.lib_info["cofactor-smiles"]))
+            cofactor_dets = "-".join(self.lib_info["cofactor"])
+
+            joint_smiles = sub_smiles + "." + cofactor_smiles
+            joint_dets = sub_dets + "_" + cofactor_dets
+
+            if self._gen_opt == "joint-cofactor-no-substrate":
+
+                # now add cofactor
+                input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
+
+            elif self._gen_opt == "joint-cofactor-seperate-substrate":
+
+                # add substrate first
+                input_fasta += f">ligand|{sub_dets}\n{sub_smiles}\n"
+
+                # now get cofactor smiles
+                input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
+
+            elif self._gen_opt == "substrate-no-cofactor":
+
+                # now add substrate
+                input_fasta += f">ligand|{sub_dets}\n{sub_smiles}\n"
+
+            else:
+            
+                # now add substrate
+                input_fasta += f">ligand|{joint_smiles}\n{joint_dets}\n"
 
             # only rerun if the flag is set and the output folder doies not exists
             if self._ifrerun or not os.path.exists(output_subdir):
@@ -127,7 +148,7 @@ class ChaiData(ZSData):
 
                 print(f"Running chai for {var}...")
 
-                output_paths = run_inference(
+                run_inference(
                     fasta_file=fasta_path,
                     output_dir=output_subdir,
                     # 'default' setup
@@ -180,38 +201,19 @@ class ChaiData(ZSData):
 
         return renamed_output_files, renamed_scores_files
 
-            # run_chai(
-            #     label=var,
-            #     seq=seq,
-            #     smiles=,
-            #     output_dir=self._chai_struct_subdir,
-            # )
-
-            # #
-
-            # # rename all the cif and npz files
-            # for file in glob(f"{subfoler}/*.cif"):
-            #     new_file = file.replace("pred.model_idx", var)
-            #     os.rename(file, new_file)
-
-            # for file in glob(f"{subfoler}/*.npz"):
-            #     new_file = file.replace("scores.model_idx", var)
-            #     os.rename(file, new_file)
-
-            # # then rename the whole subfolder if the lib name is repeated in the subfolder name
-            # if self.lib_name in subfoler:
-            # new_subfolder = os.path.join(os.path.dirname(subfoler), var_name)
-            # os.rename(subfoler, new_subfolder)
-
 
 def run_gen_chai_structure(
-    pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {}
+    pattern: str | list = "data/meta/scale2parent/*.csv", 
+    gen_opt: str = "joint",
+    kwargs: dict = {}
 ):
     """
     Run the chai gen mut file function for all libraries
 
     Args:
     - pattern: str | list: the pattern for the input csv files
+    - gen_opt: str: The generation option for the chai structure
+    - kwargs: dict: The arguments for the ChaiData class
     """
 
     if isinstance(pattern, str):
@@ -221,7 +223,7 @@ def run_gen_chai_structure(
 
     for lib in lib_list:
         print(f"Running chai gen mut file for {lib}...")
-        ChaiData(input_csv=lib, **kwargs)
+        ChaiData(input_csv=lib, gen_opt=gen_opt, **kwargs)
 
 
 def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"):
