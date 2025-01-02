@@ -5,6 +5,7 @@ Util functions
 from __future__ import annotations
 
 import os
+import json
 
 from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
@@ -68,6 +69,12 @@ def get_dir_name(file_path: str) -> str:
     """
 
     return os.path.basename(os.path.dirname(file_path))
+
+
+def load_json(file_path: str) -> dict:
+    """Load JSON content from a file."""
+    with open(file_path, "r") as f:
+        return json.load(f)
 
 
 def read_parent_fasta(fasta_path: str) -> str:
