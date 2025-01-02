@@ -20,32 +20,13 @@ from rdkit import Chem
 from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name
-
-
-def canonicalize_smiles(smiles_string: str) -> str:
-
-    """
-    A function to canonicalize a SMILES string.
-
-    Args:
-    - smiles_string (str): The input SMILES string.
-
-    Returns:
-    - str: The canonicalized SMILES string.
-    """
-
-    molecule = Chem.MolFromSmiles(smiles_string)
-    if molecule:
-        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
-        return canonical_smiles
+from REVIVAL.util import checkNgen_folder, get_file_name, canonicalize_smiles
 
 
 class ChaiData(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -57,13 +38,35 @@ class ChaiData(ZSData):
         chai_dir: str = "chai",
         chai_struct_dir: str = "mut_structure",
         gen_opt: str = "joint",
+        cofactor_dets: str = "cofactor",
         ifrerun: bool = False,
         torch_device: str = "cuda",
     ):
 
+        """
+        A class to generate the chai structure for each variant.
+
+        Args:
+        - input_csv, str: The path to the input csv file
+        - scale_fit, str: The scale to fit the fitness to
+        - combo_col_name, str: The column name for the combo
+        - var_col_name, str: The column name for the variant
+        - mut_col_name, str: The column name for the mutation
+        - pos_col_name, str: The column name for the position
+        - seq_col_name, str: The column name for the sequence
+        - fit_col_name, str: The column name for the fitness
+        - seq_dir, str: The path to the sequence directory
+        - zs_dir, str: The path to the zs directory
+        - chai_dir, str: The path to the chai directory
+        - chai_struct_dir, str: The path to the chai structure directory
+        - gen_opt, str: The generation option for the chai structure
+        - cofactor_dets, str: The cofactor details, ie "cofactor" or "inactivated-cofactor"
+        - ifrerun, bool: A flag to rerun the chai structure
+        - torch_device, str: The torch device to use
+        """
+
         super().__init__(
             input_csv,
-            scale_fit,
             combo_col_name,
             var_col_name,
             mut_col_name,
@@ -87,6 +90,16 @@ class ChaiData(ZSData):
         self._ifrerun = ifrerun
         self._torch_device = torch_device
 
+        self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
+        self._sub_dets = self.lib_info["substrate"]
+
+        self._cofactor_smiles = canonicalize_smiles(".".join(self.lib_info[f"{cofactor_dets}-smiles"]))
+        self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
+
+        self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
+        self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
+
+
         self._gen_chai_structure()
 
     def _gen_chai_structure(self):
@@ -106,37 +119,40 @@ class ChaiData(ZSData):
 
             input_fasta = f">protein|{self.lib_name}_{var}\n{seq}\n"
 
-            sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
-            sub_dets = self.lib_info["substrate"]
+            if self._gen_opt == "substrate-no-cofactor":
 
-            cofactor_smiles = canonicalize_smiles(".".join(self.lib_info["cofactor-smiles"]))
-            cofactor_dets = "-".join(self.lib_info["cofactor"])
+                # add substrate
+                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
+            
+            elif self._gen_opt == "joint-cofactor-no-substrate":
 
-            joint_smiles = sub_smiles + "." + cofactor_smiles
-            joint_dets = sub_dets + "_" + cofactor_dets
-
-            if self._gen_opt == "joint-cofactor-no-substrate":
-
-                # now add cofactor
-                input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
+                # add cofactor
+                input_fasta += f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
 
             elif self._gen_opt == "joint-cofactor-seperate-substrate":
 
                 # add substrate first
-                input_fasta += f">ligand|{sub_dets}\n{sub_smiles}\n"
+                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
 
-                # now get cofactor smiles
-                input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
+                # add cofactor smiles
+                input_fasta += f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
 
-            elif self._gen_opt == "substrate-no-cofactor":
+            elif self._gen_opt == "seperate":
+                
+                # add joint
+                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
 
-                # now add substrate
-                input_fasta += f">ligand|{sub_dets}\n{sub_smiles}\n"
+                    # loop through the cofactors and add them individually
+                for cofactor_dets, cofactor_smiles in zip(
+                    self.lib_info["cofactor"], self.lib_info["cofactor-smiles"]
+                ):
+                    cofactor_smiles = canonicalize_smiles(cofactor_smiles)
+                    input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
 
             else:
             
-                # now add substrate
-                input_fasta += f">ligand|{joint_smiles}\n{joint_dets}\n"
+                # add substrate
+                input_fasta += f">ligand|{self._joint_smiles}\n{self._joint_dets}\n"
 
             # only rerun if the flag is set and the output folder doies not exists
             if self._ifrerun or not os.path.exists(output_subdir):
@@ -203,7 +219,7 @@ class ChaiData(ZSData):
 
 
 def run_gen_chai_structure(
-    pattern: str | list = "data/meta/scale2parent/*.csv", 
+    pattern: str | list = "data/meta/not_scaled/*.csv", 
     gen_opt: str = "joint",
     kwargs: dict = {}
 ):
