@@ -5,12 +5,43 @@ This file contains variables specifically to each dataset
 # from __future__ import annotations
 
 from copy import deepcopy
+
 # from itertools import combinations
 
 # import numpy as np
 # import pandas as pd
 
 # from REVIVAL.util import get_file_name
+
+
+TrpB_CHEM = {
+    "inactivated-cofactor": ["PLP", "Na+"],
+    "inactivated-cofactor-smiles": [
+        "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+        "[Na+]",
+    ],
+    "transiminated-cofactor": ["aldimine", "Na+"],
+    "transiminated-cofactor-smiles": [
+        "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+        "[Na+]",
+    ],
+    "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+    "cofactor-smiles": [
+        "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+        "[Na+]",
+    ],
+    "cofactor-distances": {
+        "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
+        "GLU-NH_1": (
+            ("A", 104, "GLU", "OE1", False),
+            ("B", 1, "LIG", "N_1", True),
+        ),
+        "GLU-NH_2": (
+            ("A", 104, "GLU", "OE2", False),
+            ("B", 1, "LIG", "N_1", True),
+        ),
+    },  # if need to add H
+}
 
 LIB_INFO_DICT = deepcopy(
     {
@@ -122,6 +153,11 @@ LIB_INFO_DICT = deepcopy(
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
                 "[Na+]",
             ],
+            "transiminated-cofactor": ["aldimine", "Na+"],
+            "transiminated-cofactor-smiles": [
+                "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+                "[Na+]",
+            ],
             "cofactor": ["PLS", "Na+"],
             "cofactor-smiles": ["CC1=NC=C(COP(O)(O)=O)C(CNC(C(O)=O)CO)=C1O", "[Na+]"],
             "positions": {1: 165, 2: 183, 3: 301},
@@ -133,27 +169,28 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "4bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C(=C1)Br",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(Br)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
             "positions": {1: 165, 2: 183, 3: 301},
             "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "ditances": {
-                "C-C":(("B", 1, "LIG", "C_7", False), ("B", 1, "LIG", "C_9", False)),
-                "GLU-NH_1":(("A", 104, "GLU", "OE1", False), ("B", 1, "LIG", "N_1", True)),
-                "GLU-NH_2":(("A", 104, "GLU", "OE2", False), ("B", 1, "LIG", "N_1", True)),
-                }, # if need to add H
             "family": "TrpB",
             "project": "multi-substrate",
         },
@@ -161,16 +198,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "5bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Br",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Br)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -184,16 +227,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "7bromo",
             "substrate-smiles": "C1=CC2=C(C(=C1)Br)NC=C2",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(Br)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -207,16 +256,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "5chloro",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Cl",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -230,16 +285,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "6chloro",
             "substrate-smiles": "C1=CC(=CC2=C1C=CN2)Cl",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -253,16 +314,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "56chloro",
             "substrate-smiles": "ClC(C=C1NC=CC1=C2)=C2Cl",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -276,16 +343,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "4cyano",
             "substrate-smiles": "C1=CC(=C2C=CNC2=C1)C#N",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(C#N)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -299,16 +372,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "5cyano",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1C#N",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(C=C23)C#N)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -322,16 +401,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "5iodo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1I",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(I)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -345,16 +430,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "7iodo",
             "substrate-smiles": "C1=CC2=C(C(=C1)I)NC=C2",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(I)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -368,16 +459,22 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "7methyl",
             "substrate-smiles": "CC1=CC=CC2=C1NC=C2",
-            "inactivated-cofactor": ["PLP", "Na+"],
-            "inactivated-cofactor-smiles": [
-                "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
-                "[Na+]",
-            ],
-            "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
-            "cofactor-smiles": [
-                "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
-                "[Na+]",
-            ],
+            **TrpB_CHEM,
+            # "inactivated-cofactor": ["PLP", "Na+"],
+            # "inactivated-cofactor-smiles": [
+            #     "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
+            #     "[Na+]",
+            # ],
+            # "transiminated-cofactor": ["aldimine", "Na+"],
+            # "transiminated-cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
+            # "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
+            # "cofactor-smiles": [
+            #     "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
+            #     "[Na+]",
+            # ],
             "intermediate-smiles": [
                 "CC1=C2NC=C(C[C@H](\[NH+]=C\C3=C(COP([O-])([O-])=O)C=NC(C)=C3[O-])C([O-])=O)C2=CC=C1",
                 "[Na+]",

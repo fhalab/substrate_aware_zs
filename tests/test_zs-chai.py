@@ -43,7 +43,9 @@ if __name__ == "__main__":
         # "data/meta/not_scaled/Rma-CB.csv",
         # "data/meta/not_scaled/Rma-CSi.csv",
         # "data/meta/not_scaled/ParLQ.csv",
-    ], gen_opt="joint-cofactor-no-substrate")
+    ], 
+    gen_opt="joint-cofactor-no-substrate",
+    cofactor_dets="transiminated-cofactor")
 
     # parse_all_chai_scores(chai_struct_dir= "zs/chai/mut_structure")
 

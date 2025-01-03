@@ -27,6 +27,7 @@ class ChaiData(ZSData):
     def __init__(
         self,
         input_csv: str,
+        scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -66,20 +67,23 @@ class ChaiData(ZSData):
         """
 
         super().__init__(
-            input_csv,
-            combo_col_name,
-            var_col_name,
-            mut_col_name,
-            pos_col_name,
-            seq_col_name,
-            fit_col_name,
-            seq_dir,
-            zs_dir,
+            input_csv=input_csv,
+            scale_fit=scale_fit,
+            combo_col_name=combo_col_name,
+            var_col_name=var_col_name,
+            mut_col_name=mut_col_name,
+            pos_col_name=pos_col_name,
+            seq_col_name=seq_col_name,
+            fit_col_name=fit_col_name,
+            seq_dir=seq_dir,
+            zs_dir=zs_dir,
         )
 
         self._gen_opt = gen_opt
 
-        self._chai_dir = checkNgen_folder(os.path.join(self._zs_dir, f"{chai_dir}_{self._gen_opt}"))
+        self._chai_dir = checkNgen_folder(
+            os.path.join(self._zs_dir, f"{chai_dir}_{self._gen_opt}")
+        )
         self._chai_struct_dir = checkNgen_folder(
             os.path.join(self._chai_dir, chai_struct_dir)
         )
@@ -93,12 +97,13 @@ class ChaiData(ZSData):
         self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
         self._sub_dets = self.lib_info["substrate"]
 
-        self._cofactor_smiles = canonicalize_smiles(".".join(self.lib_info[f"{cofactor_dets}-smiles"]))
+        self._cofactor_smiles = canonicalize_smiles(
+            ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
+        )
         self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
 
         self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
         self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
-
 
         self._gen_chai_structure()
 
@@ -123,11 +128,13 @@ class ChaiData(ZSData):
 
                 # add substrate
                 input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
-            
+
             elif self._gen_opt == "joint-cofactor-no-substrate":
 
                 # add cofactor
-                input_fasta += f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                )
 
             elif self._gen_opt == "joint-cofactor-seperate-substrate":
 
@@ -135,14 +142,16 @@ class ChaiData(ZSData):
                 input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
 
                 # add cofactor smiles
-                input_fasta += f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                )
 
             elif self._gen_opt == "seperate":
-                
+
                 # add joint
                 input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
 
-                    # loop through the cofactors and add them individually
+                # loop through the cofactors and add them individually
                 for cofactor_dets, cofactor_smiles in zip(
                     self.lib_info["cofactor"], self.lib_info["cofactor-smiles"]
                 ):
@@ -150,7 +159,7 @@ class ChaiData(ZSData):
                     input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
 
             else:
-            
+
                 # add substrate
                 input_fasta += f">ligand|{self._joint_smiles}\n{self._joint_dets}\n"
 
@@ -219,9 +228,10 @@ class ChaiData(ZSData):
 
 
 def run_gen_chai_structure(
-    pattern: str | list = "data/meta/not_scaled/*.csv", 
+    pattern: str | list = "data/meta/not_scaled/*.csv",
     gen_opt: str = "joint",
-    kwargs: dict = {}
+    cofactor_dets: str = "cofactor",
+    kwargs: dict = {},
 ):
     """
     Run the chai gen mut file function for all libraries
@@ -229,6 +239,7 @@ def run_gen_chai_structure(
     Args:
     - pattern: str | list: the pattern for the input csv files
     - gen_opt: str: The generation option for the chai structure
+    - cofactor_dets: str: The cofactor details, ie "cofactor" or "inactivated-cofactor"
     - kwargs: dict: The arguments for the ChaiData class
     """
 
@@ -239,7 +250,7 @@ def run_gen_chai_structure(
 
     for lib in lib_list:
         print(f"Running chai gen mut file for {lib}...")
-        ChaiData(input_csv=lib, gen_opt=gen_opt, **kwargs)
+        ChaiData(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
 
 
 def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"):
