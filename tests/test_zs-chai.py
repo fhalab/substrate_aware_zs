@@ -40,13 +40,14 @@ if __name__ == "__main__":
         # "data/meta/not_scaled/PfTrpB-7methyl.csv",
         # "data/meta/not_scaled/PfTrpB-56chloro.csv",
         
-        "data/meta/not_scaled/ParLQ.csv",
+
         "data/meta/not_scaled/Rma-CB.csv",
         "data/meta/not_scaled/Rma-CSi.csv",
+        "data/meta/not_scaled/ParLQ.csv",
     ], 
     # gen_opt="joint-cofactor-no-substrate",
     # cofactor_dets="transiminated-cofactor",
-    gen_opt="seperate",
+    gen_opt="joint",
     cofactor_dets="cofactor"
     )
 

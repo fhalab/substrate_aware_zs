@@ -161,7 +161,7 @@ class ChaiData(ZSData):
             else:
 
                 # add substrate
-                input_fasta += f">ligand|{self._joint_smiles}\n{self._joint_dets}\n"
+                input_fasta += f">ligand|{self._joint_dets}\n{self._joint_smiles}\n"
 
             # only rerun if the flag is set and the output folder doies not exists
             if self._ifrerun or not os.path.exists(output_subdir):

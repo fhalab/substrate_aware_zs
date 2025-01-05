@@ -53,6 +53,7 @@ def dock_lib_parallel(
     size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
+    score_only=False,
     regen=False,
     rerun=False,
     max_workers=24,  # Number of parallel workers
@@ -100,6 +101,7 @@ def dock_lib_parallel(
                 residues=residues,
                 substrate_chain_ids=substrate_chain_ids,
                 freeze_opt=freeze_opt,
+                score_only=score_only,
                 pH=pH,
                 method=method,
                 size_x=size_x,
@@ -128,6 +130,7 @@ def dock_task(
     residues: list = None,
     substrate_chain_ids: Union[list, str] = "B",
     freeze_opt: str = None,
+    score_only=False,
     pH=7.4,
     method="vina",
     size_x=10.0,
@@ -175,6 +178,7 @@ def dock_task(
             substrate_chain_ids=substrate_chain_ids,
             cofactors=cofactor_list,
             freeze_opt=freeze_opt,
+            score_only=score_only,
             protein_dir=var_dir,
             ligand_dir=var_dir,
             output_dir=var_dir,
@@ -204,6 +208,7 @@ def dock(
     residues: list = None,
     substrate_chain_ids: Union[list, str] = "B",
     freeze_opt: str = None,
+    score_only=False,
     size_x=10.0,
     size_y=10.0,
     size_z=10.0,
@@ -219,6 +224,10 @@ def dock(
     protein_name, protein_pdb_file, protein_pdbqt = format_pdb(
         file_path=pdb_path, protein_dir=protein_dir, pH=pH, regen=regen
     )
+
+    if score_only:
+        from_pdb = True
+        # TODO might need to extract the main ligand from the jointly docked file
 
     # Step 2: Process the main ligand
     ligand_pdbqt, _, ligand_sdf = format_ligand(
