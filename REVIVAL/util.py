@@ -4,6 +4,7 @@ Util functions
 
 from __future__ import annotations
 
+import re
 import os
 import json
 
@@ -160,8 +161,6 @@ def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: s
     print(f"Chains {', '.join(chain_ids)} have been saved to {output_file_path}")
 
 
-
-
 def modify_PDB_chain(
     input_file_path: str,
     output_file_path: str,
@@ -284,6 +283,46 @@ def pdb2seq(pdb_file_path: str, chain_id: str = "A") -> str:
     }
 
     return str(chains[[chain for chain in chains.keys() if chain_id in chain][0]])
+
+
+def replace_residue_names_auto(
+    input_file: str, 
+    output_file: str,
+    residue_prefix: str = "LIG",
+    new_residue: str = "LIG"):
+    """
+    Automatically detect and replace residue names in a PDB file that match a specific prefix.
+
+    Args:
+        input_file (str): Path to the input PDB file.
+        output_file (str): Path to save the modified PDB file.
+        residue_prefix (str): Prefix of residue names to replace (e.g., "LIG").
+        new_residue (str): New residue name to replace with.
+    """
+
+    detected_residues = set()  # To store dynamically detected residue names
+    pattern = re.compile(f"^{residue_prefix}_\\w$")  # Regex to detect residues like LIG_B, LIG_C
+
+    with open(input_file, "r") as infile:
+        lines = infile.readlines()
+
+    # First pass: Detect residue names dynamically
+    for line in lines:
+        if line.startswith(("ATOM", "HETATM")):
+            long_res_name = line[17:22]
+            if pattern.match(long_res_name):
+                detected_residues.add(long_res_name)
+
+    print(f"Detected residues to replace: {detected_residues}")
+
+    # batch replace detected residues with new residue name
+    with open(output_file, "w") as outfile:
+        for line in lines:
+            if line.startswith(("ATOM", "HETATM")):
+                long_res_name = line[17:22]
+                if long_res_name in detected_residues:
+                    line = line.replace(long_res_name, new_residue)
+                outfile.write(line)
 
 
 def find_missing_str(longer: str, shorter: str) -> [str, str]:

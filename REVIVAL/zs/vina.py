@@ -33,7 +33,7 @@ from rdkit.Chem import AllChem
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
+from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure, replace_residue_names_auto
 
 
 warnings.filterwarnings("ignore")
@@ -228,6 +228,12 @@ def dock(
     # Step 3: Process cofactors
     cofactor_pdbqts = []
     for cofactor_smiles, cofactor_name, cofactor_chainid in cofactors:
+
+        if freeze_opt in cofactor_name:
+            from_pdb = True
+        else:
+            from_pdb = False
+
         cofactor_pdbqt, _, _ = format_ligand(
             smiles=cofactor_smiles,
             name=cofactor_name,
@@ -236,8 +242,11 @@ def dock(
             full_pdb_path=pdb_path,
             chain_id=cofactor_chainid,
             regen=regen,
+            from_pdb=from_pdb,
         )
         cofactor_pdbqts.append(cofactor_pdbqt)
+    
+    print(f"cofactor_pdbqt: {cofactor_pdbqt}")
 
     if method in ["vina", "ad4"]:
         dock_vina(
@@ -339,9 +348,9 @@ def dock_vina(
         fout.write(cmd_return.stdout.decode("utf-8"))
 
     # Step 3: Convert to PDB
-    # convert_pdbqt_to_pdb(
-    #     pdbqt_file=docked_ligand_pdb, pdb_file=docked_ligand_pdb, disable_bonding=True
-    # )
+    convert_pdbqt_to_pdb(
+        pdbqt_file=docked_ligand_pdb, pdb_file=docked_ligand_pdb, disable_bonding=True
+    )
 
     return vina_logfile
 
@@ -406,32 +415,99 @@ def make_config_for_vina(
         # zs/vina/PfTrpB-4bromo_cofactor/WT_0/WT_0/WT_0.pdbqt will need to become
         # zs/vina/PfTrpB-4bromo_cofactor/WT_0/comb_cofactor.pdbqt
         receptor_pdbqt = os.path.join(main_dir, "comb_cofactor.pdbqt")
+        receptor_pdb = os.path.join(main_dir, "comb_cofactor.pdb")
 
         # Combine the protein and cofactor files
         merge_pdbqt(
-            input_files=cofactor_files + [protein_pdbqt],
+            input_files=[protein_pdbqt] + cofactor_files,
             output_file_path=receptor_pdbqt,
+        )
+
+        # Convert the combined PDBQT file to PDB
+        convert_pdbqt_to_pdb(
+            pdbqt_file=receptor_pdbqt, pdb_file=receptor_pdb, disable_bonding=True
         )
 
         cofactor2dock = None
 
-    elif "heme" in freeze_opt.lower():
-        # just combine heme and Fe
-        receptor_pdbqt = os.path.join(main_dir, "comb_heme.pdbqt")
+    elif "bound-heme" in freeze_opt.lower():
+        # just combine heme and Fe with ligand bound
+        receptor_pdbqt = os.path.join(main_dir, "comb_bound-heme.pdbqt")
+        receptor_pdb = os.path.join(main_dir, "comb_bound-heme.pdb")
 
         cofactor2freeze = []
         cofactor2dock = []
 
         for c in cofactor_files:
-            if "heme.pdbqt" in c.lower() or "fe.pdbqt" in c.lower():
+            keywords = ["bound-heme.pdbqt", "fe.pdbqt", "bound-heme", "bound heme", "heme-with", "heme with", "heme bound", "heme-bound"]
+            if any(keyword in c.lower() for keyword in keywords):
                 cofactor2freeze.append(c)
             else:
                 cofactor2dock.append(c)
 
+        print(f"cofactor2freeze: {cofactor2freeze}")
+        print(f"cofactor2dock: {cofactor2dock}")
+
         # Combine the protein and cofactor files
         merge_pdbqt(
-            input_files=cofactor2freeze + [protein_pdbqt],
+            input_files=[protein_pdbqt]+cofactor2freeze,
             output_file_path=receptor_pdbqt,
+        )
+
+        # Convert the combined PDBQT file to PDB
+        convert_pdbqt_to_pdb(
+            pdbqt_file=receptor_pdbqt, pdb_file=receptor_pdb, disable_bonding=True
+        )
+
+    elif "heme" in freeze_opt.lower():
+        # just combine heme and Fe
+        receptor_pdbqt = os.path.join(main_dir, "comb_heme.pdbqt")
+        receptor_pdb = os.path.join(main_dir, "comb_heme.pdb")
+
+        cofactor2freeze = []
+        cofactor2dock = []
+
+        for c in cofactor_files:
+            keywords = ["bound-heme", "bound heme", "heme-with", "heme with", "heme bound", "heme-bound"]
+            matched_keyword = next((keyword for keyword in keywords if keyword in c.lower()), None)
+            
+            if matched_keyword:
+                heme_path = c.lower().replace(matched_keyword, "heme")
+                heme_ligand_path = c.lower().replace(matched_keyword, "heme-ligand")
+
+                checkNgen_folder(heme_path)
+                checkNgen_folder(heme_ligand_path)
+
+                # Need to split the heme and heme-ligand, always more atoms in the first file
+                split_pdbqt(
+                    input_file=c, 
+                    output_file_1=heme_path, 
+                    output_file_2=heme_ligand_path
+                )
+                cofactor2freeze.append(heme_path)
+                
+                matching_files = [c for c in cofactor_files if any(keyword in c.lower() for keyword in ["carbene"])]
+
+                if len(matching_files) == 0:
+                    cofactor2dock.append(heme_ligand_path)
+
+            elif "fe.pdbqt" in c.lower():
+                cofactor2freeze.append(c)
+            else:
+                cofactor2dock.append(c)
+
+        print(f"cofactor2freeze: {cofactor2freeze}")
+        print(f"cofactor2dock: {cofactor2dock}")
+
+        # Combine the protein and cofactor files
+        merge_pdbqt(
+            input_files=[protein_pdbqt]+cofactor2freeze,
+            output_file_path=receptor_pdbqt,
+        )
+
+        # Convert the combined PDBQT file to PDB
+        convert_pdbqt_to_pdb(
+            pdbqt_file=receptor_pdbqt, pdb_file=receptor_pdb, disable_bonding=True
         )
 
     else:
@@ -779,6 +855,9 @@ def format_pdb(file_path: str, protein_dir: str, pH: float, regen=False):
         # Now run
         clean_one_pdb(file_path, protein_pdb_file)
 
+        # replace LIG_B etc with LIG
+        replace_residue_names_auto(protein_pdb_file, protein_pdb_file)
+
         # Step 5: Convert to pdbqt for vina
         pdb_to_pdbqt_protein(
             input_path=protein_pdb_file, output_path=protein_pdbqt_file, pH=pH
@@ -814,6 +893,7 @@ def format_ligand(
     name: str,
     ligand_dir: str,
     pH: float,
+    from_pdb: bool = False,
     full_pdb_path=None,
     chain_id=None,
     regen=False,
@@ -828,8 +908,9 @@ def format_ligand(
     ligand_pdbqt_file = os.path.join(this_ligand_dir, name + ".pdbqt")
     ligand_sdf_file = os.path.join(this_ligand_dir, name + ".sdf")
 
-    fe_pdb_file = os.path.join(this_ligand_dir, "Fe.pdb")
-    fe_pdbqt_file = os.path.join(this_ligand_dir, "Fe.pdbqt")
+    fe_subdir = checkNgen_folder(os.path.join(ligand_dir, "Fe"))
+    fe_pdb_file = os.path.join(fe_subdir, "Fe.pdb")
+    fe_pdbqt_file = os.path.join(fe_subdir, "Fe.pdbqt")
 
     # Return existing files if already prepared
     if os.path.isfile(ligand_pdbqt_file) and not regen:
@@ -839,7 +920,7 @@ def format_ligand(
 
     try:
         # Handle ions separately
-        if ("[" == smiles[0]) and ("]" == smiles[-1]):  # Detect ions
+        if len(smiles) > 0 and ("[" == smiles[0]) and ("]" == smiles[-1]):  # Detect ions
             element_smiles = re.search(r"\[([A-Za-z]+)", smiles).group(1)
             print(f"Handling ion: {name} as {element_smiles}")
             print(f"extracting from {full_pdb_path}")
@@ -865,7 +946,7 @@ def format_ligand(
             mol = uncharger.uncharge(protonated_mol)
             mol = Chem.AddHs(mol)
 
-            if mol.GetNumAtoms() == 0:
+            if mol.GetNumAtoms() == 0 or from_pdb:
                 # TODO - Handle this case better
                 print(f"Manually extract {smiles} of {name}")
                 # Generate PDB file for the ion
@@ -876,6 +957,8 @@ def format_ligand(
                     output_file_path=pdb_file,
                     chain_id=chain_id,
                 )
+
+                replace_residue_names_auto(pdb_file, pdb_file)
 
                 processed_pdb_file = os.path.join(
                     this_ligand_dir, name + "_processed.pdb"
@@ -904,22 +987,27 @@ def format_ligand(
                             fe_pdb_file,
                             "-O",
                             fe_pdbqt_file,
-                            "--partialcharge",
-                            "gasteiger",
+                            "--metal"
                         ],
                         check=True,
                     )
 
-                mol = Chem.MolFromPDBFile(pdb_file, sanitize=True)
-                mol = Chem.AddHs(mol)
-                AllChem.EmbedMolecule(mol)
-                writer = Chem.SDWriter(ligand_sdf_file)
-                writer.write(mol)
-                writer.close()
-
-                os.system(
-                    f"conda run -n vina mk_prepare_ligand.py -i {ligand_sdf_file} -o {ligand_pdbqt_file}"
+                if from_pdb:
+                        os.system(
+                    f"obabel {processed_pdb_file} -xr -p {pH} --partialcharge gasteiger -O {ligand_pdbqt_file}"
                 )
+                else:
+
+                    mol = Chem.MolFromPDBFile(processed_pdb_file, sanitize=True)
+                    mol = Chem.AddHs(mol)
+                    AllChem.EmbedMolecule(mol)
+                    writer = Chem.SDWriter(ligand_sdf_file)
+                    writer.write(mol)
+                    writer.close()
+
+                    os.system(
+                        f"conda run -n vina mk_prepare_ligand.py -i {ligand_sdf_file} -o {ligand_pdbqt_file}"
+                    )
 
             else:
                 AllChem.EmbedMolecule(mol)
@@ -1068,6 +1156,7 @@ def merge_pdbqt(input_files: list, output_file_path: str):
     with open(output_file_path, "w") as outfile:
 
         for input_file_path in input_files:
+            print(f"Merging {input_file_path}")
             with open(input_file_path, "r") as infile:
                 for line in infile:
                     if line.startswith("ATOM"):
@@ -1077,6 +1166,57 @@ def merge_pdbqt(input_files: list, output_file_path: str):
         outfile.write("TER\n")
 
     print(f"Combined ATOM lines saved to {output_file_path}")
+
+
+def split_pdbqt(input_file, output_file_1, output_file_2):
+    """
+    Splits a PDBQT file into two parts based on the 'TER' separator and 
+    ensures the first output file always has more atoms than the second.
+
+    Args:
+        input_file (str): Path to the input PDBQT file.
+        output_file_1 (str): Path to save the first split file.
+        output_file_2 (str): Path to save the second split file.
+    """
+    with open(input_file, 'r') as file:
+        lines = file.readlines()
+        
+    # Split the lines based on 'TER'
+    first_part = []
+    second_part = []
+    ter_encountered = False
+
+    for line in lines:
+        if line.strip() == "TER":
+            if not ter_encountered:
+                ter_encountered = True
+                first_part.append(line)
+            else:
+                second_part.append(line)
+        elif not ter_encountered:
+            first_part.append(line)
+        else:
+            second_part.append(line)
+
+    # Counting atoms in both parts
+    num_atoms_1 = sum(1 for line in first_part if line.startswith("ATOM"))
+    num_atoms_2 = sum(1 for line in second_part if line.startswith("ATOM"))
+
+    # Ensure the first output file has more atoms
+    if num_atoms_1 < num_atoms_2:
+        first_part, second_part = second_part, first_part
+        num_atoms_1, num_atoms_2 = num_atoms_2, num_atoms_1
+
+    # Save both parts into separate files
+    with open(output_file_1, 'w') as file:
+        file.writelines(first_part)
+
+    with open(output_file_2, 'w') as file:
+        file.writelines(second_part)
+
+    print(f"File split completed: {output_file_1} with {num_atoms_1} and {output_file_2} with {num_atoms_2} atoms.")
+
+    return num_atoms_1, num_atoms_2
 
 
 ###### extract docking scores ######

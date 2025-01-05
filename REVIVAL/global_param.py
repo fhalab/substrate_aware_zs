@@ -488,8 +488,12 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "Rma",
             "substrate": "NHC-borane",
             "substrate-smiles": "[BH3-]C1=[N+](C)C=CN1C",
-            "cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "cofactor": ["carbene-heme"],
             "cofactor-smiles": [
+                "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=C(C)C(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
+            ],
+            "inactivated-cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "inactivated-cofactor-smiles": [
                 "CC(C(OCC)=O)=[N+]=[N-]",
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
@@ -504,8 +508,12 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "Rma",
             "substrate": "phenyldimethylsilane",
             "substrate-smiles": "[H][Si](C)(C)C1=CC=CC=C1",
-            "cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "cofactor": ["carbene-heme"],
             "cofactor-smiles": [
+                "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=C(C)C(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
+            ],
+            "inactived-cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "inactivated-cofactor-smiles": [
                 "CC(C(OCC)=O)=[N+]=[N-]",
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
@@ -520,8 +528,12 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "ParLQ",
             "substrate": "4-vinylanisole",
             "substrate-smiles": "C=CC1=CC=C(OC)C=C1",
-            "cofactor": ["ethyl diazoacetate (EDA)", "heme b"],
+            "cofactor": ["carbene-heme"],
             "cofactor-smiles": [
+                "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=CC(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
+            ],
+            "inactivated-cofactor": ["ethyl diazoacetate (EDA)", "heme b"],
+            "inactivated-cofactor-smiles": [
                 "[N-]=[N+]=CC(OCC)=O",
                 "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
             ],  # heme b taken from pdb
