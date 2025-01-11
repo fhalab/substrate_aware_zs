@@ -5,14 +5,16 @@ A script for calcalating the bond distances from generated structures
 from __future__ import annotations
 
 import os
-import re
+from glob import glob
 from tqdm import tqdm
+from copy import deepcopy
+
 import numpy as np
 import pandas as pd
-from Bio.PDB import PDBParser, MMCIFParser, PDBIO
+from Bio.PDB import PDBParser, MMCIFParser
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, replace_residue_names_auto
+from REVIVAL.util import checkNgen_folder
 
 
 def get_atom_with_variations(residue, atom_name):
@@ -261,32 +263,50 @@ class BondData(ZSData):
             zs_dir=zs_dir,
         )
 
-        self._struct_dir = struct_dir
-        self._bond_dir = checkNgen_folder(zs_dir, bond_dir)
+        self._struct_dir = os.path.normpath(struct_dir)
+        self._struct_subdir = os.path.join(struct_dir, self.lib_name)
+
+        self._bond_dir = checkNgen_folder(
+            os.path.join(
+                zs_dir,
+                bond_dir,
+                os.path.basename(os.path.dirname(struct_dir)),
+                os.path.basename(struct_dir),
+            )
+        )
+
+        dock_opt = ""
+
+        if "joint" in struct_dir:
+            dock_opt = "_joint"
+        elif "seperate" in struct_dir:
+            dock_opt = "_seperate"
+
+        self._dist_opt = f"cofactor-distances{dock_opt}"
 
         # init the columns based on the keys from the dict
         # {'C-C': (('B', 1, 'LIG', 'C_5', False), ('B', 1, 'LIG', 'C_14', False)),
         # 'GLU-NH_1': (('A', 104, 'GLU', 'OE1', False), ('B', 1, 'LIG', 'N_1', True)),
         # 'GLU-NH_2': (('A', 104, 'GLU', 'OE2', False), ('B', 1, 'LIG', 'N_1', True))}
-        self._dist_list = list(self.lib_info["cofactor-distances"].keys())
+        self._dist_list = list(self.lib_info[self._dist_opt].keys())
 
         # both af and chai output 5 reps
         self._rep_list = [str(i) for i in list(range(5))] + ["agg"]
 
-        if "chai" in struct_dir:
+        if "chai" in self._struct_subdir:
             output_csv = os.path.join(
                 self._bond_dir, "chai", f"{self.lib_name}_bonddist.csv"
             )
-            print(f"Calculating bond distances for {self._struct_dir}...")
+            print(f"Calculating bond distances for {self._struct_subdir}...")
             self.df = self._append_chai_dist()
             # save the dataframe
             self.df.to_csv(output_csv, index=False)
             print(f"Saved bond distances to {output_csv}")
-        elif "af3" in struct_dir:
+        elif "af3" in self._struct_subdir:
             output_csv = os.path.join(
                 self._bond_dir, "af3", f"{self.lib_name}_bonddist.csv"
             )
-            print(f"Calculating bond distances for {self._struct_dir}...")
+            print(f"Calculating bond distances for {self._struct_subdir}...")
             self.df = self._append_af_dist()
             # save the dataframe
             self.df.to_csv(output_csv, index=False)
@@ -322,27 +342,28 @@ class BondData(ZSData):
         # loop over all variants and calculate the distances and dist_list and add them to the dataframe
         for i, row in tqdm(df.iterrows()):
 
-            var_name = row[self.var_col_name].lower().replace(":", "_")
+            var_name = row[self._var_col_name].lower().replace(":", "_")
 
             # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v
-            struct_dir = os.path.join(self._struct_dir, var_name)
+            var_struct_dir = os.path.join(self._struct_subdir, var_name)
 
             for d, dist in enumerate(self._dist_list):
                 # get the inputs
-                atom_info_1, atom_info_2 = self.lib_info["cofactor-distances"][dist]
-                chain_id_1, res_id_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
-                chain_id_2, res_id_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
+                atom_info_1, atom_info_2 = self.lib_info[self._dist_opt][dist]
+                # "C-Si": (("B", 1, "LIG", "C_23", False), ("B", 1, "LIG", "SI_1", False))
+                chain_id_1, res_id_1, res_name_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
+                chain_id_2, res_id_2, res_name_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
 
                 for r in self._rep_list:
                     if r != "agg":
                         # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
                         structure_file = os.path.join(
-                            struct_dir, f"seed-1_sample-{r}", "model.cif"
+                            var_struct_dir, f"seed-1_sample-{r}", "model.cif"
                         )
                     else:
                         # zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
                         structure_file = os.path.join(
-                            struct_dir, f"{var_name}_model.cif"
+                            var_struct_dir, f"{var_name}_model.cif"
                         )
 
                     # get the distance
@@ -370,20 +391,20 @@ class BondData(ZSData):
             var_name = row[self.var_col_name]
 
             # ie s/chai/mut_structure/PfTrpB-4bromo_cofactor/I165A:I183A:Y301V
-            struct_dir = os.path.join(self._struct_dir, var_name)
+            var_struct_dir = os.path.join(self._struct_subdir, var_name)
 
             for d, dist in enumerate(self._dist_list):
                 # get the inputs
-                atom_info_1, atom_info_2 = self.lib_info["cofactor-distances"][dist]
-                chain_id_1, res_id_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
-                chain_id_2, res_id_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
+                atom_info_1, atom_info_2 = self.lib_info[self._dist_opt][dist]
+                chain_id_1, res_id_1, res_name_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
+                chain_id_2, res_id_2, res_name_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
 
                 avg4agg = []
 
                 for r in self._rep_list:
                     if r != "agg":
                         # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
-                        structure_file = os.path.join(struct_dir, f"{var_name}_{r}.cif")
+                        structure_file = os.path.join(var_struct_dir, f"{var_name}_{r}.cif")
 
                     # get the distance
                     bond_dist = measure_bond_distance(
@@ -407,3 +428,22 @@ class BondData(ZSData):
         return df
 
 
+def run_bonddist(
+    struct_dir: str,
+    pattern: str | list = "data/meta/not_scaled/*.csv",
+    kwargs: dict = {},
+):
+    """
+    Measure the bond distance for a library of structures.
+    """
+
+    if isinstance(pattern, str):
+        lib_list = glob(pattern)
+    else:
+        lib_list = deepcopy(pattern)
+
+    print(lib_list)
+
+    for lib in lib_list:
+        print(f"Running parse vina results for {lib}...")
+        BondData(input_csv=lib, struct_dir=struct_dir, **kwargs)

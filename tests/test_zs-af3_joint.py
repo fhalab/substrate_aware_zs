@@ -13,8 +13,6 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
-
     # log outputs
     f = open(
         os.path.join(

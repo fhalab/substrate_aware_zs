@@ -334,6 +334,12 @@ LIB_INFO_DICT = deepcopy(
             ],
             "product": "organoborane",
             "product-smiles": "CN1C=C[N+](C)=C1[BH2-][C@H](C)C(OCC)=O",
+            "cofactor-distances_joint": {
+                "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
+            }, # if need to add H
+            "cofactor-distances_seperate": {
+                "C-B": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "B_1", False))
+            }, # if need to add H
             "positions": {1: 75, 2: 99, 3: 100, 4: 101, 5: 102, 6: 103},
             "AAs": {1: "V", 2: "M", 3: "M", 4: "T", 5: "D", 6: "M"},
             "family": "cyt c",
@@ -354,6 +360,12 @@ LIB_INFO_DICT = deepcopy(
             ],
             "product": "organosilicon",
             "product-smiles": "C[Si]([C@]([H])(C)C(OCC)=O)(C)C1=CC=CC=C1",
+            "cofactor-distances_joint": {
+                "C-Si": (("B", 1, "LIG", "C_23", False), ("B", 1, "LIG", "SI_1", False))
+            }, # if need to add H
+            "cofactor-distances_seperate": {
+                "C-Si": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "SI_1", False))
+            }, # if need to add H
             "positions": {1: 75, 2: 99, 3: 100, 4: 101, 5: 102, 6: 103},
             "AAs": {1: "V", 2: "M", 3: "M", 4: "T", 5: "D", 6: "M"},
             "family": "cyt c",
@@ -376,6 +388,14 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
             "product2": "1,2-disubstituted cyclopropanes trans",
             "product2-smiles": "COC1=CC=C([C@@H]2[C@@H](C(OCC)=O)C2)C=C1",
+            "cofactor-distances_joint": {
+                "C-C_1": (("B", 1, "LIG", "C_24", False), ("B", 1, "LIG", "C_1", False)),
+                "C-C_2": (("B", 1, "LIG", "C_24", False), ("B", 1, "LIG", "C_2", False)),
+            }, # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "C_1", False)),
+                "C-C_2": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "C_2", False)),
+            }, # if need to add H
             "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
             "AAs": {
                 1: "W",

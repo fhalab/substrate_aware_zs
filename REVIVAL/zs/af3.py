@@ -219,9 +219,18 @@ class AF3Prep(ZSData):
         A method to generate the AlphaFold3 JSON files for each variant.
         """
 
-        # check if the output struct directory exists and ifrerun is False
+        var_dir = os.path.join(self._af3_struct_subdir, var.lower())
+
+        # the output cif file
+        model_cif = os.path.join(var_dir, f"{var.lower()}_model.cif")
+
+        # del the folder if the model is not there but the folder exists
+        if os.path.exists(var_dir) and not os.path.exists((model_cif)):
+            os.system(f"sudo rm -r {var_dir}")
+
+        # check if the output model exists and ifrerun is False
         if (
-            os.path.exists(os.path.join(self._af3_struct_subdir, var.lower()))
+            os.path.exists(model_cif)
             and not self._ifrerun
         ):
             print(
