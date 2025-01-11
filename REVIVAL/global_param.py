@@ -30,7 +30,7 @@ TrpB_CHEM = {
         "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
         "[Na+]",
     ],
-    "cofactor-distances": {
+    "cofactor-distances_joint": {
         "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
         "GLU-NH_1": (
             ("A", 104, "GLU", "OE1", False),

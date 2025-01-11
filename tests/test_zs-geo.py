@@ -25,7 +25,7 @@ if __name__ == "__main__":
 
     run_bonddist(
         struct_dir="zs/af3/struct_joint",
-        pattern="data/meta/not_scaled/*.csv",
+        pattern="data/meta/not_scaled/PfTrpB*.csv",
     )
     
     run_bonddist(
@@ -39,7 +39,7 @@ if __name__ == "__main__":
 
     run_bonddist(
         struct_dir="zs/chai/mut_structure_joint",
-        pattern="data/meta/not_scaled/*.csv",
+        pattern="data/meta/not_scaled/PfTrpB*.csv",
     )
 
     run_bonddist(
