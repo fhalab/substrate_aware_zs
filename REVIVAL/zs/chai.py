@@ -15,15 +15,13 @@ import pandas as pd
 
 import torch
 
-from rdkit import Chem
-
 from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name, canonicalize_smiles
+from REVIVAL.util import checkNgen_folder, canonicalize_smiles
 
 
-class ChaiData(ZSData):
+class ChaiStruct(ZSData):
     def __init__(
         self,
         input_csv: str,
@@ -37,7 +35,7 @@ class ChaiData(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         chai_dir: str = "chai",
-        chai_struct_dir: str = "mut_structure",
+        chai_struct_dir: str = "structure",
         gen_opt: str = "joint",
         cofactor_dets: str = "cofactor",
         ifrerun: bool = False,
@@ -81,14 +79,17 @@ class ChaiData(ZSData):
 
         self._gen_opt = gen_opt
 
-        self._chai_dir = checkNgen_folder(
-            os.path.join(self._zs_dir, f"{chai_dir}_{self._gen_opt}")
-        )
+        self._chai_dir = checkNgen_folder(os.path.join(self._zs_dir, chai_dir))
         self._chai_struct_dir = checkNgen_folder(
-            os.path.join(self._chai_dir, chai_struct_dir)
+            os.path.join(self._chai_dir, f"{chai_struct_dir}_{self._gen_opt}")
         )
+
+        append_dets = ""
+        if cofactor_dets != "cofactor":
+            append_dets = f"_{cofactor_dets}"
+
         self._chai_struct_subdir = checkNgen_folder(
-            os.path.join(self._chai_struct_dir, self.lib_name)
+            os.path.join(self._chai_struct_dir, f"{self.lib_name}{append_dets}")
         )
 
         self._ifrerun = ifrerun
@@ -240,7 +241,7 @@ def run_gen_chai_structure(
     - pattern: str | list: the pattern for the input csv files
     - gen_opt: str: The generation option for the chai structure
     - cofactor_dets: str: The cofactor details, ie "cofactor" or "inactivated-cofactor"
-    - kwargs: dict: The arguments for the ChaiData class
+    - kwargs: dict: The arguments for the ChaiStruct class
     """
 
     if isinstance(pattern, str):
@@ -250,10 +251,12 @@ def run_gen_chai_structure(
 
     for lib in lib_list:
         print(f"Running chai gen mut file for {lib}...")
-        ChaiData(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
+        ChaiStruct(
+            input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs
+        )
 
 
-def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"):
+def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
 
     """
     A function for going through the subfolder and getting the chai scores
@@ -263,72 +266,100 @@ def parse_chai_scores(mut_structure_dir: str, output_dir: str = "zs/chai/output"
         - aggregate_score
         - ptm
         - iptm
-        - chain_ptm_A
-        - chain_ptm_B
-        - chain_iptm_AA
-        - chain_iptm_AB
-        - chain_iptm_BA
-        - chain_iptm_BB
         - has_inter_chain_clashes
 
     Args:
     - input_dir, str: The path to the folder containing the chai score
-        ie zs/chai/mut_structure/PfTrpB-4bromo
-    - output_dir, str: The path to the folder to save the dataframe to
-        ie zs/chai/output
+        ie zs/chai/structure_joint/PfTrpB-4bromo
+    - score_dir_name, str: The name of the score directory but keep other details
+        ie zs/chai/score_joint
     """
 
-    output_dir = checkNgen_folder(output_dir)
-    lib_name = os.path.basename(mut_structure_dir)
-
-    # init dataframe
-    df = pd.DataFrame(
-        columns=[
-            "var",
-            "rep",
-            "aggregate_score",
-            "ptm",
-            "iptm",
-            "chain_ptm_A",
-            "chain_ptm_B",
-            "chain_iptm_AB",
-            "chain_iptm_BA",
-            "has_inter_chain_clashes",
-        ]
+    # Determine the docking details based on folder naming
+    dock_dets = (
+        "joint"
+        if "joint" in mut_structure_dir
+        else "separate"
+        if "seperate" in mut_structure_dir
+        else ""
     )
 
-    for subfolder in sorted(glob(f"{mut_structure_dir}/*")):
-        var = os.path.basename(subfolder)
+    output_dir = checkNgen_folder(
+        os.path.dirname(mut_structure_dir).replace("structure", score_dir_name)
+    )
+    lib_name = os.path.basename(mut_structure_dir)
 
-        for rep_npz in sorted(glob(f"{subfolder}/*.npz")):
+    # Prepare the score keys for data extraction
+    overall_keys = ["aggregate_score", "ptm", "iptm"]
+    chain_labels = ["A", "B", "C"] if dock_dets == "separate" else ["A", "B"]
+    score_keys = deepcopy(overall_keys)
+    for chain in chain_labels:
+        score_keys.append(f"chain_ptm_{chain}")
+        for other_chain in chain_labels:
+            if chain != other_chain:
+                score_keys.append(f"chain_iptm_{chain}{other_chain}")
 
-            npz = np.load(rep_npz)
+    # Initialize results storage
+    results = []
 
-            df = df._append(
-                {
-                    "var": var,
-                    "rep": get_file_name(rep_npz).split("_")[-1],
-                    "aggregate_score": npz["aggregate_score"][0],
-                    "ptm": npz["ptm"][0],
-                    "iptm": npz["iptm"][0],
-                    "chain_ptm_A": npz["per_chain_ptm"][0][0],
-                    "chain_ptm_B": npz["per_chain_ptm"][0][1],
-                    "chain_iptm_AB": npz["per_chain_pair_iptm"][0][0, 1],
-                    "chain_iptm_BA": npz["per_chain_pair_iptm"][0][1, 0],
-                    "has_inter_chain_clashes": npz["has_inter_chain_clashes"][0],
-                },
-                ignore_index=True,
-            )
+    # Iterate through each variant directory
+    for subfolder in sorted(glob(os.path.join(mut_structure_dir, "*"))):
+        var_name = os.path.basename(subfolder)
+        var_data = {"var": var_name}
+
+        # Prepare for averaging
+        score_sums = {key: [] for key in score_keys}
+
+        # Loop through each replicate score file
+        for rep_index, rep_npz in enumerate(
+            sorted(glob(os.path.join(subfolder, "*.npz")))
+        ):
+            try:
+                npz = np.load(rep_npz)
+                # Extract the score data for this replicate
+                for key in overall_keys:
+                    var_data[f"{key}_{rep_index}"] = npz[key][0]
+
+                # Process chain-level ptm and iptm scores
+                for i, chain in enumerate(chain_labels):
+                    var_data[f"chain_ptm_{chain}_{rep_index}"] = npz["per_chain_ptm"][
+                        0
+                    ][i]
+                    for j, other_chain in enumerate(chain_labels):
+                        if i != j:
+                            var_data[
+                                f"chain_iptm_{chain}{other_chain}_{rep_index}"
+                            ] = npz["per_chain_pair_iptm"][0][i, j]
+
+                # Only consider for averaging if no clashes
+                if not npz["has_inter_chain_clashes"][0]:
+                    for key in score_keys:
+                        value = var_data.get(f"{key}_{rep_index}")
+                        if value is not None:
+                            score_sums[key].append(value)
+
+            except Exception as e:
+                print(f"Error processing {rep_npz}: {e}")
+
+        # Compute averages for the variant and store them as columns
+        for key, values in score_sums.items():
+            var_data[f"{key}_avg"] = np.mean(values) if values else None
+
+        # Collect results
+        results.append(var_data)
+
+    # Convert results to a DataFrame and save it
+    df = pd.DataFrame(results)
 
     df.to_csv(f"{output_dir}/{lib_name}.csv", index=False)
     print(f"Saved chai scores for {lib_name} to {output_dir}/{lib_name}.csv")
 
 
-def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/mut_structure"):
+def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/structure_joint"):
     """
     A function to parse all the chai scores for all libraries
     """
 
-    for lib in glob(f"{chai_struct_dir}/*"):
+    for lib in tqdm(sorted(glob(f"{chai_struct_dir}/*"))):
         print(f"Parsing chai scores for {lib}...")
         parse_chai_scores(lib)
