@@ -235,7 +235,7 @@ class BondData(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         bond_dir: str = "bonddist",
-        max_workers: int = 64
+        max_workers: int = 64,
     ):
 
         """
@@ -301,221 +301,161 @@ class BondData(ZSData):
         # both af and chai output 5 reps
         self._rep_list = [str(i) for i in list(range(5))] + ["agg"]
 
+        print(f"self._dist_list: {self._dist_list}")
+        print(f"self._rep_list: {self._rep_list}")
+
+        print(f"Calculating bond distances for {self._struct_subdir}...")
+
         if "chai" in self._struct_subdir:
-            output_csv = os.path.join(
-                self._bond_dir, f"{self.lib_name}_bonddist.csv"
-            )
-            print(f"Calculating bond distances for {self._struct_subdir}...")
             df = self._append_chai_dist()
-            # save the dataframe
-            df.to_csv(output_csv, index=False)
-            print(f"Saved bond distances to {output_csv}")
+
         elif "af3" in self._struct_subdir:
-            output_csv = os.path.join(
-                self._bond_dir, f"{self.lib_name}_bonddist.csv"
-            )
-            print(f"Calculating bond distances for {self._struct_subdir}...")
             df = self._append_af_dist()
-            # save the dataframe
-            df.to_csv(output_csv, index=False)
-            print(f"Saved bond distances to {output_csv}")
+
         else:
             raise ValueError("Unsupported structure directory. Use 'chai' or 'af3'.")
 
-    def _init_dist_df(self) -> pd.DataFrame:
-
-        """
-        Initialize the dataframe with the columns from the input CSV file.
-        """
-
-        df = self.df.copy()
-
-        # make a list of 0 to 4 in string and add "agg"
-        # add the columns to the dataframe with nan values
-        for i, dist in enumerate(self._dist_list):
-            for j in self._rep_list:
-                col_name = f"{i}:{dist}_{j}"
-                df[col_name] = np.nan
-
-        return df.copy()
+        # save the dataframe
+        output_csv = os.path.join(self._bond_dir, f"{self.lib_name}.csv")
+        df.to_csv(output_csv, index=False)
+        print(f"Saved bond distances to {output_csv}")
 
     def _calculate_distances(self, df, struct_type="af"):
         """
         Generalized method for calculating bond distances using ProcessPoolExecutor.
         """
         # Use external method for compatibility with ProcessPoolExecutor
-        with concurrent.futures.ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-            futures = [executor.submit(self._process_row, i, row, struct_type) for i, row in df.iterrows()]
-            
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=self._max_workers
+        ) as executor:
+            futures = [
+                executor.submit(self._process_row, row, struct_type)
+                for i, row in df.iterrows()
+            ]
+
             # TQDM for progress tracking
             result_dfs = []
-            for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
+            for future in tqdm(
+                concurrent.futures.as_completed(futures), total=len(futures)
+            ):
                 result_dfs.append(future.result())
 
         # Flatten results and convert to DataFrame
         flat_results = [item for sublist in result_dfs for item in sublist]
         results_df = pd.DataFrame(flat_results)
 
-        # Handle column overlaps
-        overlapping_columns = set(df.columns).intersection(set(results_df['key'].unique()))
-        if overlapping_columns:
-            results_df["key"] = results_df["key"].apply(lambda x: f"{x}_new" if x in overlapping_columns else x)
-
         # Pivot and merge
-        df_wide = results_df.pivot_table(index="index", columns="key", values="distance", aggfunc="first")
-        df = df.join(df_wide)
+        df_wide = results_df.pivot_table(
+            index=self._var_col_name, columns="key", values="distance", aggfunc="first"
+        )
 
-        return df
+        return pd.merge(df, df_wide, on=self._var_col_name, how="outer")
 
-    def _process_row(self, i, row, struct_type):
-        """Helper method for parallel processing, picklable."""
+    def _process_row(self, row, struct_type):
+
+        """Helper method for parallel processing."""
+
         results = []
         var_name = row[self._var_col_name].lower().replace(":", "_")
         var_struct_dir = os.path.join(self._struct_subdir, var_name)
 
         for d, dist in enumerate(self._dist_list):
             atom_info_1, atom_info_2 = self.lib_info[self._dist_opt][dist]
-            chain_id_1, res_id_1, res_name_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
-            chain_id_2, res_id_2, res_name_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
+
+            atom_kwags = {
+                "chain_id_1": atom_info_1[0],
+                "res_id_1": atom_info_1[1],
+                "atom_name_1": atom_info_1[3],
+                "add_hydrogen_to_1": atom_info_1[4],
+                "chain_id_2": atom_info_2[0],
+                "res_id_2": atom_info_2[1],
+                "atom_name_2": atom_info_2[3],
+                "add_hydrogen_to_2": atom_info_2[4],
+            }
 
             avg4agg = []
 
             for r in self._rep_list:
-                structure_file = (
-                    os.path.join(var_struct_dir, f"seed-1_sample-{r}", "model.cif")
-                    if struct_type == "af"
-                    else os.path.join(var_struct_dir, f"{var_name}_{r}.cif")
-                )
-
-                try:
-                    distance = measure_bond_distance(
-                        structure_file=structure_file,
-                        chain_id_1=chain_id_1,
-                        res_id_1=res_id_1,
-                        atom_name_1=atom_name_1,
-                        chain_id_2=chain_id_2,
-                        res_id_2=res_id_2,
-                        atom_name_2=atom_name_2,
-                        add_hydrogen_to_1=add_hydrogen_to_1,
-                        add_hydrogen_to_2=add_hydrogen_to_2,
+                if r != "agg":
+                    structure_file = (
+                        os.path.join(var_struct_dir, f"seed-1_sample-{r}", "model.cif")
+                        if struct_type == "af"
+                        else os.path.join(var_struct_dir, f"{var_name}_{r}.cif")
                     )
-                    results.append({"index": i, "key": f"{d}:{dist}_{r}", "distance": distance})
-                    avg4agg.append(distance)
-                except Exception as e:
-                    print(f"Error processing {structure_file}: {e}")
-                    results.append({"index": i, "key": f"{d}:{dist}_{r}", "distance": None})
 
-            if "agg" in self._rep_list:
-                avg_distance = np.mean(avg4agg) if avg4agg else None
-                results.append({"index": i, "key": f"{d}:{dist}_agg", "distance": avg_distance})
+                    try:
+                        distance = measure_bond_distance(
+                            structure_file=structure_file, **atom_kwags
+                        )
+                        results.append(
+                            {
+                                self._var_col_name: row[self._var_col_name],
+                                "key": f"{d}:{dist}_{r}",
+                                "distance": distance,
+                            }
+                        )
+                        avg4agg.append(distance)
+                    except Exception as e:
+                        print(f"Error processing {structure_file}: {e}")
+                        results.append(
+                            {
+                                self._var_col_name: row[self._var_col_name],
+                                "key": f"{d}:{dist}_{r}",
+                                "distance": None,
+                            }
+                        )
+
+                # now handel agg based on af or chai
+                else:
+                    if struct_type == "af":
+                        # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
+                        structure_file = os.path.join(
+                            var_struct_dir, f"{var_name}_model.cif"
+                        )
+                        try:
+                            distance = measure_bond_distance(
+                                structure_file=structure_file, **atom_kwags
+                            )
+                            results.append(
+                                {
+                                    self._var_col_name: row[self._var_col_name],
+                                    "key": f"{d}:{dist}_{r}",
+                                    "distance": distance,
+                                }
+                            )
+                            avg4agg.append(distance)
+                        except Exception as e:
+                            print(f"Error processing {structure_file}: {e}")
+                            results.append(
+                                {
+                                    self._var_col_name: row[self._var_col_name],
+                                    "key": f"{d}:{dist}_{r}",
+                                    "distance": None,
+                                }
+                            )
+                    else:
+                        avg_distance = np.mean(avg4agg) if avg4agg else None
+                        results.append(
+                            {
+                                self._var_col_name: row[self._var_col_name],
+                                "key": f"{d}:{dist}_agg",
+                                "distance": avg_distance,
+                            }
+                        )
 
         return results
 
     def _append_af_dist(self) -> pd.DataFrame:
         """Append distances for AF structures."""
-        df = self._init_dist_df()
+        # df = self._init_dist_df()
+        df = self.df.copy()
         return self._calculate_distances(df, struct_type="af")
 
     def _append_chai_dist(self) -> pd.DataFrame:
         """Append distances for CHAI structures."""
-        df = self._init_dist_df()
+        # df = self._init_dist_df()
+        df = self.df.copy()
         return self._calculate_distances(df, struct_type="chai")
-
-    # def _append_af_dist(self) -> pd.DataFrame:
-
-    #     """
-    #     Append the bond distances to the dataframe from AF structures.
-    #     """
-
-    #     df = self._init_dist_df()
-
-    #     # loop over all variants and calculate the distances and dist_list and add them to the dataframe
-    #     for i, row in tqdm(df.iterrows()):
-
-    #         var_name = row[self._var_col_name].lower().replace(":", "_")
-
-    #         # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v
-    #         var_struct_dir = os.path.join(self._struct_subdir, var_name)
-
-    #         for d, dist in enumerate(self._dist_list):
-    #             # get the inputs
-    #             atom_info_1, atom_info_2 = self.lib_info[self._dist_opt][dist]
-    #             # "C-Si": (("B", 1, "LIG", "C_23", False), ("B", 1, "LIG", "SI_1", False))
-    #             chain_id_1, res_id_1, res_name_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
-    #             chain_id_2, res_id_2, res_name_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
-
-    #             for r in self._rep_list:
-    #                 if r != "agg":
-    #                     # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
-    #                     structure_file = os.path.join(
-    #                         var_struct_dir, f"seed-1_sample-{r}", "model.cif"
-    #                     )
-    #                 else:
-    #                     # zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
-    #                     structure_file = os.path.join(
-    #                         var_struct_dir, f"{var_name}_model.cif"
-    #                     )
-
-    #                 # get the distance
-    #                 df.at[i, f"{d}:{dist}_{r}"] = measure_bond_distance(
-    #                     structure_file=structure_file,
-    #                     chain_id_1=chain_id_1,
-    #                     res_id_1=res_id_1,
-    #                     atom_name_1=atom_name_1,
-    #                     chain_id_2=chain_id_2,
-    #                     res_id_2=res_id_2,
-    #                     atom_name_2=atom_name_2,
-    #                     add_hydrogen_to_1=add_hydrogen_to_1,
-    #                     add_hydrogen_to_2=add_hydrogen_to_2,
-    #                 )
-
-    #     return df
-
-    # def _append_chai_dist(self) -> pd.DataFrame:
-
-    #     df = self._init_dist_df()
-
-    #     # loop over all variants and calculate the distances and dist_list and add them to the dataframe
-    #     for i, row in tqdm(df.iterrows()):
-
-    #         var_name = row[self.var_col_name]
-
-    #         # ie s/chai/mut_structure/PfTrpB-4bromo_cofactor/I165A:I183A:Y301V
-    #         var_struct_dir = os.path.join(self._struct_subdir, var_name)
-
-    #         for d, dist in enumerate(self._dist_list):
-    #             # get the inputs
-    #             atom_info_1, atom_info_2 = self.lib_info[self._dist_opt][dist]
-    #             chain_id_1, res_id_1, res_name_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
-    #             chain_id_2, res_id_2, res_name_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
-
-    #             avg4agg = []
-
-    #             for r in self._rep_list:
-    #                 if r != "agg":
-    #                     # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
-    #                     structure_file = os.path.join(var_struct_dir, f"{var_name}_{r}.cif")
-
-    #                 # get the distance
-    #                 bond_dist = measure_bond_distance(
-    #                     structure_file=structure_file,
-    #                     chain_id_1=chain_id_1,
-    #                     res_id_1=res_id_1,
-    #                     atom_name_1=atom_name_1,
-    #                     chain_id_2=chain_id_2,
-    #                     res_id_2=res_id_2,
-    #                     atom_name_2=atom_name_2,
-    #                     add_hydrogen_to_1=add_hydrogen_to_1,
-    #                     add_hydrogen_to_2=add_hydrogen_to_2,
-    #                 )
-
-    #                 df.at[i, f"{d}:{dist}_{r}"] = bond_dist
-    #                 avg4agg.append(bond_dist)
-
-    #             if r == "agg":
-    #                 df.at[i, f"{d}:{dist}_{r}"] = np.mean(avg4agg)
-
-    #     return df
 
 
 def run_bonddist(
@@ -528,11 +468,9 @@ def run_bonddist(
     """
 
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
-
-    print(lib_list)
 
     for lib in lib_list:
         print(f"Running parse vina results for {lib}...")
