@@ -3,6 +3,7 @@ A script to generate JSON files for AlphaFold3 inference from a CSV file.
 """
 
 from __future__ import annotations
+import concurrent.futures
 
 import os
 import json
@@ -31,16 +32,13 @@ class AF3Prep(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         af3_dir: str = "af3",
-        # af3_msa_indir: str = "msa_in",
-        # af3_msa_dir: str = "msa",
-        # af3_json_dir: str = "json",
-        # af3_command_dir: str = "command",
-        # af3_struct_dir: str = "struct",
         gen_opt: str = "joint",
         cofactor_dets: str = "cofactor",
         ifrerun: bool = False,
         full_model_path: str = "/disk2/fli/af3_inference/model",
         full_db_path: str = "/disk2/fli/af3_inference/databases",
+        max_workers: int = 16,  # for msa generation parallelization
+        gpu_id: str = "0",
     ):
 
         super().__init__(
@@ -58,9 +56,14 @@ class AF3Prep(ZSData):
 
         self._gen_opt = gen_opt
 
-        self._af3_dir = checkNgen_folder(
-            os.path.join(self._zs_dir, f"{af3_dir}_{self._gen_opt}")
-        )
+        self._ifrerun = ifrerun
+
+        self._full_model_path = full_model_path
+        self._full_db_path = full_db_path
+
+        self._gpu_id = gpu_id
+
+        self._af3_dir = checkNgen_folder(os.path.join(self._zs_dir, f"{af3_dir}"))
 
         self._af3_msa_insubdir = checkNgen_folder(
             os.path.join(self._af3_dir, "msa_in", self.protein_name)
@@ -70,14 +73,12 @@ class AF3Prep(ZSData):
         )
 
         self._af3_json_subdir = checkNgen_folder(
-            os.path.join(self._af3_dir, "json", self.lib_name)
+            os.path.join(self._af3_dir, f"json_{self._gen_opt}", self.lib_name)
         )
 
         self._af3_struct_subdir = checkNgen_folder(
-            os.path.join(self._af3_dir, "struct", self.lib_name)
+            os.path.join(self._af3_dir, f"struct_{self._gen_opt}", self.lib_name)
         )
-
-        self._ifrerun = ifrerun
 
         self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
         self._sub_dets = self.lib_info["substrate"]
@@ -90,9 +91,27 @@ class AF3Prep(ZSData):
         self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
         self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
 
-        self._full_model_path = full_model_path
-        self._full_db_path = full_db_path
+        # Parallelizing MSA generation only
+        with concurrent.futures.ProcessPoolExecutor(
+            max_workers=max_workers
+        ) as executor:
+            futures = []
+            for i, (var, seq) in enumerate(
+                self.df[[self._var_col_name, self._seq_col_name]].values
+            ):
+                futures.append(
+                    executor.submit(
+                        self._gen_var_msa, var=var.replace(":", "_"), seq=seq
+                    )
+                )
 
+            for future in concurrent.futures.as_completed(futures):
+                try:
+                    future.result()
+                except Exception as e:
+                    print(f"Error in parallel execution: {e}")
+
+        # now do the inferences and the _gen_var_msa step will simply check the path
         for (
             var,
             seq,
@@ -144,8 +163,8 @@ class AF3Prep(ZSData):
             "sudo",
             "docker",
             "run",
-            "-it",
-            # "--env", f"CUDA_VISIBLE_DEVICES={gpu_id}",
+            # "-it",
+            # "--env", f"CUDA_VISIBLE_DEVICES={self._gpu_id}",
             "--volume",
             f"{os.path.abspath(os.path.dirname(var_msa_inpath))}:/root/af_input",
             "--volume",
@@ -155,13 +174,14 @@ class AF3Prep(ZSData):
             "--volume",
             f"{self._full_db_path}:/root/public_databases",
             "--gpus",
-            "all",
+            f"device={self._gpu_id}",
+            # "all",
             "alphafold3",
             "python",
             "run_alphafold.py",
             f"--json_path=/root/af_input/{os.path.basename(var_msa_inpath)}",
-            "--jackhmmer_n_cpu=32",
-            "--nhmmer_n_cpu=32",
+            "--jackhmmer_n_cpu=8",
+            "--nhmmer_n_cpu=8",
             "--model_dir=/root/models",
             "--output_dir=/root/af_output",
             "--run_data_pipeline=True",
@@ -193,10 +213,21 @@ class AF3Prep(ZSData):
 
         return var_msa_outpath
 
-    def _run_var_inference(self, var_msa_outpath, var, seq):
+    def _run_var_inference(self, var, seq, var_msa_outpath):
+
         """
         A method to generate the AlphaFold3 JSON files for each variant.
         """
+
+        # check if the output struct directory exists and ifrerun is False
+        if (
+            os.path.exists(os.path.join(self._af3_struct_subdir, var.lower()))
+            and not self._ifrerun
+        ):
+            print(
+                f"Structures for {var} already exist at {self._af3_struct_subdir}. Skipping..."
+            )
+            return
 
         msa_json = load_json(var_msa_outpath).get("sequences", [])[0].get("protein", {})
 
@@ -252,7 +283,7 @@ class AF3Prep(ZSData):
                 {"ligand": {"id": "B", "smiles": f"{self._sub_smiles}"}}
             )
 
-            for j, cofactor_dets, cofactor_smiles in enumerate(
+            for j, (cofactor_dets, cofactor_smiles) in enumerate(
                 zip(self.lib_info["cofactor"], self.lib_info["cofactor-smiles"])
             ):
                 cofactor_smiles = canonicalize_smiles(cofactor_smiles)
@@ -284,8 +315,8 @@ class AF3Prep(ZSData):
             "sudo",
             "docker",
             "run",
-            "-it",
-            # "--env", f"CUDA_VISIBLE_DEVICES={gpu_id}",
+            # "-it",
+            # "--env", f"CUDA_VISIBLE_DEVICES={self._gpu_id}",
             "--volume",
             f"{os.path.abspath(os.path.dirname(json_file_path))}:/root/af_input",
             "--volume",
@@ -295,7 +326,8 @@ class AF3Prep(ZSData):
             "--volume",
             f"{self._full_db_path}:/root/public_databases",
             "--gpus",
-            "all",
+            f"device={self._gpu_id}",
+            # "all",
             "alphafold3",
             "python",
             "run_alphafold.py",
@@ -333,6 +365,8 @@ class AF3Prep(ZSData):
 def run_af3_prep(
     pattern: str | list = "data/meta/not_scaled/*.csv",
     gen_opt: str = "joint",
+    cofactor_dets: str = "cofactor",
+    gpu_id: str = "0",
     kwargs: dict = {},
 ):
     """
@@ -344,8 +378,6 @@ def run_af3_prep(
     - kwargs: dict: The arguments for the AF3Data class
     """
 
-    all_exe_paths = []
-
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
     else:
@@ -353,4 +385,4 @@ def run_af3_prep(
 
     for lib in lib_list:
         print(f"Running AF3 for {lib}...")
-        AF3Prep(input_csv=lib, gen_opt=gen_opt, **kwargs)
+        AF3Prep(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)

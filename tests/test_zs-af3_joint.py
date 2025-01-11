@@ -13,7 +13,7 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    # os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     # log outputs
     f = open(
@@ -40,14 +40,14 @@ if __name__ == "__main__":
         #     # "data/meta/not_scaled/PfTrpB-7iodo.csv",
         #     # "data/meta/not_scaled/PfTrpB-7methyl.csv",
         #     # "data/meta/not_scaled/PfTrpB-56chloro.csv",
-            "data/meta/not_scaled/Rma-CB.csv",
-            "data/meta/not_scaled/Rma-CSi.csv",
+            # "data/meta/not_scaled/Rma-CB.csv",
+            # "data/meta/not_scaled/Rma-CSi.csv",
             "data/meta/not_scaled/ParLQ.csv",
         ],
-        # gen_opt="joint",
-        gen_opt="seperate",
+        gen_opt="joint",
+        # gen_opt="seperate",
         cofactor_dets="cofactor",
-        gpu_id="0"
+        gpu_id="1"
     )
 
     # def run_af3_prep(

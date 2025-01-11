@@ -6,7 +6,9 @@ from __future__ import annotations
 
 import os
 import re
+from tqdm import tqdm
 import numpy as np
+import pandas as pd
 from Bio.PDB import PDBParser, MMCIFParser, PDBIO
 
 from REVIVAL.preprocess import ZSData
@@ -38,7 +40,9 @@ def get_atom_with_variations(residue, atom_name):
             return residue[variation]
         except KeyError:
             continue
-    raise KeyError(f"Atom {atom_name} or its variations not found in residue {residue}.")
+    raise KeyError(
+        f"Atom {atom_name} or its variations not found in residue {residue}."
+    )
 
 
 # Match residues dynamically
@@ -52,7 +56,7 @@ def find_residue_by_id(chain, target_res_id):
 
     Returns:
         Residue object if found.
-    
+
     Raises:
         ValueError: If the residue is not found in the chain.
     """
@@ -61,7 +65,6 @@ def find_residue_by_id(chain, target_res_id):
         if residue.id[1] == target_res_id:
             return residue
     raise ValueError(f"Residue with ID {target_res_id} not found in chain.")
-
 
 
 def get_covalent_neighbors(atom, residue, bond_distance_cutoff=1.6):
@@ -128,23 +131,28 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0):
         hydrogen_coord = atom_coord + direction * bond_length
 
     else:
-        raise ValueError(f"Unsupported geometry for atom with {len(neighbors)} neighbors.")
+        raise ValueError(
+            f"Unsupported geometry for atom with {len(neighbors)} neighbors."
+        )
 
-    print(f"Calculated hydrogen position from {atom} based on {neighbors}: {hydrogen_coord}")
+    print(
+        f"Calculated hydrogen position from {atom} based on {neighbors}: {hydrogen_coord}"
+    )
 
     return hydrogen_coord
 
 
 def measure_bond_distance(
-    structure_file, 
-    chain_id_1, 
-    res_id_1, 
-    atom_name_1, 
-    chain_id_2, 
-    res_id_2, 
-    atom_name_2, 
-    add_hydrogen_to_1=False, 
-    add_hydrogen_to_2=False):
+    structure_file,
+    chain_id_1,
+    res_id_1,
+    atom_name_1,
+    chain_id_2,
+    res_id_2,
+    atom_name_2,
+    add_hydrogen_to_1=False,
+    add_hydrogen_to_2=False,
+):
     """
     Measure the bond distance between two atoms or hydrogens attached to them in a PDB or CIF file.
 
@@ -165,9 +173,9 @@ def measure_bond_distance(
 
     file_format = os.path.splitext(structure_file)[1][1:]
 
-    if file_format.lower() == 'pdb':
+    if file_format.lower() == "pdb":
         parser = PDBParser(QUIET=True)
-    elif file_format.lower() == 'cif':
+    elif file_format.lower() == "cif":
         parser = MMCIFParser(QUIET=True)
     else:
         raise ValueError("Unsupported file format. Use 'pdb' or 'cif'.")
@@ -183,7 +191,9 @@ def measure_bond_distance(
 
     atom_1 = get_atom_with_variations(residue_1, atom_name_1)
     atom_2 = get_atom_with_variations(residue_2, atom_name_2)
-    print(f"Measuring bond distance between {chain_1}{residue_1}{atom_1} and {chain_2}{residue_2}{atom_2}.")
+    print(
+        f"Measuring bond distance between {chain_1}{residue_1}{atom_1} and {chain_2}{residue_2}{atom_2}."
+    )
 
     # Determine coordinates for atom_1 and atom_2
     if add_hydrogen_to_1:
@@ -207,6 +217,7 @@ class BondData(ZSData):
     def __init__(
         self,
         input_csv: str,
+        struct_dir: str,
         scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -216,13 +227,26 @@ class BondData(ZSData):
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
-        struct_dir: str = "af3_joint/struct/PfTrpB-4bromo",
-        # triad_dir: str = "triad",
-        # triad_mut_dir: str = "mut_file",
-        # triad_struct_dir: str = "struct_file",
-        # withsub: bool = True,
-        # chain_id: str = "A",
+        bond_dir: str = "bonddist",
     ):
+
+        """
+        Initialize the BondData object.
+
+        Args:
+            input_csv (str): Path to the input CSV file.
+            struct_dir (str): Path to the directory containing PDB or CIF files.
+                ie. zs/af3/struct_joint/PfTrpB-4bromo
+            scale_fit (str): Scale of the fitness values.
+            combo_col_name (str): Column name for the combination of mutations.
+            var_col_name (str): Column name for the variant name.
+            mut_col_name (str): Column name for the mutation.
+            pos_col_name (str): Column name for the position.
+            seq_col_name (str): Column name for the sequence.
+            fit_col_name (str): Column name for the fitness.
+            seq_dir (str): Path to the directory containing sequence files.
+            zs_dir (str): Path to the directory containing Z-score files.
+        """
 
         super().__init__(
             input_csv=input_csv,
@@ -233,9 +257,153 @@ class BondData(ZSData):
             pos_col_name=pos_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
-            # withsub=withsub,
             seq_dir=seq_dir,
             zs_dir=zs_dir,
         )
 
-   
+        self._struct_dir = struct_dir
+        self._bond_dir = checkNgen_folder(zs_dir, bond_dir)
+
+        # init the columns based on the keys from the dict
+        # {'C-C': (('B', 1, 'LIG', 'C_5', False), ('B', 1, 'LIG', 'C_14', False)),
+        # 'GLU-NH_1': (('A', 104, 'GLU', 'OE1', False), ('B', 1, 'LIG', 'N_1', True)),
+        # 'GLU-NH_2': (('A', 104, 'GLU', 'OE2', False), ('B', 1, 'LIG', 'N_1', True))}
+        self._dist_list = list(self.lib_info["cofactor-distances"].keys())
+
+        # both af and chai output 5 reps
+        self._rep_list = [str(i) for i in list(range(5))] + ["agg"]
+
+        if "chai" in struct_dir:
+            output_csv = os.path.join(
+                self._bond_dir, "chai", f"{self.lib_name}_bonddist.csv"
+            )
+            print(f"Calculating bond distances for {self._struct_dir}...")
+            self.df = self._append_chai_dist()
+            # save the dataframe
+            self.df.to_csv(output_csv, index=False)
+            print(f"Saved bond distances to {output_csv}")
+        elif "af3" in struct_dir:
+            output_csv = os.path.join(
+                self._bond_dir, "af3", f"{self.lib_name}_bonddist.csv"
+            )
+            print(f"Calculating bond distances for {self._struct_dir}...")
+            self.df = self._append_af_dist()
+            # save the dataframe
+            self.df.to_csv(output_csv, index=False)
+            print(f"Saved bond distances to {output_csv}")
+        else:
+            raise ValueError("Unsupported structure directory. Use 'chai' or 'af3'.")
+
+    def _init_dist_df(self) -> pd.DataFrame:
+
+        """
+        Initialize the dataframe with the columns from the input CSV file.
+        """
+
+        df = self.df.copy()
+
+        # make a list of 0 to 4 in string and add "agg"
+        # add the columns to the dataframe with nan values
+        for i, dist in enumerate(self._dist_list):
+            for j in self._rep_list:
+                col_name = f"{i}:{dist}_{j}"
+                df[col_name] = np.nan
+
+        return df.copy()
+
+    def _append_af_dist(self) -> pd.DataFrame:
+
+        """
+        Append the bond distances to the dataframe from AF structures.
+        """
+
+        df = self._init_dist_df()
+
+        # loop over all variants and calculate the distances and dist_list and add them to the dataframe
+        for i, row in tqdm(df.iterrows()):
+
+            var_name = row[self.var_col_name].lower().replace(":", "_")
+
+            # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v
+            struct_dir = os.path.join(self._struct_dir, var_name)
+
+            for d, dist in enumerate(self._dist_list):
+                # get the inputs
+                atom_info_1, atom_info_2 = self.lib_info["cofactor-distances"][dist]
+                chain_id_1, res_id_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
+                chain_id_2, res_id_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
+
+                for r in self._rep_list:
+                    if r != "agg":
+                        # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
+                        structure_file = os.path.join(
+                            struct_dir, f"seed-1_sample-{r}", "model.cif"
+                        )
+                    else:
+                        # zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
+                        structure_file = os.path.join(
+                            struct_dir, f"{var_name}_model.cif"
+                        )
+
+                    # get the distance
+                    df.at[i, f"{d}:{dist}_{r}"] = measure_bond_distance(
+                        structure_file=structure_file,
+                        chain_id_1=chain_id_1,
+                        res_id_1=res_id_1,
+                        atom_name_1=atom_name_1,
+                        chain_id_2=chain_id_2,
+                        res_id_2=res_id_2,
+                        atom_name_2=atom_name_2,
+                        add_hydrogen_to_1=add_hydrogen_to_1,
+                        add_hydrogen_to_2=add_hydrogen_to_2,
+                    )
+
+        return df
+
+    def _append_chai_dist(self) -> pd.DataFrame:
+
+        df = self._init_dist_df()
+
+        # loop over all variants and calculate the distances and dist_list and add them to the dataframe
+        for i, row in tqdm(df.iterrows()):
+
+            var_name = row[self.var_col_name]
+
+            # ie s/chai/mut_structure/PfTrpB-4bromo_cofactor/I165A:I183A:Y301V
+            struct_dir = os.path.join(self._struct_dir, var_name)
+
+            for d, dist in enumerate(self._dist_list):
+                # get the inputs
+                atom_info_1, atom_info_2 = self.lib_info["cofactor-distances"][dist]
+                chain_id_1, res_id_1, atom_name_1, add_hydrogen_to_1 = atom_info_1
+                chain_id_2, res_id_2, atom_name_2, add_hydrogen_to_2 = atom_info_2
+
+                avg4agg = []
+
+                for r in self._rep_list:
+                    if r != "agg":
+                        # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
+                        structure_file = os.path.join(struct_dir, f"{var_name}_{r}.cif")
+
+                    # get the distance
+                    bond_dist = measure_bond_distance(
+                        structure_file=structure_file,
+                        chain_id_1=chain_id_1,
+                        res_id_1=res_id_1,
+                        atom_name_1=atom_name_1,
+                        chain_id_2=chain_id_2,
+                        res_id_2=res_id_2,
+                        atom_name_2=atom_name_2,
+                        add_hydrogen_to_1=add_hydrogen_to_1,
+                        add_hydrogen_to_2=add_hydrogen_to_2,
+                    )
+
+                    df.at[i, f"{d}:{dist}_{r}"] = bond_dist
+                    avg4agg.append(bond_dist)
+
+                if r == "agg":
+                    df.at[i, f"{d}:{dist}_{r}"] = np.mean(avg4agg)
+
+        return df
+
+
