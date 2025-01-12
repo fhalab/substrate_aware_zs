@@ -11,14 +11,16 @@ import subprocess
 
 from copy import deepcopy
 from glob import glob
-
 from tqdm import tqdm
+
+import numpy as np
+import pandas as pd
 
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder, canonicalize_smiles, load_json
 
 
-class AF3Prep(ZSData):
+class AF3Struct(ZSData):
     def __init__(
         self,
         input_csv: str,
@@ -229,10 +231,7 @@ class AF3Prep(ZSData):
             os.system(f"sudo rm -r {var_dir}")
 
         # check if the output model exists and ifrerun is False
-        if (
-            os.path.exists(model_cif)
-            and not self._ifrerun
-        ):
+        if os.path.exists(model_cif) and not self._ifrerun:
             print(
                 f"Structures for {var} already exist at {self._af3_struct_subdir}. Skipping..."
             )
@@ -371,7 +370,7 @@ class AF3Prep(ZSData):
             print(f"Error: {e}")
 
 
-def run_af3_prep(
+def run_af3_struct(
     pattern: str | list = "data/meta/not_scaled/*.csv",
     gen_opt: str = "joint",
     cofactor_dets: str = "cofactor",
@@ -394,4 +393,155 @@ def run_af3_prep(
 
     for lib in lib_list:
         print(f"Running AF3 for {lib}...")
-        AF3Prep(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
+        AF3Struct(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
+
+
+# TODO make a class
+def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
+
+    """
+    A function for going through the subfolder and getting the af3 scores
+    to generate a dataframe with the following columns:
+        - var: The mutation, ie I165A:I183A:Y301V
+        - rep: The replicate number
+    For joint docking:
+        {'chain_iptm': [0.88, 0.88],
+        'chain_pair_iptm': [[0.93, 0.88], [0.88, 0.8]],
+        'chain_pair_pae_min': [[0.76, 0.85], [1.36, 0.76]],
+        'chain_ptm': [0.93, 0.8],
+        'fraction_disordered': 0.0,
+        'has_clash': 0.0,
+        'iptm': 0.88,
+        'ptm': 0.92,
+        'ranking_score': 0.89}
+    For separate docking:
+        {'chain_iptm': [0.88, 0.88],
+        'chain_pair_iptm': [[0.93, 0.88], [0.88, 0.8]],
+        'chain_pair_pae_min': [[0.76, 0.85], [1.36, 0.76]],
+        'chain_ptm': [0.93, 0.8],
+        'fraction_disordered': 0.0,
+        'has_clash': 0.0,
+        'iptm': 0.88,
+        'ptm': 0.92,
+        'ranking_score': 0.89}
+
+    Args:
+    - input_dir, str: The path to the folder containing the af3 score
+        ie zs/af3/structure_joint/PfTrpB-4bromo
+    - score_dir_name, str: The name of the score directory but keep other details
+        ie zs/af3/score_joint
+    """
+
+    # Determine the docking details based on folder naming
+    dock_dets = (
+        "joint"
+        if "joint" in mut_structure_dir
+        else "separate"
+        if "seperate" in mut_structure_dir
+        else ""
+    )
+
+    output_dir = checkNgen_folder(
+        os.path.dirname(mut_structure_dir).replace("struct", score_dir_name)
+    )
+    lib_name = os.path.basename(mut_structure_dir)
+
+    # Prepare the score keys for data extraction
+    overall_keys = ["ranking_score", "ptm", "iptm", "fraction_disordered"]
+    chain_labels = ["A", "B", "C"] if dock_dets == "separate" else ["A", "B"]
+    score_keys = deepcopy(overall_keys)
+    for chain in chain_labels:
+        score_keys.append(f"chain_ptm_{chain}")
+        score_keys.append(f"chain_iptm_{chain}")
+        for other_chain in chain_labels:
+            score_keys.append(f"chain_pae_min_{chain}{other_chain}")
+            if chain != other_chain:
+                score_keys.append(f"chain_iptm_{chain}{other_chain}")
+
+    # Initialize results storage
+    results = []
+
+    # Iterate through each variant directory
+    # zs/af3/struct_joint/ParLQ/f89a
+    for subfolder in sorted(glob(os.path.join(mut_structure_dir, "*"))):
+        var_name = os.path.basename(subfolder)
+        var_data = {"var": var_name.replace("_", ":").upper()}
+
+        # Prepare for averaging
+        score_sums = {key: [] for key in score_keys}
+
+        rep_index_list = [str(i) for i in range(5)] + ["agg"]
+        rep_json = sorted(glob(os.path.join(subfolder, "*.json")))
+
+        # Loop through each replicate score file
+        for rep_index in rep_index_list:
+            if rep_index == "agg":
+                # zs/af3/struct_joint/ParLQ/f89a/f89a_summary_confidences.json
+                rep_json = os.path.join(
+                    subfolder, f"{var_name}_summary_confidences.json"
+                )
+            else:
+                # zs/af3/struct_joint/ParLQ/f89a/seed-1_sample-0/summary_confidences.json
+                rep_json = os.path.join(
+                    subfolder,
+                    f"seed-1_sample-{rep_index}",
+                    "summary_confidences.json",
+                )
+
+            try:
+                json_dict = load_json(rep_json)
+                # Extract the score data for this replicate
+                for key in overall_keys:
+                    var_data[f"{key}_{rep_index}"] = json_dict[key]
+
+                # Process chain-level ptm and iptm scores
+                for i, chain in enumerate(chain_labels):
+                    var_data[f"chain_ptm_{chain}_{rep_index}"] = json_dict["chain_ptm"][
+                        i
+                    ]
+                    var_data[f"chain_iptm_{chain}_{rep_index}"] = json_dict[
+                        "chain_iptm"
+                    ][i]
+                    for j, other_chain in enumerate(chain_labels):
+                        var_data[
+                            f"chain_pae_min_{chain}{other_chain}_{rep_index}"
+                        ] = json_dict["chain_pair_pae_min"][i][j]
+
+                        if i != j:
+                            var_data[
+                                f"chain_iptm_{chain}{other_chain}_{rep_index}"
+                            ] = json_dict["chain_pair_iptm"][i][j]
+
+                # Only consider for averaging if no clashes
+                if not json_dict["has_clash"]:
+                    for key in score_keys:
+                        value = var_data.get(f"{key}_{rep_index}")
+                        if value is not None:
+                            score_sums[key].append(value)
+
+            except Exception as e:
+                print(f"Error processing {rep_json}: {e}")
+
+        # Compute averages for the variant and store them as columns
+        for key, values in score_sums.items():
+            var_data[f"{key}_avg"] = np.mean(values) if values else None
+            var_data[f"{key}_std"] = np.std(values) if values else None
+
+        # Collect results
+        results.append(var_data)
+
+    # Convert results to a DataFrame and save it
+    df = pd.DataFrame(results)
+
+    df.to_csv(f"{output_dir}/{lib_name}.csv", index=False)
+    print(f"Saved af3 scores for {lib_name} to {output_dir}/{lib_name}.csv")
+
+
+def parse_all_af3_scores(af3_struct_dir: str = "zs/af3/struct_joint"):
+    """
+    A function to parse all the af3 scores for all libraries
+    """
+
+    for lib in tqdm(sorted(glob(f"{af3_struct_dir}/*"))):
+        print(f"Parsing af3 scores for {lib}...")
+        parse_af3_scores(lib)

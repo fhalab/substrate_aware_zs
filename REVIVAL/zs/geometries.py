@@ -299,7 +299,7 @@ class BondData(ZSData):
         self._dist_list = list(self.lib_info[self._dist_opt].keys())
 
         # both af and chai output 5 reps
-        self._rep_list = [str(i) for i in list(range(5))] + ["agg"]
+        self._rep_list = [str(i) for i in list(range(5))] + ["avg"]
 
         print(f"self._dist_list: {self._dist_list}")
         print(f"self._rep_list: {self._rep_list}")
@@ -360,7 +360,7 @@ class BondData(ZSData):
             var_name = row[self._var_col_name].lower().replace(":", "_")
         else:
             var_name = row[self._var_col_name]
-            
+
         var_struct_dir = os.path.join(self._struct_subdir, var_name)
 
         for d, dist in enumerate(self._dist_list):
@@ -380,7 +380,9 @@ class BondData(ZSData):
             avg4agg = []
 
             for r in self._rep_list:
-                if r != "agg":
+
+                # if not avg, then get the distance for each replicate
+                if r != "avg":
                     structure_file = (
                         os.path.join(var_struct_dir, f"seed-1_sample-{r}", "model.cif")
                         if struct_type == "af"
@@ -409,43 +411,53 @@ class BondData(ZSData):
                             }
                         )
 
-                # now handel agg based on af or chai
+                # now take the avg for both af and chai
                 else:
-                    if struct_type == "af":
-                        # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
-                        structure_file = os.path.join(
-                            var_struct_dir, f"{var_name}_model.cif"
-                        )
-                        try:
-                            distance = measure_bond_distance(
-                                structure_file=structure_file, **atom_kwags
-                            )
-                            results.append(
-                                {
-                                    self._var_col_name: row[self._var_col_name],
-                                    "key": f"{d}:{dist}_{r}",
-                                    "distance": distance,
-                                }
-                            )
-                            avg4agg.append(distance)
-                        except Exception as e:
-                            print(f"Error processing {structure_file}: {e}")
-                            results.append(
-                                {
-                                    self._var_col_name: row[self._var_col_name],
-                                    "key": f"{d}:{dist}_{r}",
-                                    "distance": None,
-                                }
-                            )
-                    else:
-                        avg_distance = np.mean(avg4agg) if avg4agg else None
-                        results.append(
-                            {
-                                self._var_col_name: row[self._var_col_name],
-                                "key": f"{d}:{dist}_agg",
-                                "distance": avg_distance,
-                            }
-                        )
+
+                    avg_distance = np.mean(avg4agg) if avg4agg else None
+                    results.append(
+                        {
+                            self._var_col_name: row[self._var_col_name],
+                            "key": f"{d}:{dist}_avg",
+                            "distance": avg_distance,
+                        }
+                    )
+
+                    std_distance = np.std(avg4agg) if avg4agg else None
+                    results.append(
+                        {
+                            self._var_col_name: row[self._var_col_name],
+                            "key": f"{d}:{dist}_std",
+                            "distance": std_distance,
+                        }
+                    )
+
+            # add additional agg if af3
+            if struct_type == "af":
+                r = "agg"
+                # ie zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
+                structure_file = os.path.join(var_struct_dir, f"{var_name}_model.cif")
+                try:
+                    distance = measure_bond_distance(
+                        structure_file=structure_file, **atom_kwags
+                    )
+                    results.append(
+                        {
+                            self._var_col_name: row[self._var_col_name],
+                            "key": f"{d}:{dist}_{r}",
+                            "distance": distance,
+                        }
+                    )
+                    avg4agg.append(distance)
+                except Exception as e:
+                    print(f"Error processing {structure_file}: {e}")
+                    results.append(
+                        {
+                            self._var_col_name: row[self._var_col_name],
+                            "key": f"{d}:{dist}_{r}",
+                            "distance": None,
+                        }
+                    )
 
         return results
 

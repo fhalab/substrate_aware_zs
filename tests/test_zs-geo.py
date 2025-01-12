@@ -23,10 +23,10 @@ if __name__ == "__main__":
     sys.stdout = f
 
 
-    run_bonddist(
-        struct_dir="zs/af3/struct_joint",
-        pattern="data/meta/not_scaled/*.csv",
-    )
+    # run_bonddist(
+    #     struct_dir="zs/af3/struct_joint",
+    #     pattern="data/meta/not_scaled/*.csv",
+    # )
     
     # run_bonddist(
     #     struct_dir="zs/af3/struct_seperate",
@@ -37,19 +37,19 @@ if __name__ == "__main__":
     #         ]
     #     )
 
-    # run_bonddist(
-    #     struct_dir="zs/chai/structure_joint",
-    #     pattern="data/meta/not_scaled/*.csv",
-    # )
+    run_bonddist(
+        struct_dir="zs/chai/structure_joint",
+        pattern="data/meta/not_scaled/*.csv",
+    )
 
-    # run_bonddist(
-    #     struct_dir="zs/chai/structure_seperate",
-    #     pattern=[
-    #         "data/meta/not_scaled/ParLQ.csv",
-    #         "data/meta/not_scaled/Rma-CB.csv",
-    #         "data/meta/not_scaled/Rma-CSi.csv",
-    #         ]
-    #     )
+    run_bonddist(
+        struct_dir="zs/chai/structure_seperate",
+        pattern=[
+            "data/meta/not_scaled/ParLQ.csv",
+            "data/meta/not_scaled/Rma-CB.csv",
+            "data/meta/not_scaled/Rma-CSi.csv",
+            ]
+        )
 
 
     f.close()
