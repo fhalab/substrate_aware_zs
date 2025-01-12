@@ -344,6 +344,7 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
         # Compute averages for the variant and store them as columns
         for key, values in score_sums.items():
             var_data[f"{key}_avg"] = np.mean(values) if values else None
+            var_data[f"{key}_std"] = np.std(values) if values else None
 
         # Collect results
         results.append(var_data)

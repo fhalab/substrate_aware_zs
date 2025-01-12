@@ -356,7 +356,11 @@ class BondData(ZSData):
         """Helper method for parallel processing."""
 
         results = []
-        var_name = row[self._var_col_name].lower().replace(":", "_")
+        if struct_type == "af":
+            var_name = row[self._var_col_name].lower().replace(":", "_")
+        else:
+            var_name = row[self._var_col_name]
+            
         var_struct_dir = os.path.join(self._struct_subdir, var_name)
 
         for d, dist in enumerate(self._dist_list):
