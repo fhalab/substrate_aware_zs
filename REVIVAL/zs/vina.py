@@ -596,120 +596,6 @@ real_number_pattern = r"[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?"
 score_re = re.compile(rf"REMARK VINA RESULT:\s*(?P<affinity>{real_number_pattern})")
 
 
-def dock_ad4_pdbqt(
-    ligand_pdbqt, protein_pdbqt, logfile, output_dir, protein_name, ligand_name
-) -> None:
-    """Run AD4.
-
-    ../../software/x86_64Linux2/autogrid4 -p UYO78372.gpf -l UYO78372.glg
-    pythonsh ../../enzymetk/prepare_dpf4.py -l ligand.pdbqt -r UYO78372.pdbqt -o UYO78372.dpf
-    ../../software/x86_64Linux2/autodock4 -p UYO78372.dpf -l docking_results_UYO78372.dlg
-
-    """
-    package_root = Path(__file__).resolve().parent.parent
-
-    gpf = os.path.join(output_dir, f"{protein_name}_{ligand_name}.gpf")
-    glg = os.path.join(output_dir, f"{protein_name}_{ligand_name}.glg")
-    dpf = os.path.join(output_dir, f"{protein_name}_{ligand_name}.dpf")
-    dlg = os.path.join(output_dir, f"{protein_name}_{ligand_name}.dlg")
-
-    os.chdir(output_dir)
-    os.system(f'cp {protein_pdbqt} {os.path.join(output_dir, protein_name + ".pdbqt")}')
-    os.system(f'cp {ligand_pdbqt} {os.path.join(output_dir, ligand_name + ".pdbqt")}')
-    protein_pdbqt = protein_name + ".pdbqt"
-    ligand_pdbqt = ligand_name + ".pdbqt"
-
-    print(output_dir)
-    # Step 1 prepare GPF
-    cmd_list = [
-        f"{package_root}/docko/deps/x86_64Linux2/mgltools_x86_64Linux2_1.5.7/bin/pythonsh",
-        f"{package_root}/docko/deps/prepare_gpf.py",
-        "-l",
-        ligand_pdbqt,
-        "-r",
-        protein_pdbqt,
-        "-o",
-        gpf,
-    ]
-    print(" ".join(cmd_list))
-    os.system(" ".join(cmd_list))
-
-    # --------- Step 2 prepare GLG
-    os.system(
-        " ".join(
-            [f"{package_root}/docko/deps/x86_64Linux2/autogrid4", "-p", gpf, "-l", glg]
-        )
-    )
-
-    # --------- Step 3 prepare DPF
-    cmd_list = [
-        f"{package_root}/docko/deps/x86_64Linux2/mgltools_x86_64Linux2_1.5.7/bin/pythonsh",
-        f"{package_root}/docko/deps/prepare_dpf4.py",
-        "-l",
-        ligand_pdbqt,
-        "-r",
-        protein_pdbqt,
-        "-o",
-        dpf,
-    ]
-    os.system(" ".join(cmd_list))
-
-    # --------- FINALLY RUN AD4
-    cmd_list = [
-        f"{package_root}/docko/deps/x86_64Linux2/autodock4",
-        "-p",
-        dpf,
-        "-l",
-        dlg,
-    ]
-
-    os.system(" ".join(cmd_list))
-
-    # They can get the results from here.
-    return dlg
-
-
-def dock_autodock_pdbqt(
-    conf_path, log_path, out_path, seed, num_cpus: int = None
-) -> None:
-    """
-    Run AutoDock Vina.
-
-    :param conf_path: config
-    :param log_path: path to log file
-    :param out_path: path to output file
-    :param seed: random seed
-    :param num_cpus: number of CPU cores available to AutoDock Vina
-    """
-    cmd_list = [
-        "vina",  # Needs to be installed as vina.
-        "--config",
-        conf_path,
-        "--out",
-        out_path,
-        "--seed",
-        str(seed),
-    ]
-    # ToDo: add in scoring function for ad4
-    print(f"vina --config {conf_path} --out {out_path}")
-    if num_cpus is not None:
-        cmd_list += ["--cpu", str(num_cpus)]
-
-    cmd_return = subprocess.run(
-        cmd_list, stdout=subprocess.PIPE, stderr=subprocess.STDOUT
-    )
-    output = cmd_return.stdout.decode("utf-8")
-    logging.debug(output)
-
-    # Write output to the logging file
-    with open(log_path, "w+") as fout:
-        fout.write(output)
-
-    # If failure, raise DockingError
-    if cmd_return.returncode != 0:
-        print(f"Docking with Vina failed: {output}")
-
-
 ##### helper functions #####
 
 
@@ -1041,7 +927,7 @@ def format_ligand(
     return ligand_pdbqt_file, fe_pdbqt_file, ligand_sdf_file
 
 
-def extract_ions(input_file_path, output_file_path, ion):
+def extract_ions(input_file_path: str, output_file_path: str, ion: str) -> None:
     """
     Extract lines starting with ATOM containing the specified ion from a PDB or CIF file.
 
@@ -1050,7 +936,7 @@ def extract_ions(input_file_path, output_file_path, ion):
         output_file_path (str): Path to save the extracted ion lines.
         ion (str): Name of the ion to extract (e.g., "Na", "Cl").
     """
-    is_cif = input_file_path.endswith(".cif")
+
     ion_found = False
 
     with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
@@ -1235,10 +1121,18 @@ def extract_lowest_energy(file_path: str):
     with open(file_path, "r") as file:
         lines = file.readlines()
 
+    # Initialize table_start outside the loop for safety
+    table_start = None
+
     for i, line in enumerate(lines):
         if "mode |   affinity | dist from best mode" in line:
             table_start = i + 3  # Skip to the actual table
             break
+    
+    # If the header wasn't found, return np.nan and print a warning
+    if table_start is None:
+        print(f"Cannot find the table in {file_path}")
+        return np.nan
 
     energies = []
     for line in lines[table_start:]:
@@ -1268,7 +1162,8 @@ class VinaResults(ZSData):
         zs_dir: str = "zs",
         vina_dir: str = "vina",
         vina_raw_dir: str = "",
-        vina_score_dir: str = "score",
+        vina_score_dirname: str = "score",
+        freeze_opt: str = None,
         num_rep: int = 5,
         cofactor_type: str = "",
         withsub: bool = True,
@@ -1291,7 +1186,7 @@ class VinaResults(ZSData):
         - zs_dir (str): The directory for the ZS data.
         - vina_dir (str): The directory for the Vina data.
         - vina_raw_dir (str): The directory for the raw Vina data.
-        - vina_score_dir (str): The directory for the Vina score data.
+        - vina_score_dirname (str): The directory for the Vina score data.
         - num_rep (int): The number of replicates.
         - cofactor_type (str): The type of cofactor based on LIB_INFO_DICT.
             ie "" for simple cofacoctor, "inactivated" for inactivated cofactor, etc.
@@ -1312,12 +1207,16 @@ class VinaResults(ZSData):
             zs_dir=zs_dir,
         )
 
-        self._cofactor_append = f"_{cofactor_type}" if cofactor_type else ""
+        self._cofactor_append = f"_{cofactor_type}" if cofactor_type and cofactor_type != "cofactor" else ""
+        
+        self._freeze_opt_append = freeze_opt if not None else ""
+        self._freeze_opt_subdir = f"freeze_{str(freeze_opt).lower()}"
+
         self._vina_lib_name = f"{self.lib_name}{self._cofactor_append}"
 
         self._vina_dir = os.path.join(self._zs_dir, vina_dir, vina_raw_dir)
         self._vina_score_dir = checkNgen_folder(
-            os.path.join(self._zs_dir, vina_dir, vina_score_dir)
+            os.path.join(self._zs_dir, vina_dir, vina_score_dirname, self._freeze_opt_subdir)
         )
         self._vina_lib_dir = os.path.join(self._vina_dir, self._vina_lib_name)
 
@@ -1355,7 +1254,7 @@ class VinaResults(ZSData):
         for variant in tqdm(variants):
             for r in range(self._num_rep):
                 vina_log_files = glob(
-                    os.path.join(self._vina_lib_dir, f"{variant}_{r}", "*_log.txt")
+                    os.path.join(self._vina_lib_dir, f"{variant}_{r}", f"*{self._freeze_opt_append}_log.txt")
                 )
 
                 if len(vina_log_files) >= 1 and os.path.isfile(vina_log_files[0]):
@@ -1403,6 +1302,7 @@ class VinaResults(ZSData):
 def run_parse_vina_results(
     pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
     cofactor_type: str = "",
+    freeze_opt: str = None,
     kwargs: dict = {},
 ):
 
@@ -1420,4 +1320,9 @@ def run_parse_vina_results(
 
     for lib in lib_list:
         print(f"Running parse vina results for {lib}...")
-        VinaResults(input_csv=lib, cofactor_type=cofactor_type, **kwargs)
+        VinaResults(
+            input_csv=lib, 
+            cofactor_type=cofactor_type,
+            freeze_opt=freeze_opt,
+            **kwargs
+        )

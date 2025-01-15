@@ -31,9 +31,16 @@ if __name__ == "__main__":
     #     cofactor_type="inactivated-cofactor",
     # )
     
+    # run_parse_vina_results(
+    #     pattern="data/meta/not_scaled/PfTrpB-*.csv",
+    #     cofactor_type="", # default cofactor
+    #     freeze_opt=None
+    # )
+
     run_parse_vina_results(
-        pattern="data/meta/not_scaled/PfTrpB-4*.csv",
-        cofactor_type="cofactor",
+        pattern="data/meta/not_scaled/PfTrpB-*.csv",
+        cofactor_type="",
+        freeze_opt="cofactor"
     )
 
     # def run_parse_vina_results(

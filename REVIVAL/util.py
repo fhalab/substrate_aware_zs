@@ -100,6 +100,31 @@ def read_parent_fasta(fasta_path: str) -> str:
     return str(sequences[0].seq)
 
 
+def get_protein_structure(file_path: str):
+
+    """
+    Get the parser based on the file extension
+
+    Args:
+    - file_path: str, the path to the file
+
+    Returns:
+    - PDBParser, the parser
+    """
+
+    # Check the file extension
+    file_extension = os.path.splitext(file_path)[1].lower()
+
+    if file_extension == ".pdb":
+        parser = PDBParser(QUIET=True)  # QUIET suppresses warnings
+    elif file_extension == ".cif":
+        parser = MMCIFParser(QUIET=True)
+    else:
+        raise ValueError("Unsupported file format. Please use a .pdb or .cif file.")
+
+    return parser.get_structure("protein", file_path)
+
+
 def get_chain_ids(pdb_file_path: str) -> list:
     """
     Extract chain IDs from a given PDB file.
@@ -110,8 +135,9 @@ def get_chain_ids(pdb_file_path: str) -> list:
     Returns:
     - list: A list of chain IDs in the PDB file.
     """
-    parser = PDBParser(QUIET=True)  # QUIET=True suppresses warnings
-    structure = parser.get_structure("structure", pdb_file_path)
+    # Parse the input PDB file
+
+    structure = get_protein_structure(pdb_file_path)
 
     # Extract chain IDs
     chain_ids = set()
@@ -119,7 +145,7 @@ def get_chain_ids(pdb_file_path: str) -> list:
         for chain in model:
             chain_ids.add(chain.id)
 
-    return list(chain_ids)
+    return sorted(list(chain_ids))
 
 
 def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: str):
@@ -133,32 +159,33 @@ def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: s
             ie. "A", "A,B", "A,B,C", etc.
     """
     # Check if input is a CIF file
-    if os.path.splitext(input_file_path)[-1] == ".cif":
-        structure = convert_cif_to_pdb(
-            cif_file=input_file_path, pdb_file="", ifsave=False
-        )
-    else:
-        # Parse the input PDB file
-        parser = PDBParser()
-        structure = parser.get_structure("protein", input_file_path)
+    structure = get_protein_structure(input_file_path)
 
     # convert chain_id to a list
     chain_ids = chain_id.split(",")
 
     # Initialize PDBIO for writing the output
     io = PDBIO()
+    extracted_chains = []
 
-    # Open the output file for writing
-    with open(output_file_path, "w") as fout:
+    if output_file_path:
+        # Open the output file for writing
+        with open(output_file_path, "w") as fout:
+            for model in structure:
+                for chain in model:
+                    if chain.id in chain_ids:
+                        # Save the chain to a temporary file-like object
+                        io.set_structure(chain)
+                        io.save(fout)  # Save chain to the output file
+                        fout.write("\n")  # Add a newline for separation
+
+        print(f"Chains {', '.join(chain_ids)} have been saved to {output_file_path}")
+    else:
         for model in structure:
             for chain in model:
                 if chain.id in chain_ids:
-                    # Save the chain to a temporary file-like object
-                    io.set_structure(chain)
-                    io.save(fout)  # Save chain to the output file
-                    fout.write("\n")  # Add a newline for separation
-
-    print(f"Chains {', '.join(chain_ids)} have been saved to {output_file_path}")
+                    extracted_chains.append(chain)
+        return extracted_chains
 
 
 def modify_PDB_chain(
@@ -178,8 +205,7 @@ def modify_PDB_chain(
     """
 
     # Parse the input PDB file
-    parser = PDBParser()
-    structure = parser.get_structure("protein", input_file_path)
+    structure = get_protein_structure(input_file_path)
 
     # Iterate over the chains and replace the original chain ID with the modified chain ID
     for model in structure:
@@ -205,11 +231,9 @@ def convert_cif_to_pdb(cif_file: str, pdb_file: str = "", ifsave: bool = True):
     - cif_file (str): Path to the input CIF file.
     - pdb_file (str): Path to the output PDB file.
     """
-    # Create a CIF parser object
-    parser = MMCIFParser(QUIET=True)
 
     # Parse the CIF file
-    structure = parser.get_structure("structure", cif_file)
+    structure = get_protein_structure(cif_file)
 
     # Create a PDBIO object to write the structure to PDB format
     io = PDBIO()
@@ -241,8 +265,7 @@ def chop_pdb(
     """
 
     # Initialize the parser and structure
-    parser = PDB.PDBParser(QUIET=True)
-    structure = parser.get_structure("structure", input_pdb)
+    structure = get_protein_structure(input_pdb)
 
     # Initialize the writer
     io = PDB.PDBIO()

@@ -290,6 +290,11 @@ class BondData(ZSData):
         elif "seperate" in struct_dir:
             dock_opt = "_seperate"
 
+        if "chai" in struct_dir:
+            dock_opt = "_chai" + dock_opt
+        elif "af3" in struct_dir:
+            dock_opt = "_af3" + dock_opt
+
         self._dist_opt = f"cofactor-distances{dock_opt}"
 
         # init the columns based on the keys from the dict
