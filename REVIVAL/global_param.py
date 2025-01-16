@@ -97,23 +97,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(Br)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "4bromo-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'BR_1')
+            "4bromo-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "BR1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -124,10 +121,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C7", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -151,23 +145,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Br)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "5bromo-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'BR_1')
+            "5bromo-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "BR1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -178,10 +169,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C6", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -205,23 +193,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(Br)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "7bromo-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'BR_1')
+            "7bromo-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "BR1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_8", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_8", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -232,10 +217,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C6", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -259,23 +241,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "5chloro-info_joint": [
-                ('B', 'LIG', 'CL_1'),
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1')
+            "5chloro-info": [
+                ("B", "LIG", "CL1"),
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -286,10 +265,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C6", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -313,23 +289,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "6chloro-info_joint": [
-                ('B', 'LIG', 'CL_1'),
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1')
+            "6chloro-info": [
+                ("B", "LIG", "CL1"),
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_7", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_7", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -340,10 +313,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C5", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C5", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -367,24 +337,21 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "56chloro-info_joint": [
-                ('B', 'LIG', 'CL_1'),
-                ('B', 'LIG', 'CL_2'),
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1')
+            "56chloro-info": [
+                ("B", "LIG", "CL1"),
+                ("B", "LIG", "CL2"),
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -395,10 +362,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C4", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C4", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -422,24 +386,21 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(C#N)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "4cyano-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'C_9'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'N_2')
+            "4cyano-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "C9"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "N2"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_15", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_15", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -450,10 +411,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C8", False),
-                    ("B", 1, "LIG", "C10", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C8", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N2", True),
@@ -477,24 +435,21 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(C=C23)C#N)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "5cyano-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'C_9'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'N_2')
+            "5cyano-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "C9"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "N2"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_15", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_15", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -505,10 +460,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C7", False),
-                    ("B", 1, "LIG", "C10", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N2", True),
@@ -532,23 +484,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(I)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "5iodo-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'I_1')
+            "5iodo-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "I1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_5", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -559,10 +508,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C6", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -586,23 +532,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(I)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
             ],
-            "7iodo-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'N_1'),
-                ('B', 'LIG', 'I_1')
+            "7iodo-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "I1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_8", False),
-                    ("B", 1, "LIG", "C_14", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_8", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -613,10 +556,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C6", False),
-                    ("B", 1, "LIG", "C9", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -640,23 +580,20 @@ LIB_INFO_DICT = deepcopy(
                 "CC1=C2NC=C(C[C@H](\[NH+]=C\C3=C(COP([O-])([O-])=O)C=NC(C)=C3[O-])C([O-])=O)C2=CC=C1",
                 "[Na+]",
             ],
-            "7methyl-info_joint": [
-                ('B', 'LIG', 'C_1'),
-                ('B', 'LIG', 'C_2'),
-                ('B', 'LIG', 'C_3'),
-                ('B', 'LIG', 'C_4'),
-                ('B', 'LIG', 'C_5'),
-                ('B', 'LIG', 'C_6'),
-                ('B', 'LIG', 'C_7'),
-                ('B', 'LIG', 'C_8'),
-                ('B', 'LIG', 'C_9'),
-                ('B', 'LIG', 'N_1'),
+            "7methyl-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "C9"),
+                ("B", "LIG", "N1"),
             ],
             "cofactor-distances_chai_joint": {
-                "C-C": ((
-                    "B", 1, "LIG", "C_9", False),
-                    ("B", 1, "LIG", "C_15", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C_9", False), ("B", 1, "LIG", "C_15", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N_1", True),
@@ -667,10 +604,7 @@ LIB_INFO_DICT = deepcopy(
                 ),
             },  # if need to add H
             "cofactor-distances_af3_joint": {
-                "C-C": (
-                    ("B", 1, "LIG", "C7", False),
-                    ("B", 1, "LIG", "C10", False)
-                ),
+                "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
                     ("A", 104, "GLU", "OE1", False),
                     ("B", 1, "LIG", "N1", True),
@@ -700,12 +634,40 @@ LIB_INFO_DICT = deepcopy(
             ],
             "product": "organoborane",
             "product-smiles": "CN1C=C[N+](C)=C1[BH2-][C@H](C)C(OCC)=O",
+            "NHC-borane-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "N1"),
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "B1"),
+            ],
+            "carbene-info_joint": [
+                ("B", "LIG", "C20"),
+                ("B", "LIG", "C21"),
+                ("B", "LIG", "C22"),
+                ("B", "LIG", "C23"),
+                ("B", "LIG", "C24"),
+                ("B", "LIG", "O1"),
+                ("B", "LIG", "O2"),
+            ],
+            "carbene-info_seperate": [
+                ("C", "LIG", "C15"),
+                ("C", "LIG", "C16"),
+                ("C", "LIG", "C17"),
+                ("C", "LIG", "C18"),
+                ("C", "LIG", "C19"),
+                ("C", "LIG", "O1"),
+                ("C", "LIG", "O2"),
+            ],
             "cofactor-distances_joint": {
                 "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
-            }, # if need to add H
+            },  # if need to add H
             "cofactor-distances_seperate": {
                 "C-B": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "B_1", False))
-            }, # if need to add H
+            },  # if need to add H
             "positions": {1: 75, 2: 99, 3: 100, 4: 101, 5: 102, 6: 103},
             "AAs": {1: "V", 2: "M", 3: "M", 4: "T", 5: "D", 6: "M"},
             "family": "cyt c",
@@ -726,12 +688,41 @@ LIB_INFO_DICT = deepcopy(
             ],
             "product": "organosilicon",
             "product-smiles": "C[Si]([C@]([H])(C)C(OCC)=O)(C)C1=CC=CC=C1",
+            "phenyldimethylsilane-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "SI1"),
+            ],
+            "carbene-info_joint": [
+                ("B", "LIG", "C23"),
+                ("B", "LIG", "C24"),
+                ("B", "LIG", "C25"),
+                ("B", "LIG", "C26"),
+                ("B", "LIG", "C27"),
+                ("B", "LIG", "O1"),
+                ("B", "LIG", "O2"),
+            ],
+            "carbene-info_seperate": [
+                ("C", "LIG", "C15"),
+                ("C", "LIG", "C16"),
+                ("C", "LIG", "C17"),
+                ("C", "LIG", "C18"),
+                ("C", "LIG", "C19"),
+                ("C", "LIG", "O1"),
+                ("C", "LIG", "O2"),
+            ],
             "cofactor-distances_joint": {
                 "C-Si": (("B", 1, "LIG", "C_23", False), ("B", 1, "LIG", "SI_1", False))
-            }, # if need to add H
+            },  # if need to add H
             "cofactor-distances_seperate": {
                 "C-Si": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "SI_1", False))
-            }, # if need to add H
+            },  # if need to add H
             "positions": {1: 75, 2: 99, 3: 100, 4: 101, 5: 102, 6: 103},
             "AAs": {1: "V", 2: "M", 3: "M", 4: "T", 5: "D", 6: "M"},
             "family": "cyt c",
@@ -754,14 +745,54 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
             "product2": "1,2-disubstituted cyclopropanes trans",
             "product2-smiles": "COC1=CC=C([C@@H]2[C@@H](C(OCC)=O)C2)C=C1",
+            "4-vinylanisole-info": [
+                ("B", "LIG", "C1"),
+                ("B", "LIG", "C2"),
+                ("B", "LIG", "C3"),
+                ("B", "LIG", "C4"),
+                ("B", "LIG", "C5"),
+                ("B", "LIG", "C6"),
+                ("B", "LIG", "C7"),
+                ("B", "LIG", "C8"),
+                ("B", "LIG", "C9"),
+                ("B", "LIG", "O1"),
+            ],
+            "carbene-info_joint": [
+                ("B", "LIG", "C24"),
+                ("B", "LIG", "C25"),
+                ("B", "LIG", "C26"),
+                ("B", "LIG", "C27"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+            ],
+            "carbene-info_seperate": [
+                ("C", "LIG", "C15"),
+                ("C", "LIG", "C16"),
+                ("C", "LIG", "C17"),
+                ("C", "LIG", "C18"),
+                ("C", "LIG", "O1"),
+                ("C", "LIG", "O2"),
+            ],
             "cofactor-distances_joint": {
-                "C-C_1": (("B", 1, "LIG", "C_24", False), ("B", 1, "LIG", "C_1", False)),
-                "C-C_2": (("B", 1, "LIG", "C_24", False), ("B", 1, "LIG", "C_2", False)),
-            }, # if need to add H
+                "C-C_1": (
+                    ("B", 1, "LIG", "C_24", False),
+                    ("B", 1, "LIG", "C_1", False),
+                ),
+                "C-C_2": (
+                    ("B", 1, "LIG", "C_24", False),
+                    ("B", 1, "LIG", "C_2", False),
+                ),
+            },  # if need to add H
             "cofactor-distances_seperate": {
-                "C-C_1": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "C_1", False)),
-                "C-C_2": (("C", 1, "LIG", "C_15", False), ("B", 1, "LIG", "C_2", False)),
-            }, # if need to add H
+                "C-C_1": (
+                    ("C", 1, "LIG", "C_15", False),
+                    ("B", 1, "LIG", "C_1", False),
+                ),
+                "C-C_2": (
+                    ("C", 1, "LIG", "C_15", False),
+                    ("B", 1, "LIG", "C_2", False),
+                ),
+            },  # if need to add H
             "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
             "AAs": {
                 1: "W",

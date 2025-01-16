@@ -323,6 +323,19 @@ def replace_residue_names_auto(
         new_residue (str): New residue name to replace with.
     """
 
+    # Convert CIF to PDB if necessary
+    if input_file.lower().endswith(".cif"):
+        pdb_file = os.path.splitext(input_file)[0] + ".pdb"
+        print(f"Converting CIF to PDB: {input_file} -> {pdb_file}")
+        
+        # Parse CIF and write as PDB
+        parser = MMCIFParser(QUIET=True)
+        structure = parser.get_structure("structure", input_file)
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(pdb_file)
+        input_file = pdb_file  # Use the converted PDB file as input
+
     detected_residues = set()  # To store dynamically detected residue names
     pattern = re.compile(f"^{residue_prefix}_\\w$")  # Regex to detect residues like LIG_B, LIG_C
 
@@ -345,7 +358,15 @@ def replace_residue_names_auto(
                 long_res_name = line[17:22]
                 if long_res_name in detected_residues:
                     line = line.replace(long_res_name, new_residue)
-                outfile.write(line)
+
+                # Clean up atom names by removing underscores
+                atom_name = line[12:16].strip()
+                cleaned_atom_name = atom_name.replace("_", "")
+                line = line[:12] + cleaned_atom_name.ljust(4) + line[16:]
+
+            outfile.write(line)
+
+    os.remove(pdb_file)  # Remove the original file
 
 
 def find_missing_str(longer: str, shorter: str) -> [str, str]:

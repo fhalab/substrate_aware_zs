@@ -427,7 +427,7 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
 
     Args:
     - input_dir, str: The path to the folder containing the af3 score
-        ie zs/af3/structure_joint/PfTrpB-4bromo
+        ie zs/af3/struct_joint/PfTrpB-4bromo
     - score_dir_name, str: The name of the score directory but keep other details
         ie zs/af3/score_joint
     """

@@ -51,7 +51,7 @@ if __name__ == "__main__":
     # cofactor_dets="cofactor"
     # )
 
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/structure_joint")
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/structure_seperate")
+    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_joint")
+    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_seperate")
 
     f.close()

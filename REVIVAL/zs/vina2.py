@@ -28,6 +28,7 @@ from openmm.app import PDBFile, PDBxFile
 from Bio import PDB
 from Bio.PDB import PDBParser, MMCIFParser, PDBIO, Select, MMCIFIO
 
+
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
@@ -68,7 +69,7 @@ def format_pdb(file_path: str, protein_dir: str, pH: float, regen=False):
             input_path=protein_pdb_file, output_path=protein_pdbqt_file, pH=pH
         )
 
-    return name, protein_pdb_file, protein_pdbqt_file
+    return protein_pdb_file, protein_pdbqt_file
 
 
 ##### helper functions for cleaning pdb #####
@@ -248,11 +249,11 @@ def format_ligand(
     smiles: str,
     ligand_name: str,
     var_dir: str,
-    pH: float,
+    input_struct_path: str,
+    pH: float = 7.4,
     from_pdb: bool = True,
-    input_struct_path: Optional[str] = None,
-    ligand_chain_id: Optional[str] = None,
-    ligand_info: Optional[dict] = None,
+    ligand_chain_id: str = None,
+    ligand_info: list = None,
     substruct_criteria: str = None,
     regen: bool = False,
 ) -> str:
@@ -280,10 +281,13 @@ def format_ligand(
         str: Paths to the PDBQT file
     """
 
+    print(f"Formatting ligand {ligand_name}")
+
     this_ligand_dir = checkNgen_folder(os.path.join(var_dir, ligand_name))
 
     ligand_pdbqt_file = os.path.join(this_ligand_dir, f"{ligand_name}.pdbqt")
     ligand_pdb_file = os.path.join(this_ligand_dir, f"{ligand_name}.pdb")
+    ligand_pdb_temp_file = os.path.join(this_ligand_dir, f"{ligand_name}_temp.pdb")
     ligand_sdf_file = os.path.join(this_ligand_dir, f"{ligand_name}.sdf")
 
     # Skip processing if file exists and regen is False
@@ -291,23 +295,29 @@ def format_ligand(
         return ligand_pdbqt_file
 
     # Special handling for ions
-    if ligand_name.upper()[:2] in LIGAND_IONS or (smiles and re.match(r"\[.*\]", smiles)):
+    print("Checking for ions...")
+    simple_ion = ligand_name.upper()[:2]
+    if simple_ion in LIGAND_IONS or (smiles and smiles[0] == "[" and smiles[-1] == "]"):
+        print(f"Processing ion {ligand_name}")
+
         return prepare_ion(
             smiles=smiles,
-            element=ligand_name if ligand_name.upper()[:2] in LIGAND_IONS else None,
+            element=simple_ion if simple_ion in LIGAND_IONS else None,
             output_dir=this_ligand_dir,
             input_struct_path=input_struct_path,
             pH=pH
-            )
+        )
     
     # try to directly convert from pdb
     if from_pdb:
+        print(f"Processing ligand {ligand_name} from {input_struct_path}")
+
         if ligand_info is not None:
 
             # Extract ligand from PDB file
             extract_substruct(
-                input_file_path=input_struct_path,
-                output_substruct_path=ligand_pdb_file,
+                input_file_path=os.path.abspath(input_struct_path),
+                output_substruct_path=os.path.abspath(ligand_pdb_temp_file),
                 info_list=ligand_info,
                 chain_id=ligand_chain_id,
                 criteria=substruct_criteria, # only include the ligand
@@ -316,17 +326,56 @@ def format_ligand(
         else:
             get_chain_structure(
                 input_file_path=input_struct_path, 
-                output_file_path=ligand_pdb_file,
+                output_file_path=ligand_pdb_temp_file,
                 chain_id=ligand_chain_id
             )
 
+        print(ligand_pdb_temp_file, ligand_pdb_file)
+
         # get rid of ions as they will be handled separately
-        remove_ions(ligand_pdb_file, ligand_pdb_file)
+        remove_ions(
+            input_file_path=ligand_pdb_temp_file,
+            output_file_path=ligand_pdb_file
+        )
+
+        print("after removing ions")
+
+        # now remove the temp file
+        os.remove(ligand_pdb_temp_file)
 
         # now convert to pdbqt
-        os.system(
-                    f"obabel {ligand_pdb_file} -xr -p {pH} --partialcharge gasteiger -O {ligand_pdbqt_file}"
-                )
+        # os.system(
+        #             f"obabel {os.path.abspath(ligand_pdb_file)} -xr -p {pH} --partialcharge gasteiger -O {os.path.abspath(ligand_pdbqt_file)}"
+        #         )
+
+        # Construct command
+        try: 
+            command = [
+                "obabel",
+                os.path.abspath(ligand_pdb_file),
+                "-xr",
+                "-p", str(pH),
+                "--partialcharge", "gasteiger",
+                "-O", os.path.abspath(ligand_pdbqt_file)
+            ]
+            
+            # Execute command and capture output
+            subprocess.run(
+                command,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                text=True,
+                check=True  # Raises CalledProcessError if the command fails
+            )
+        except subprocess.CalledProcessError as e:
+            # Handle errors
+            print(f"Error during conversion:\n{e.stderr}")
+            return False
+
+        except Exception as e:
+            # Handle other exceptions
+            print(f"An unexpected error occurred: {e}")
+            return False
 
         # Validate output
         if not os.path.isfile(ligand_pdbqt_file) or os.path.getsize(ligand_pdbqt_file) == 0:
@@ -364,6 +413,7 @@ def remove_ions(input_file_path: str, output_file_path: str) -> None:
         input_file_path (str): Path to the input PDB or CIF file.
         output_file_path (str): Path to save the file without ions.
     """
+    print(f"Removing ions from {input_file_path}")
 
     with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
         for line in infile:
@@ -388,13 +438,16 @@ def extract_ions(input_file_path: str, output_file_path: str, ion: str) -> None:
     with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
         for line in infile:
             if line.startswith("ATOM") or line.startswith("HETATM"):
+                
                 fields = line.split()
                 if len(fields) >= 4:
                     atom_name = fields[2].strip()  # Atom name
                     residue_name = fields[3].strip()  # Residue name
+                    element_name = fields[-1].strip()
                     if (
                         atom_name.upper() == ion.upper()
                         or residue_name.upper() == ion.upper()
+                        or element_name.upper() == ion.upper()
                     ):
                         outfile.write(line)
                         ion_found = True
@@ -429,11 +482,43 @@ def protonate_smiles(smiles: str, pH: float) -> str:
     return output.strip()
 
 
+def save_full_hierarchy_atoms(atoms_with_context, output_file_path):
+    """
+    Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom).
+
+    Args:
+        atoms_with_context (list): List of tuples (model, chain, residue, atom).
+        output_file_path (str): Path to save the filtered PDB file.
+    """
+
+    print("insdie save_full_hierarchy_atoms")
+    print(output_file_path)
+
+    # Create a custom selector
+    class FullHierarchySelector(Select):
+        def __init__(self, atoms_with_context):
+            self.selected_atoms = set(atom for _, _, _, atom in atoms_with_context)
+
+        def accept_atom(self, atom):
+            # Include only selected atoms
+            return atom in self.selected_atoms
+
+    # Use the structure from the first atom's model as a base
+    if atoms_with_context:
+
+        structure = atoms_with_context[0][0].get_parent()
+
+        # Write the filtered structure
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(output_file_path, select=FullHierarchySelector(atoms_with_context))
+
+
 def extract_substruct(
     input_file_path: str,
     output_substruct_path: str,
     info_list: list,
-    chain_id: str = None,
+    chain_id: str,
     criteria: str = "include",
 ):
     """
@@ -445,38 +530,36 @@ def extract_substruct(
         info_list (list of tuples): List of (chain_id, resn, name) for selection.
         criteria (str): "include" to keep specified atoms, "exclude" to remove them.
     """
-    if chain_id is None or chain_id == "":
-        structure = get_protein_structure(input_file_path)
-    else:
-        structure = get_chain_structure(
-            input_file_path=input_file_path,
-            output_file_path=None,
-            chain_id=chain_id)
 
-    # Collect matching atoms
-    substrate_atoms = {
-        atom for model in structure for chain in model for residue in chain for atom in residue
-        if any(
-            (chain.id, residue.resname, atom.name) == (chain_id, resn, name)
-            for chain_id, resn, name in info_list
-        )
-    }
+    print("insdie extract_substruct")
+    print(output_substruct_path)
 
-    # Filter structure based on criteria
+    structure = get_protein_structure(input_file_path)
+
+    substrate_atoms = []
+    rest_atoms = []
+
     for model in structure:
         for chain in model:
-            for residue in list(chain):
-                for atom in list(residue):
-                    if (criteria == "include" and atom not in substrate_atoms) or (
-                        criteria == "exclude" and atom in substrate_atoms
-                    ):
-                        residue.detach_child(atom.name)
+            if chain.id == chain_id:
+                for residue in chain:
+                    for atom in residue:
+                        match = any(
+                            chain.id == chain_id and residue.resname == resn and atom.name == name
+                            for chain_id, resn, name in info_list
+                        )
+                        if match:
+                            substrate_atoms.append((model, chain, residue, atom))
+                        else:
+                            rest_atoms.append((model, chain, residue, atom))
 
-    # Save structure and clean up residue names
-    io = PDBIO()
-    io.set_structure(structure)
-    io.save(output_substruct_path)
-    replace_residue_names_auto(output_substruct_path, output_substruct_path)
+    print(f"Substrate atoms: {substrate_atoms}")
+    print(f"Rest atoms: {rest_atoms}")
+    
+    if criteria == "include":
+        save_full_hierarchy_atoms(substrate_atoms, output_substruct_path)
+    else:
+        save_full_hierarchy_atoms(rest_atoms, output_substruct_path)
 
     print(f"Substructure saved to {output_substruct_path}")
 
@@ -484,21 +567,20 @@ def extract_substruct(
 ### docking ###
 def dock(
     input_struct_path: str,
-    lib_name: str,
-    smiles: str,
-    ligand_name: str,
-    cofactor_dets: str,
-    var_dir: str,
-    pH: float,
+    dock_opt: str, #  ie "substrate",
+    score_only: bool, # = True,
+    cofactor_dets: str = "cofactor",
+    vina_dir: str = "zs/vina",
     residues4centriod: list = None,
-    freeze_opt: str = None,
-    score_only=False,
+    pH: float = 7.4,
     size_x=10.0,
     size_y=10.0,
     size_z=10.0,
     num_modes=9,
     exhaustiveness=32,
     regen=False,
+    num_cpus: int = None,
+    seed=42,
 ):
 
     """
@@ -506,43 +588,85 @@ def dock(
 
     Args:
     - input_struct_path (str): Path to the input PDB file.
-        ie. zs/chai/structure_joint/PfTrpB-4bromo/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
+        ie. zs/chai/struct_joint/PfTrpB-4bromo/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
 
     """
 
+    protein_name = get_file_name(input_struct_path)
+    lib_name = os.path.basename(os.path.dirname(os.path.dirname(input_struct_path)))
+    lib_info = LIB_INFO_DICT[lib_name]
+    substrate_name = lib_info["substrate"]
+
+    struct_dets = input_struct_path.split("zs/")[-1].split(lib_name)[0]
+
+    output_opt = "score_only" if score_only else "docked"
+
+
+    var_dir = checkNgen_folder(os.path.join(vina_dir, struct_dets, lib_name, protein_name))
+
+    # Auxiliary files
+    vina_logfile = os.path.join(
+        var_dir, f"{protein_name}-{substrate_name}{dock_opt}-{output_opt}_log.txt"
+    )
+    docked_ligand_pdb = os.path.join(
+        var_dir, f"{protein_name}-{substrate_name}{dock_opt}-{output_opt}.pdb"
+    )
+
+    if not regen and os.path.isfile(docked_ligand_pdb):
+        print(f"{docked_ligand_pdb} exists and regen is False. Skipping")
+        return vina_logfile
+
+    # clean input file
+    clean_input_file = os.path.join(var_dir, protein_name + ".pdb")
+    replace_residue_names_auto(
+        input_file=input_struct_path,
+        output_file=clean_input_file,
+    )
+
     # Process the protein
-    protein_name, protein_pdb_file, protein_pdbqt = format_pdb(
-        file_path=input_struct_path, protein_dir=var_dir, pH=pH, regen=regen
+    protein_pdb_file, protein_pdbqt = format_pdb(
+        file_path=clean_input_file, protein_dir=var_dir, pH=pH, regen=regen
     )
 
     if score_only:
         from_pdb = True
 
-    ligand_chain_ids = get_chain_ids(pdb_file_path=input_struct_path)[1:]
+    ligand_chain_ids = get_chain_ids(pdb_file_path=clean_input_file)[1:]
+
+    if "joint" in clean_input_file:
+        input_struct_dock_opt = "joint"
+    elif "seperate" in clean_input_file:
+        input_struct_dock_opt = "seperate"
+    else:
+        raise ValueError("Neither 'joint' nor 'seperate' found in clean_input_file")
+
+    ligand_info = lib_info[f"{substrate_name}-info"]
     
     if len(ligand_chain_ids) == 1:
-        input_struct_dock_opt = "joint"
-    else:
-        input_struct_dock_opt = "seperate"
+        ligand_chain_id = ligand_chain_ids[0]
+        cofactor_chain_id = ligand_chain_id
 
-    lib_info = LIB_INFO_DICT[lib_name]
-    ligand_info = lib_info[f"{ligand_name}-info_{input_struct_dock_opt}"]
-    ligand_chain_id = ligand_info[0][0]
+    elif len(ligand_chain_ids) == 2:
+        ligand_chain_id = ligand_info[0][0]
+        cofactor_chain_id = [i for i in ligand_chain_ids if i != ligand_chain_id][0]
+    else:
+        raise ValueError("Substrate chains not implemented beyond 2")
+
+    print(f"ligand_chain_id: {ligand_chain_id}, type: {type(ligand_chain_id)}")
 
     # Process the main ligand
     ligand_pdbqt = format_ligand(
-            smiles=smiles,
-            ligand_name=ligand_name,
+            smiles=lib_info["substrate-smiles"],
+            ligand_name=substrate_name,
             var_dir=var_dir,
             pH=pH,
             substruct_criteria="include",
             from_pdb=from_pdb,
-            input_struct_path=input_struct_path,
+            input_struct_path=clean_input_file,
             ligand_info=ligand_info,
             ligand_chain_id=ligand_chain_id,
             regen = regen,
     )
-
 
     # Process all cofactors from the input pdb
     cofactor_pdbqts = []
@@ -551,27 +675,55 @@ def dock(
         LIB_INFO_DICT[lib_name][f"{cofactor_dets}-smiles"]
     ):
 
-        if len(ligand_chain_ids) == 1:
-            # means the cofactors are a part of the chain for the substrates
+        print(f"Processing cofactor {cofactor_name} {cofactor_smiles} using {clean_input_file}")
 
-            if f"carbene-info_{input_struct_dock_opt}" in lib_info:
-                # need to get carbene and then heme and Fe
-                carbene_info = lib_info[f"carbene-info_{input_struct_dock_opt}"]
+        if f"carbene-info_{input_struct_dock_opt}" in lib_info:
+            # need to get carbene and then heme and Fe
+            carbene_info = lib_info[f"carbene-info_{input_struct_dock_opt}"]
 
             cofactor_pdbqts.append(
                 format_ligand(
-                    smiles=smiles,
-                    ligand_name=ligand_name,
+                    smiles=cofactor_smiles,
+                    ligand_name="carbene",
+                    var_dir=var_dir,
+                    pH=pH,
+                    substruct_criteria="include",
+                    from_pdb=from_pdb,
+                    input_struct_path=clean_input_file,
+                    ligand_info=carbene_info,
+                    chain_id=cofactor_chain_id,
+                    regen = regen,
+            ))
+
+            cofactor_pdbqts.append(
+                format_ligand(
+                    smiles=cofactor_smiles,
+                    ligand_name="heme",
                     var_dir=var_dir,
                     pH=pH,
                     substruct_criteria="exclude",
                     from_pdb=from_pdb,
-                    input_struct_path=input_struct_path,
-                    ligand_info=ligand_info,
-                    chain_id=ligand_chain_id,
+                    input_struct_path=clean_input_file,
+                    ligand_info=carbene_info,
+                    chain_id=cofactor_chain_id,
                     regen = regen,
             ))
 
+            # handle Fe separately
+            cofactor_pdbqts.append(
+                format_ligand(
+                    smiles="[Fe2+]",
+                    ligand_name="Fe",
+                    var_dir=var_dir,
+                    pH=pH,
+                    from_pdb=from_pdb,
+                    input_struct_path=clean_input_file,
+                    ligand_info=None,
+                    chain_id=cofactor_chain_id,
+                    regen = regen,
+            ))
+
+        # trpbs
         else:
             cofactor_pdbqts.append(
                 format_ligand(
@@ -579,41 +731,248 @@ def dock(
                     ligand_name=cofactor_name,
                     var_dir=var_dir,
                     pH=pH,
+                    substruct_criteria="exclude",
                     from_pdb=from_pdb,
-                    input_struct_path=input_struct_path,
-                    ligand_chain_id=ligand_chain_id,
-                    ligand_info=None,
+                    input_struct_path=clean_input_file,
+                    ligand_chain_id=cofactor_chain_id,
+                    ligand_info=ligand_info,
                     regen=regen,
             ))
     
-    print(f"cofactor_pdbqt: {cofactor_pdbqts}")
+    print(f"cofactor_pdbqts: {cofactor_pdbqts}")
 
+    conf_path = os.path.join(
+        var_dir, f"{protein_name}-{substrate_name}{dock_opt}_conf.txt"
+    )
+
+    # Create config file
+    make_config_for_vina(
+        input_pdb_path=input_struct_path,
+        protein_pdbqt=protein_pdbqt,
+        ligand_pdbqt=ligand_pdbqt,
+        cofactor_pdbqts=cofactor_pdbqts,
+        conf_path=conf_path,
+        residues=residues4centriod,
+        substrate_chain_ids=ligand_chain_ids,
+        dock_opt=dock_opt,
+        size_x=size_x,
+        size_y=size_y,
+        size_z=size_z,
+        num_modes=num_modes,
+        exhaustiveness=exhaustiveness,
+    )
+
+    # Construct the base command
+    cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb]
+    
+    if score_only:
+        cmd_list += ["--score_only"]
+    else:
+        cmd_list += [ "--seed", str(seed)]
+        if num_cpus is not None:
+            cmd_list += ["--cpu", str(num_cpus)]
+
+    try:
+        # Run the Vina command
+        cmd_return = subprocess.run(
+            cmd_list,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            check=True  # Ensures subprocess raises an exception on error
+        )
+
+        # Write the Vina output to the log file
+        with open(vina_logfile, "w") as fout:
+            fout.write(cmd_return.stdout.decode("utf-8"))
+
+        print(f"Vina run {'(score-only)' if score_only else ''} completed successfully. Log saved to: {vina_logfile}")
+        if not score_only:
+            print(f"Docked ligand saved to: {docked_ligand_pdb}")
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error during Vina run: {e}")
+        with open(vina_logfile, "w") as fout:
+            fout.write(e.stdout.decode("utf-8"))
+        raise
+
+    if not score_only:
+        # Convert the docked PDBQT file to PDB if not in score-only mode
+        convert_pdbqt_to_pdb(
+            pdbqt_file=docked_ligand_pdb, pdb_file=docked_ligand_pdb, disable_bonding=True
+        )
+
+    return vina_logfile    
+
+
+
+def dock_task(
+    var_path,
+    lib_dict,
+    cofactor_list,
+    output_dir,
+    residues: list = None,
+    substrate_chain_ids: Union[list, str] = "B",
+    freeze_opt: str = None,
+    score_only=False,
+    pH=7.4,
+    method="vina",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
+    num_modes=9,
+    exhaustiveness=32,
+    regen=False,
+    rerun=False,
+):
+    """
+    Task to dock a single .cif file.
+    """
 
     if freeze_opt is None:
         append_name = ""
     else:
-        append_name = f"-{freeze_opt}"
+        append_name = freeze_opt
 
-    conf_path = os.path.join(
-        var_dir, f"{protein_name}-{ligand_name}{append_name}_conf.txt"
+    log_txt = glob(
+        os.path.join(output_dir, get_file_name(var_path), f"*{append_name}_log.txt")
     )
 
-    # Step 1: Create config file
-    
+    var_dir = (
+        os.path.normpath(
+            checkNgen_folder(os.path.join(output_dir, get_file_name(var_path)))
+        )
+        + "/"
+    )
 
-    # Step 2: Perform docking
-    
+    if len(log_txt) > 0 and (rerun is False):
+        print(f"{var_path} already docked")
+        print(f"See {log_txt}")
+        return
+    elif len(log_txt) == 0 and rerun is False:
+        print(f"{var_path} not docked yet or successful")
+        print("Rerun automatically set to True")
+
+    try:
+        dock(
+            pdb_path=var_path,
+            smiles=lib_dict["substrate-smiles"],
+            ligand_name=lib_dict["substrate"],
+            residues=residues,
+            substrate_chain_ids=substrate_chain_ids,
+            cofactors=cofactor_list,
+            freeze_opt=freeze_opt,
+            score_only=score_only,
+            protein_dir=var_dir,
+            ligand_dir=var_dir,
+            output_dir=var_dir,
+            pH=pH,
+            method=method,
+            size_x=size_x,
+            size_y=size_y,
+            size_z=size_z,
+            num_modes=num_modes,
+            exhaustiveness=exhaustiveness,
+            regen=regen,
+        )
+    except Exception as e:
+        print(f"Error in docking {var_path}: {e}")
+
+
+
+def dock_lib_parallel(
+    chai_dir: str,
+    cofactor_type: str,
+    residues: list = None,
+    substrate_chain_ids: Union[list, str] = "B",
+    freeze_opt: str = None,
+    vina_dir: str = "vina",
+    pH: float = 7.4,
+    method="vina",
+    size_x=10.0,
+    size_y=10.0,
+    size_z=10.0,
+    num_modes=9,
+    exhaustiveness=32,
+    score_only=False,
+    regen=False,
+    rerun=False,
+    max_workers=24,  # Number of parallel workers
+):
+    """
+    A function to dock all generated chai structures and get scores in parallel.
+    """
+
+    output_dir = checkNgen_folder(chai_dir.replace("chai/mut_structure", vina_dir))
+
+    keys_to_remove = [
+        cofactor_type,
+        cofactor_type.replace("-cofactor", ""),
+        cofactor_type.replace("cofactor", ""),
+        "cofactor",
+        "-cofactor",
+    ]
+    lib_name = os.path.basename(chai_dir)
+    for key in keys_to_remove:
+        lib_name = lib_name.replace("_" + key, "")
+
+    lib_dict = LIB_INFO_DICT[lib_name]
+
+    cofactor_list = [
+        (cofactor_smiles, cofactor, "B")
+        for cofactor_smiles, cofactor in zip(
+            lib_dict[cofactor_type + "-smiles"], lib_dict[cofactor_type]
+        )
+    ]
+
+    print(f"Docking {chai_dir} with {cofactor_type} to {output_dir}")
+    print(cofactor_list)
+    print(f"Freeze option: {freeze_opt}")
+
+    var_paths = sorted(glob(os.path.join(chai_dir, "*", "*.cif")))
+
+    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+        futures = [
+            executor.submit(
+                dock_task,
+                var_path=var_path,
+                lib_dict=lib_dict,
+                cofactor_list=cofactor_list,
+                output_dir=output_dir,
+                residues=residues,
+                substrate_chain_ids=substrate_chain_ids,
+                freeze_opt=freeze_opt,
+                score_only=score_only,
+                pH=pH,
+                method=method,
+                size_x=size_x,
+                size_y=size_y,
+                size_z=size_z,
+                num_modes=num_modes,
+                exhaustiveness=exhaustiveness,
+                regen=regen,
+                rerun=rerun,
+            )
+            for var_path in var_paths
+        ]
+
+        for future in tqdm(as_completed(futures), total=len(var_paths)):
+            try:
+                future.result()  # Raises an exception if the task failed
+            except Exception as e:
+                print(f"Task failed for {futures[future]}: {e}")
+
+
 
 
 def make_config_for_vina(
     input_pdb_path: str,
     protein_pdbqt: str,
     ligand_pdbqt: str,
+    cofactor_pdbqts: list,
     conf_path: str,
     residues: list = None,
     substrate_chain_ids: Union[list, str] = "B",
-    cofactor_files: list = None,
-    freeze_opt: str = None,
+    dock_opt: str = "substrate",
     size_x=10.0,
     size_y=10.0,
     size_z=10.0,
@@ -626,7 +985,9 @@ def make_config_for_vina(
     Args:
     - input_pdb_path (str): Path to the input PDB file.
     - protein_pdbqt (str): Path to the protein PDBQT file.
+        ie zs/vina/chai_joint/PfTrpB-4bromo/I165A:I183A:Y301V_0/I165A:I183A:Y301V_0/I165A:I183A:Y301V_0.pdbqt
     - ligand_pdbqt (str): Path to the ligand PDBQT file.
+        ie zs/vina/chai_joint/PfTrpB-4bromo/I165A:I183A:Y301V_0/4bromo/4bromo.pdbqt
     - conf_path (str): Path to the output config file.
     - residues (list): List of residue positions to dock.
     - substrate_chain_ids (list): List of chain IDs for the substrate.
@@ -655,96 +1016,54 @@ def make_config_for_vina(
                 coords.append(coordinates)
         coords = calculate_centroid(coords)
 
-    main_dir = os.path.dirname(os.path.dirname(protein_pdbqt))
+    var_dir = os.path.dirname(os.path.dirname(protein_pdbqt))
+    var_name = get_file_name(protein_pdbqt)
 
-    if freeze_opt is None:
+    # treat all cofactors as ligands
+    if dock_opt == "all":
         receptor_pdbqt = protein_pdbqt
-        cofactor2dock = deepcopy(cofactor_files)
-
-    elif "cofactor" in freeze_opt.lower():
-        # zs/vina/PfTrpB-4bromo_cofactor/WT_0/WT_0/WT_0.pdbqt will need to become
-        # zs/vina/PfTrpB-4bromo_cofactor/WT_0/comb_cofactor.pdbqt
-        receptor_pdbqt = os.path.join(main_dir, "comb_cofactor.pdbqt")
-        receptor_pdb = os.path.join(main_dir, "comb_cofactor.pdb")
+        cofactor2dock = deepcopy(cofactor_pdbqts)
+    
+    # freeze cofactors as part of receptors
+    elif dock_opt == "substrate":
+        receptor_name = var_name + "_cofactors"
+        # make an new subdir 
+        merge_receptor_dir = checkNgen_folder(os.path.join(var_dir, receptor_name))
 
         # Combine the protein and cofactor files
+        receptor_pdbqt = os.path.join(merge_receptor_dir, f"{receptor_name}.pdbqt")
+        receptor_pdb = os.path.join(merge_receptor_dir, f"{receptor_name}.pdb")
+
         merge_pdbqt(
-            input_files=[protein_pdbqt] + cofactor_files,
+            input_files=[protein_pdbqt] + cofactor_pdbqts,
             output_file_path=receptor_pdbqt,
         )
 
-        # Convert the combined PDBQT file to PDB
+        # Convert the combined PDBQT file to PDB for downstream analysis
         convert_pdbqt_to_pdb(
             pdbqt_file=receptor_pdbqt, pdb_file=receptor_pdb, disable_bonding=True
         )
 
         cofactor2dock = None
+        
+    # freeze heme but dock carbene and the substrate
+    elif dock_opt == "substrate+carbene":
 
-    elif "bound-heme" in freeze_opt.lower():
-        # just combine heme and Fe with ligand bound
-        receptor_pdbqt = os.path.join(main_dir, "comb_bound-heme.pdbqt")
-        receptor_pdb = os.path.join(main_dir, "comb_bound-heme.pdb")
-
-        cofactor2freeze = []
-        cofactor2dock = []
-
-        for c in cofactor_files:
-            keywords = ["bound-heme.pdbqt", "fe.pdbqt", "bound-heme", "bound heme", "heme-with", "heme with", "heme bound", "heme-bound"]
-            if any(keyword in c.lower() for keyword in keywords):
-                cofactor2freeze.append(c)
-            else:
-                cofactor2dock.append(c)
-
-        print(f"cofactor2freeze: {cofactor2freeze}")
-        print(f"cofactor2dock: {cofactor2dock}")
+        receptor_name = var_name + "_heme"
+        # make an new subdir 
+        merge_receptor_dir = checkNgen_folder(var_dir, receptor_name)
 
         # Combine the protein and cofactor files
-        merge_pdbqt(
-            input_files=[protein_pdbqt]+cofactor2freeze,
-            output_file_path=receptor_pdbqt,
-        )
-
-        # Convert the combined PDBQT file to PDB
-        convert_pdbqt_to_pdb(
-            pdbqt_file=receptor_pdbqt, pdb_file=receptor_pdb, disable_bonding=True
-        )
-
-    elif "heme" in freeze_opt.lower():
-        # just combine heme and Fe
-        receptor_pdbqt = os.path.join(main_dir, "comb_heme.pdbqt")
-        receptor_pdb = os.path.join(main_dir, "comb_heme.pdb")
+        receptor_pdbqt = os.path.join(merge_receptor_dir, f"{receptor_name}.pdbqt")
+        receptor_pdb = os.path.join(merge_receptor_dir, f"{receptor_name}.pdb")
 
         cofactor2freeze = []
-        cofactor2dock = []
 
-        for c in cofactor_files:
-            keywords = ["bound-heme", "bound heme", "heme-with", "heme with", "heme bound", "heme-bound"]
-            matched_keyword = next((keyword for keyword in keywords if keyword in c.lower()), None)
-            
-            if matched_keyword:
-                heme_path = c.lower().replace(matched_keyword, "heme")
-                heme_ligand_path = c.lower().replace(matched_keyword, "heme-ligand")
-
-                checkNgen_folder(heme_path)
-                checkNgen_folder(heme_ligand_path)
-
-                # Need to split the heme and heme-ligand, always more atoms in the first file
-                split_pdbqt(
-                    input_file=c, 
-                    output_file_1=heme_path, 
-                    output_file_2=heme_ligand_path
-                )
-                cofactor2freeze.append(heme_path)
-                
-                matching_files = [c for c in cofactor_files if any(keyword in c.lower() for keyword in ["carbene"])]
-
-                if len(matching_files) == 0:
-                    cofactor2dock.append(heme_ligand_path)
-
-            elif "fe.pdbqt" in c.lower():
-                cofactor2freeze.append(c)
+        for c in cofactor_pdbqts:
+            if "carbene" in c.lower():
+                cofactor2dock = [c]
             else:
-                cofactor2dock.append(c)
+                cofactor2freeze.append(c)
 
         print(f"cofactor2freeze: {cofactor2freeze}")
         print(f"cofactor2dock: {cofactor2dock}")
@@ -761,7 +1080,7 @@ def make_config_for_vina(
         )
 
     else:
-        raise ValueError("Invalid freeze option")
+        raise ValueError(f"{dock_opt} invalid dock option")
 
     with open(conf_path, "w") as fout:
         fout.write(f"receptor = {receptor_pdbqt}\n")

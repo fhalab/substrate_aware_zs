@@ -270,7 +270,7 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
 
     Args:
     - input_dir, str: The path to the folder containing the chai score
-        ie zs/chai/structure_joint/PfTrpB-4bromo
+        ie zs/chai/struct_joint/PfTrpB-4bromo
     - score_dir_name, str: The name of the score directory but keep other details
         ie zs/chai/score_joint
     """
@@ -356,7 +356,7 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     print(f"Saved chai scores for {lib_name} to {output_dir}/{lib_name}.csv")
 
 
-def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/structure_joint"):
+def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/struct_joint"):
     """
     A function to parse all the chai scores for all libraries
     """
