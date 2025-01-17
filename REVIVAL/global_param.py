@@ -109,6 +109,25 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
+            "substrate-addH_chai_joint":[
+                ("B", "LIG", "N1")
+            ],
+            "substrate-addH_af3_joint":[
+                ("B", "LIG", "N1")
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O1"),
+                ("B", "LIG", "C11")
+            ],
+            "cofactor-double_bond_pairs_chai_joint":[
+                (("B", "LIG", "N2"), ("B", "LIG", "C11"))
+            ],
+            # "cofactor-addH_af3_joint":[
+            #     ("B", "LIG", "N2"),
+            #     ("B", "LIG", "O1"),
+            #     ("B", "LIG", "C11")
+            # ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
