@@ -351,7 +351,7 @@ def format_ligand(
             output_pdb=ligand_pdb_file,
             target_list=target_list_addh,
             bond_length = 1.0,
-            neighbor_cutoff = 1.9,
+            neighbor_cutoff = 1.6,
             double_bond_pairs=double_bond_pairs
         )
 
@@ -373,7 +373,7 @@ def format_ligand(
 
         # now remove the temp files
         os.remove(ligand_pdb_temp_file)
-        # os.remove(ligand_pdb_prehydrogen_file)
+        os.remove(ligand_pdb_prehydrogen_file)
         # os.remove(ligand_pdb_prealigned_file)
 
         # now convert to pdbqt
@@ -390,10 +390,10 @@ def format_ligand(
                 "obabel",
                 os.path.abspath(ligand_pdb_file),
                 # "--assignatoms",
-                "--addh",
-                "--addexplicit",
+                # "--addh",
+                # "--addexplicit",
                 "-xr",
-                "-p", str(pH),
+                # "-p", str(pH),
                 "--partialcharge", "gasteiger",
                 "-O", os.path.abspath(ligand_pdbqt_temp_file)
             ]
@@ -413,7 +413,7 @@ def format_ligand(
             # now clean up
             clean_pdbqt_file(ligand_pdbqt_temp_file, ligand_pdbqt_file)
 
-            # os.remove(ligand_pdbqt_temp_file)
+            os.remove(ligand_pdbqt_temp_file)
 
         except subprocess.CalledProcessError as e:
             # Handle errors
@@ -733,71 +733,149 @@ def format_ligand(
 #                 # Write other lines as they are
 #                 outfile.write(line)
 
-
-def calculate_hydrogen_position(
-    atom,
-    neighbors,
-    bond_length=1.0,
-    double_bond_pairs=None
-):
+def rotation_matrix(axis, theta):
     """
-    Minimal geometry logic to handle:
-     - sp (1 neighbor)
-     - sp2 (2 neighbors)
-     - sp3 (3 neighbors)
-     - special double-bond pairs if desired (2 neighbors, 1 is double => in-plane 120°)
+    Return the 3x3 rotation matrix for rotating 'theta' radians about 'axis'.
+    Uses Rodrigues' rotation formula.
+    """
+    axis = np.array(axis, dtype=float)
+    axis /= np.linalg.norm(axis)
+    x, y, z = axis
+    c = np.cos(theta)
+    s = np.sin(theta)
+    C = 1 - c
+    return np.array([
+        [x*x*C + c,   x*y*C - z*s, x*z*C + y*s],
+        [y*x*C + z*s, y*y*C + c,   y*z*C - x*s],
+        [z*x*C - y*s, z*y*C + x*s, z*z*C + c   ]
+    ])
+
+def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pairs=None):
+    """
+    Calculate a new hydrogen coordinate for 'atom' based on:
+      - number of existing neighbors
+      - known double bonds (double_bond_pairs)
+      - special case: O with 1 neighbor => offset angle for a more realistic OH geometry
+
+    Args:
+        atom (Bio.PDB.Atom.Atom): The central atom (will receive H).
+        neighbors (list[Bio.PDB.Atom.Atom]): already-bonded neighbors of 'atom'.
+        bond_length (float): approx distance for the new H–X bond.
+        double_bond_pairs (dict or set or None): 
+            e.g. {("C3","N2"), ("N2","C3")}, marking certain bonds as double.
+
+    Returns:
+        np.ndarray: [x, y, z] of the newly placed hydrogen atom.
     """
     if double_bond_pairs is None:
         double_bond_pairs = {}
 
-    # The central atom name, chain, etc. (We'll see if we need them.)
-    center_name = atom.get_name().strip()
     element = atom.element.strip().upper()
+    atom_name = atom.get_name().strip()
     atom_coord = np.array(atom.coord)
     n_neighbors = len(neighbors)
 
-    # Example "special" logic:
-    # If (C with 2 neighbors) and one neighbor is in double_bond_pairs => sp2 forced
-    # For brevity, we keep it minimal. 
-    # Real code might examine bond_order from double_bond_pairs.
-    if element == "C" and n_neighbors == 2:
-        # Check if ANY neighbor is in double_bond_pairs with (this atom)
-        # We'll find chain/res name via parent objects if needed.
-        pass  # (Omitted for brevity, or copy from earlier logic)
+    # ----- Special case #1: O with 1 neighbor => "OH" with a small offset angle
+    if element == "O" and n_neighbors == 1:
+        neighbor_coord = np.array(neighbors[0].coord)
 
-    # Fallback standard sp/sp2/sp3:
+        # Vector from O to the neighbor
+        vec = atom_coord - neighbor_coord
+        norm_v = np.linalg.norm(vec)
+        if norm_v < 1e-12:
+            # degenerate fallback
+            vec = np.array([1.0, 0.0, 0.0])
+        else:
+            vec /= norm_v
+
+        # We'll rotate 'vec' by ~70° so the final angle is ~110° from the neighbor
+        # This is a simple approximation for an -OH bond angle.
+        angle_deg = 70.0
+        angle_rad = np.radians(angle_deg)
+
+        # Find a perpendicular axis to rotate around
+        axis = np.cross(vec, [0, 0, 1])
+        if np.linalg.norm(axis) < 1e-12:
+            axis = np.cross(vec, [0, 1, 0])
+
+        # Create rotation matrix
+        R = rotation_matrix(axis, angle_rad)
+        # Rotate the vector
+        rotated_vec = R.dot(vec)
+        # Scale by bond length
+        H_coord = atom_coord + rotated_vec * bond_length
+        return H_coord
+
+    # ----- Special case #2: C with 2 neighbors + double bond => sp2 forced
+    if element == "C" and n_neighbors == 2:
+        neighbor_names = [n.get_name().strip() for n in neighbors]
+        is_double_bonded = False
+        for nbr_name in neighbor_names:
+            if (atom_name, nbr_name) in double_bond_pairs:
+                is_double_bonded = True
+                break
+
+        if is_double_bonded:
+            # sp2 approach: ~120° from the two neighbors
+            v1 = np.array(neighbors[0].coord) - atom_coord
+            v2 = np.array(neighbors[1].coord) - atom_coord
+            v1 /= np.linalg.norm(v1)
+            v2 /= np.linalg.norm(v2)
+            direction = -(v1 + v2)
+            norm_d = np.linalg.norm(direction)
+            if norm_d < 1e-12:
+                # fallback
+                direction = np.cross(v1, [0,0,1])
+                if np.linalg.norm(direction) < 1e-12:
+                    direction = np.array([1, 0, 0])
+            else:
+                direction /= norm_d
+            return atom_coord + direction * bond_length
+
+    # ----- Fallback: sp / sp2 / sp3 standard
     if n_neighbors == 1:
-        # sp
-        ncoord = np.array(neighbors[0].coord)
-        direction = atom_coord - ncoord
-        direction /= np.linalg.norm(direction)
-        return atom_coord + direction * bond_length
+        # sp (linear)
+        vec = atom_coord - np.array(neighbors[0].coord)
+        nrm = np.linalg.norm(vec)
+        if nrm < 1e-12:
+            vec = np.array([1,0,0])
+        else:
+            vec /= nrm
+        return atom_coord + vec * bond_length
 
     elif n_neighbors == 2:
-        # sp2
+        # sp2 (planar)
         coords = [np.array(n.coord) for n in neighbors]
         v1 = coords[0] - atom_coord
         v2 = coords[1] - atom_coord
         v1 /= np.linalg.norm(v1)
         v2 /= np.linalg.norm(v2)
-        in_plane = -(v1 + v2)
-        norm_val = np.linalg.norm(in_plane)
-        if norm_val < 1e-6:
-            # degenerate fallback
-            in_plane = np.cross(v1, [0, 0, 1])
-        in_plane /= np.linalg.norm(in_plane)
-        return atom_coord + in_plane * bond_length
+        direction = -(v1 + v2)
+        norm_d = np.linalg.norm(direction)
+        if norm_d < 1e-12:
+            direction = np.cross(v1, [0,0,1])
+            if np.linalg.norm(direction) < 1e-12:
+                direction = np.array([1,0,0])
+        else:
+            direction /= norm_d
+        return atom_coord + direction * bond_length
 
     elif n_neighbors == 3:
-        # sp3
+        # sp3 (tetrahedral)
         coords = [np.array(n.coord) for n in neighbors]
         centroid = np.mean(coords, axis=0)
         direction = atom_coord - centroid
-        direction /= np.linalg.norm(direction)
+        norm_d = np.linalg.norm(direction)
+        if norm_d < 1e-12:
+            direction = np.array([1,0,0])
+        else:
+            direction /= norm_d
         return atom_coord + direction * bond_length
 
-    else:
-        raise ValueError(f"Unsupported geometry for {atom.get_name()} with {n_neighbors} neighbors.")
+    # else no geometry known
+    raise ValueError(
+        f"Unsupported geometry for atom '{atom_name}' with {n_neighbors} neighbors."
+    )
 
 
 def add_hydrogens_to_atoms(
@@ -805,7 +883,7 @@ def add_hydrogens_to_atoms(
     output_pdb: str,
     target_list,
     bond_length: float = 1.0,
-    neighbor_cutoff: float = 1.9,
+    neighbor_cutoff: float = 1.6,
     double_bond_pairs=None
 ):
     """
@@ -1206,9 +1284,9 @@ def dock(
     vina_dir: str = "zs/vina",
     residues4centriod: list = None,
     pH: float = 7.4,
-    size_x=10.0,
-    size_y=10.0,
-    size_z=10.0,
+    size_x=20.0,
+    size_y=20.0,
+    size_z=20.0,
     num_modes=9,
     exhaustiveness=32,
     regen=False,
@@ -1451,9 +1529,9 @@ def dock_lib_parallel(
     vina_dir: str = "zs/vina",
     residues4centriod: list = None,
     pH: float = 7.4,
-    size_x=10.0,
-    size_y=10.0,
-    size_z=10.0,
+    size_x=20.0,
+    size_y=20.0,
+    size_z=20.0,
     num_modes=9,
     exhaustiveness=32,
     regen=False,
@@ -1517,9 +1595,9 @@ def make_config_for_vina(
     residues: list = None,
     substrate_chain_ids: Union[list, str] = "B",
     dock_opt: str = "substrate",
-    size_x=10.0,
-    size_y=10.0,
-    size_z=10.0,
+    size_x=20.0,
+    size_y=20.0,
+    size_z=20.0,
     num_modes=9,
     exhaustiveness=32,
 ):

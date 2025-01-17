@@ -30,6 +30,13 @@ TrpB_CHEM = {
         "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
         "[Na+]",
     ],
+    "substrate-addH_chai_joint":[
+        ("B", "LIG", "N1"),
+    ],
+    "cofactor-double_bond_pairs_chai_joint":[
+        (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+        (("B", "LIG", "C12"), ("B", "LIG", "C14")),
+    ],
 }
 
 LIB_INFO_DICT = deepcopy(
@@ -109,19 +116,16 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
-            "substrate-addH_chai_joint":[
-                ("B", "LIG", "N1")
-            ],
-            "substrate-addH_af3_joint":[
-                ("B", "LIG", "N1")
-            ],
+
             "cofactor-addH_chai_joint":[
                 ("B", "LIG", "N2"),
-                ("B", "LIG", "O1"),
-                ("B", "LIG", "C11")
-            ],
-            "cofactor-double_bond_pairs_chai_joint":[
-                (("B", "LIG", "N2"), ("B", "LIG", "C11"))
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+                # ("B", "LIG", "C11"),
+                # ("B", "LIG", "C14"),
+                # ("B", "LIG", "C16"),
+                # ("B", "LIG", "C19"),
             ],
             # "cofactor-addH_af3_joint":[
             #     ("B", "LIG", "N2"),
@@ -176,6 +180,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+            ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
@@ -223,6 +233,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
             ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_8", False), ("B", 1, "LIG", "C_14", False)),
@@ -272,6 +288,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
             ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+            ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
@@ -319,6 +341,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C7"),
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
             ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_7", False), ("B", 1, "LIG", "C_14", False)),
@@ -369,6 +397,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
             ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+            ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
@@ -417,6 +451,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C9"),
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "N2"),
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N3"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
             ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_15", False)),
@@ -467,6 +507,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "N2"),
             ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N3"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+            ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_15", False)),
                 "GLU-NH_1": (
@@ -514,6 +560,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "I1"),
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
             ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_5", False), ("B", 1, "LIG", "C_14", False)),
@@ -563,6 +615,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "I1"),
             ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
+            ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_8", False), ("B", 1, "LIG", "C_14", False)),
                 "GLU-NH_1": (
@@ -610,6 +668,12 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "C9"),
                 ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_chai_joint":[
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O4"),
+                ("B", "LIG", "O5"),
             ],
             "cofactor-distances_chai_joint": {
                 "C-C": (("B", 1, "LIG", "C_9", False), ("B", 1, "LIG", "C_15", False)),
