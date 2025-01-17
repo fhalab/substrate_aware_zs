@@ -343,14 +343,17 @@ def format_ligand(
 
         print("after removing ions")
 
+        mol = Chem.MolFromSmiles(smiles)
+        protonated_smiles = protonate_oxygen(protonate_smiles(smiles=Chem.MolToSmiles(mol, isomericSmiles=True), pH=pH))
+    
         fixmolpdbhs(
-            smiles=smiles,
+            smiles=protonated_smiles,
             input_file_path=ligand_pdb_prehydrogen_file,
             output_file_path=ligand_pdb_prealigned_file,
         )
 
         align_and_fix_molecule(
-            smiles=smiles,
+            smiles=protonated_smiles,
             original_pdb=ligand_pdb_prehydrogen_file,
             generated_pdb=ligand_pdb_prealigned_file,
             output_pdb=ligand_pdb_file,
@@ -441,12 +444,10 @@ def fixmolpdbhs(smiles: str, input_file_path: str, output_file_path: str, pH: fl
     # Load the molecule from SMILES (defines bond orders)
     # print("protonating smiles")
     # print(protonate_smiles(smiles=Chem.CanonSmiles(smiles, useChiral=True), pH=pH))
+    
     mol = Chem.MolFromSmiles(smiles)
-    Chem.AddHs(mol)
-    canonical_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-    mol = Chem.MolFromSmiles(protonate_oxygen(protonate_smiles(smiles=canonical_smiles, pH=pH)))
     print("protonating smiles")
-    print(protonate_oxygen(protonate_smiles(smiles=canonical_smiles, pH=pH)))
+    print(smiles)
     if not mol:
         raise ValueError("Invalid SMILES string. Could not parse the molecule.")
     mol_with_h = Chem.AddHs(mol)  # Add hydrogens based on valence
@@ -513,7 +514,7 @@ def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, o
 
     # Handle explicit protonation for atoms like O or P
     for atom in mol_with_h.GetAtoms():
-        if atom.GetSymbol() in ["O", "P"] and atom.GetFormalCharge() == -1:
+        if atom.GetSymbol() in ["O"] and atom.GetFormalCharge() == -1:
             atom.SetFormalCharge(0)
             atom.SetNumExplicitHs(atom.GetNumExplicitHs() + 1)
 
