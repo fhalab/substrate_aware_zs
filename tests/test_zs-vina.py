@@ -24,7 +24,7 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for struct_dir in glob(("zs/chai/struct_joint/PfTrpB*")):
+    for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB*"))):
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate",

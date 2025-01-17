@@ -453,7 +453,7 @@ def fixmolpdbhs(smiles: str, input_file_path: str, output_file_path: str, pH: fl
     mol_with_h = Chem.AddHs(mol)  # Add hydrogens based on valence
 
     # Generate a 3D conformer for the molecule
-    status = AllChem.EmbedMolecule(mol_with_h, useRandomCoords=False)
+    status = AllChem.EmbedMolecule(mol_with_h, useRandomCoords=False, randomSeed=42)
     if status != 0:
         raise ValueError("Failed to embed 3D coordinates for the molecule.")
 
@@ -475,6 +475,10 @@ def fixmolpdbhs(smiles: str, input_file_path: str, output_file_path: str, pH: fl
         if i in atom_coords:
             x, y, z = map(float, atom_coords[i])
             conf.SetAtomPosition(i, (x, y, z))
+        else:
+            # For hydrogens, use the RDKit positions as a fallback
+            pos = conf.GetAtomPosition(i)
+            conf.SetAtomPosition(i, (pos.x, pos.y, pos.z))
 
     # Optimize the hydrogens' positions
     AllChem.UFFOptimizeMolecule(mol_with_h)
@@ -482,6 +486,7 @@ def fixmolpdbhs(smiles: str, input_file_path: str, output_file_path: str, pH: fl
     # Save the molecule as a PDB file with hydrogens added
     with open(output_file_path, "w") as f:
         f.write(Chem.MolToPDBBlock(mol_with_h))
+
 
 def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, output_pdb: str):
     """
@@ -531,6 +536,8 @@ def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, o
         (atom.GetSymbol(), i, conf_smiles.GetAtomPosition(i))
         for i, atom in enumerate(mol_with_h.GetAtoms()) if atom.GetSymbol() != "H"
     ]
+    print(original_atoms)
+    print(smiles_atoms)
 
     # Match atoms based on element type
     matched_coords_original = []
@@ -561,13 +568,29 @@ def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, o
         Vt[-1, :] *= -1
         R = np.dot(U, Vt)
 
+    # # Step 6: Apply transformation to all atoms in the SMILES molecule
+    # coords_smiles = np.array([conf_smiles.GetAtomPosition(i) for i in range(mol_with_h.GetNumAtoms())])
+    # transformed_coords = np.dot(coords_smiles - centroid_smiles, R) + centroid_original
+
+    # # Update coordinates in the SMILES molecule
+    # for i, coord in enumerate(transformed_coords):
+    #     conf_smiles.SetAtomPosition(i, coord)
     # Step 6: Apply transformation to all atoms in the SMILES molecule
-    coords_smiles = np.array([conf_smiles.GetAtomPosition(i) for i in range(mol_with_h.GetNumAtoms())])
-    transformed_coords = np.dot(coords_smiles - centroid_smiles, R) + centroid_original
+    coords_smiles = np.array([list(conf_smiles.GetAtomPosition(i)) for i in range(mol_with_h.GetNumAtoms())])
+
+    # Apply rotation and translation
+    # First, center the coordinates around the centroid of SMILES
+    centered_coords_smiles = coords_smiles - centroid_smiles
+
+    # Apply the rotation matrix
+    rotated_coords = np.dot(centered_coords_smiles, R.T)
+
+    # Translate back to the original molecule's centroid
+    transformed_coords = rotated_coords + centroid_original
 
     # Update coordinates in the SMILES molecule
     for i, coord in enumerate(transformed_coords):
-        conf_smiles.SetAtomPosition(i, coord)
+        conf_smiles.SetAtomPosition(i, tuple(coord))
 
     # Step 7: Save the transformed molecule as a PDB file
     with open(output_pdb, "w") as f:
