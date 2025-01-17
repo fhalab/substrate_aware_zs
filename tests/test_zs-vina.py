@@ -14,8 +14,6 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
-
     # log outputs
     f = open(
         os.path.join(
@@ -26,35 +24,12 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for chai_dir in [
-        "zs/chai/mut_structure/PfTrpB-7iodo_cofactor",
-        "zs/chai/mut_structure/PfTrpB-7methyl_cofactor",
-        "zs/chai/mut_structure/PfTrpB-56chloro_cofactor",
-        "zs/chai/mut_structure/PfTrpB-4bromo_cofactor",
-        "zs/chai/mut_structure/PfTrpB-4cyano_cofactor",
-        "zs/chai/mut_structure/PfTrpB-5bromo_cofactor",
-        "zs/chai/mut_structure/PfTrpB-5chloro_cofactor",
-        "zs/chai/mut_structure/PfTrpB-5cyano_cofactor",
-        "zs/chai/mut_structure/PfTrpB-5iodo_cofactor",
-        "zs/chai/mut_structure/PfTrpB-6chloro_cofactor",
-        "zs/chai/mut_structure/PfTrpB-7bromo_cofactor",
-    ]:
-        dock_lib_parallel(chai_dir, "cofactor")
-
-    # for chai_dir in sorted(glob("zs/chai/mut_structure/*_inactivated-cofactor")):
-    #     dock_lib_parallel(chai_dir, "inactivated-cofactor")
-
-    # def dock_lib(
-    #     chai_dir: str,
-    #     cofactor_type: str,
-    #     vina_dir: str = "vina",
-    #     pH: float = 7.4,
-    #     method='vina',
-    #     size_x=15.0,
-    #         size_y=15.0, 
-    #         size_z=15.0,
-    #         num_modes=9, # Dunno check vina docks using the defaut
-    #         exhaustiveness=32 
-    # ):
+    for struct_dir in glob(("zs/chai/struct_joint/PfTrpB*")):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            cofactor_dets="cofactor",
+        )
 
     f.close()
