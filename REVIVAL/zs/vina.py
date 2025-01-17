@@ -424,41 +424,36 @@ def format_ligand(
 
 ### helper functions for prep ligand ###
 
-# def fixmolpdbhs(
-#     smiles: str,
-#     input_file_path: str,
-#     output_file_path: str,
-# ):
+def fixmolpdbhs(
+    smiles: str,
+    input_file_path: str,
+    output_file_path: str,
+):
 
-#     # Load the SMILES string to create a molecule with valence information
-#     mol = Chem.MolFromSmiles(smiles)
-#     mol_with_h = Chem.AddHs(mol)  # Add hydrogens based on valence
-#     AllChem.EmbedMolecule(mol_with_h, randomSeed=42)  # Generate 3D coordinates for reference
+    # Load the SMILES string to create a molecule with valence information
+    mol = Chem.MolFromSmiles(smiles)
+    mol_with_h = Chem.AddHs(mol)  # Add hydrogens based on valence
 
-#     structure = get_protein_structure(input_file_path)
+    # Parse the PDB to extract atomic coordinates
+    structure = get_protein_structure(input_file_path)
 
-#     # Extract atomic coordinates from the PDB
-#     atom_coords = {}
-#     for model in structure:
-#         for chain in model:
-#             for residue in chain:
-#                 for atom in residue:
-#                     atom_coords[atom.get_serial_number() - 1] = atom.coord  # Map index to coordinates
+    atom_coords = {}
+    for model in structure:
+        for chain in model:
+            for residue in chain:
+                for atom in residue:
+                    atom_coords[atom.get_serial_number() - 1] = atom.coord
 
-#     # Align PDB coordinates with the SMILES molecule
-#     conf = mol_with_h.GetConformer()
-#     for i, atom in enumerate(mol_with_h.GetAtoms()):
-#         if i in atom_coords:
-#             x, y, z = map(float, atom_coords[i])  # Ensure coordinates are floats
-#             conf.SetAtomPosition(i, (x, y, z))
+    # Align PDB coordinates with the SMILES molecule
+    conf = mol_with_h.GetConformer()
+    for i, atom in enumerate(mol_with_h.GetAtoms()):
+        if i in atom_coords:
+            x, y, z = atom_coords[i]
+            conf.SetAtomPosition(i, (x, y, z))
 
-#     # Generate 3D coordinates
-#     AllChem.EmbedMolecule(mol_with_h)
-#     AllChem.UFFOptimizeMolecule(mol_with_h)
-
-#     # Save the molecule as a PDB file with hydrogens added
-#     with open(output_file_path, "w") as f:
-#         f.write(Chem.MolToPDBBlock(mol_with_h))
+    # Save the molecule as a PDB file with hydrogens added
+    with open(output_file_path, "w") as f:
+        f.write(Chem.MolToPDBBlock(mol_with_h))
 
 
 # def remove_numbers_from_atom_names(input_pdb, output_pdb):
