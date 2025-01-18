@@ -24,16 +24,16 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB-5*"))):
+    for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB*"))):
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate",
-            score_only=True,
+            score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
         )
     
-    for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB-6*"))):
+    for struct_dir in sorted(glob(("zs/chai/struct_seperate/PfTrpB*"))):
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate",
@@ -42,13 +42,13 @@ if __name__ == "__main__":
             cofactor_dets="cofactor",
         )
 
-    for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB-7*"))):
+    for struct_dir in sorted(glob(("zs/chai/struct_seperate/PfTrpB*"))):
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate",
-            score_only=True,
+            score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
         )
-
+    
     f.close()
