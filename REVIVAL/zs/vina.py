@@ -302,8 +302,6 @@ def format_ligand(
         str: Paths to the PDBQT file
     """
 
-    print(f"Formatting ligand {ligand_name}")
-
     this_ligand_dir = checkNgen_folder(os.path.join(var_dir, ligand_name))
 
     ligand_pdbqt_file = os.path.join(this_ligand_dir, f"{ligand_name}.pdbqt")
@@ -312,13 +310,15 @@ def format_ligand(
     ligand_pdb_prehydrogen_file = os.path.join(
         this_ligand_dir, f"{ligand_name}_prehydrogen.pdb"
     )
-    # ligand_pdb_prealigned_file = os.path.join(this_ligand_dir, f"{ligand_name}_prealigned.pdb")
     ligand_sdf_file = os.path.join(this_ligand_dir, f"{ligand_name}.sdf")
 
     # Skip processing if file exists and regen is False
     if os.path.isfile(ligand_pdbqt_file) and not regen:
+        print(f"Skipping ligand {ligand_name} as {ligand_pdbqt_file} already exists and regen false.")
         return ligand_pdbqt_file
 
+    print(f"Processing ligand {ligand_name}")
+    
     # Special handling for ions
     print("Checking for ions...")
     simple_ion = ligand_name.upper()[:2]
@@ -355,15 +355,11 @@ def format_ligand(
                 chain_id=ligand_chain_id,
             )
 
-        print(ligand_pdb_temp_file, ligand_pdb_file)
-
         # get rid of ions as they will be handled separately
         remove_ions(
             input_file_path=ligand_pdb_temp_file,
             output_file_path=ligand_pdb_prehydrogen_file,
         )
-
-        print("after removing ions")
 
         add_hydrogens_to_atoms(
             input_pdb=ligand_pdb_prehydrogen_file,
@@ -374,32 +370,10 @@ def format_ligand(
             double_bond_pairs=double_bond_pairs,
         )
 
-        # mol = Chem.MolFromSmiles(smiles)
-        # protonated_smiles = protonate_oxygen(protonate_smiles(smiles=Chem.MolToSmiles(mol, isomericSmiles=True), pH=pH))
-
-        # fixmolpdbhs(
-        #     smiles=protonated_smiles,
-        #     input_file_path=ligand_pdb_prehydrogen_file,
-        #     output_file_path=ligand_pdb_prealigned_file,
-        # )
-
-        # align_and_fix_molecule(
-        #     smiles=protonated_smiles,
-        #     original_pdb=ligand_pdb_prehydrogen_file,
-        #     generated_pdb=ligand_pdb_prealigned_file,
-        #     output_pdb=ligand_pdb_file,
-        # )
-
         # now remove the temp files
         os.remove(ligand_pdb_temp_file)
         os.remove(ligand_pdb_prehydrogen_file)
-        # os.remove(ligand_pdb_prealigned_file)
-
-        # now convert to pdbqt
-        # os.system(
-        #             f"obabel {os.path.abspath(ligand_pdb_file)} -xr -p {pH} --partialcharge gasteiger -O {os.path.abspath(ligand_pdbqt_file)}"
-        #         )
-
+        
         # Construct command
         try:
             ligand_pdbqt_temp_file = os.path.join(
@@ -478,287 +452,6 @@ def format_ligand(
 
 
 ### helper functions for prep ligand ###
-
-# def fixmolpdbhs(smiles: str, input_file_path: str, output_file_path: str, pH: float = 7.4):
-#     # Load the molecule from SMILES (defines bond orders)
-#     # print("protonating smiles")
-#     # print(protonate_smiles(smiles=Chem.CanonSmiles(smiles, useChiral=True), pH=pH))
-
-#     mol = Chem.MolFromSmiles(smiles)
-#     print("protonating smiles")
-#     print(smiles)
-#     if not mol:
-#         raise ValueError("Invalid SMILES string. Could not parse the molecule.")
-#     mol_with_h = Chem.AddHs(mol)  # Add hydrogens based on valence
-
-#     # Generate a 3D conformer for the molecule
-#     status = AllChem.EmbedMolecule(mol_with_h, useRandomCoords=False, randomSeed=42)
-#     if status != 0:
-#         raise ValueError("Failed to embed 3D coordinates for the molecule.")
-
-#     # Parse the PDB file to extract atomic coordinates
-#     parser = PDBParser(QUIET=True)
-#     structure = parser.get_structure("input_structure", input_file_path)
-
-#     # Extract atomic coordinates from the PDB
-#     atom_coords = {}
-#     for model in structure:
-#         for chain in model:
-#             for residue in chain:
-#                 for atom in residue:
-#                     atom_coords[atom.get_serial_number() - 1] = atom.coord
-
-#     # Align PDB coordinates with the SMILES molecule
-#     conf = mol_with_h.GetConformer()
-#     for i, atom in enumerate(mol_with_h.GetAtoms()):
-#         if i in atom_coords:
-#             x, y, z = map(float, atom_coords[i])
-#             conf.SetAtomPosition(i, (x, y, z))
-#         else:
-#             # For hydrogens, use the RDKit positions as a fallback
-#             pos = conf.GetAtomPosition(i)
-#             conf.SetAtomPosition(i, (pos.x, pos.y, pos.z))
-
-#     # Optimize the hydrogens' positions
-#     AllChem.UFFOptimizeMolecule(mol_with_h)
-
-#     # Save the molecule as a PDB file with hydrogens added
-#     with open(output_file_path, "w") as f:
-#         f.write(Chem.MolToPDBBlock(mol_with_h))
-
-# def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, output_pdb: str):
-#     """
-#     Align and fix a molecule based on SMILES and PDB structures.
-
-#     Args:
-#         smiles (str): SMILES string of the molecule.
-#         original_pdb (str): Path to the original PDB file.
-#         generated_pdb (str): Path to the generated PDB file with hydrogens.
-#         output_pdb (str): Path to save the aligned and fixed PDB file.
-#     """
-#     # Step 1: Load the original PDB molecule
-#     mol_original = Chem.MolFromPDBFile(original_pdb, removeHs=False)
-#     if not mol_original:
-#         raise ValueError("Could not parse the original PDB file.")
-#     conf_original = mol_original.GetConformer()
-
-#     # Step 2: Load the generated PDB molecule with hydrogens
-#     mol_generated = Chem.MolFromPDBFile(generated_pdb, removeHs=False)
-#     if not mol_generated:
-#         raise ValueError("Could not parse the generated PDB file.")
-#     conf_generated = mol_generated.GetConformer()
-
-#     # Step 3: Create a molecule from SMILES with correct connectivity and bond orders
-#     mol_smiles = Chem.MolFromSmiles(smiles)
-#     if not mol_smiles:
-#         raise ValueError("Invalid SMILES string.")
-
-#     mol_with_h = Chem.AddHs(mol_smiles)
-
-#     # Handle explicit protonation for atoms like O or P
-#     for atom in mol_with_h.GetAtoms():
-#         if atom.GetSymbol() in ["O"] and atom.GetFormalCharge() == -1:
-#             atom.SetFormalCharge(0)
-#             atom.SetNumExplicitHs(atom.GetNumExplicitHs() + 1)
-
-#     AllChem.EmbedMolecule(mol_with_h, useRandomCoords=False)
-#     AllChem.UFFOptimizeMolecule(mol_with_h)
-#     conf_smiles = mol_with_h.GetConformer()
-
-#     # Step 4: Align the heavy atoms of the generated molecule to the original PDB
-#     original_atoms = [
-#         (atom.GetSymbol(), i, conf_original.GetAtomPosition(i))
-#         for i, atom in enumerate(mol_original.GetAtoms()) if atom.GetSymbol() != "H"
-#     ]
-#     smiles_atoms = [
-#         (atom.GetSymbol(), i, conf_smiles.GetAtomPosition(i))
-#         for i, atom in enumerate(mol_with_h.GetAtoms()) if atom.GetSymbol() != "H"
-#     ]
-
-#     # Match atoms based on element type
-#     matched_coords_original = []
-#     matched_coords_smiles = []
-#     for (symbol_orig, index_orig, coord_orig), (symbol_smiles, index_smiles, coord_smiles) in zip(original_atoms, smiles_atoms):
-#         if symbol_orig == symbol_smiles:
-#             matched_coords_original.append(coord_orig)
-#             matched_coords_smiles.append(coord_smiles)
-
-#     if not matched_coords_original or not matched_coords_smiles:
-#         raise ValueError("Failed to find matching heavy atoms for alignment.")
-
-#     # Step 5: Compute alignment transformation (RMSD alignment)
-#     matched_coords_original = np.array(matched_coords_original)
-#     matched_coords_smiles = np.array(matched_coords_smiles)
-
-#     centroid_original = np.mean(matched_coords_original, axis=0)
-#     centroid_smiles = np.mean(matched_coords_smiles, axis=0)
-
-#     centered_original = matched_coords_original - centroid_original
-#     centered_smiles = matched_coords_smiles - centroid_smiles
-
-#     H = np.dot(centered_smiles.T, centered_original)
-#     U, S, Vt = np.linalg.svd(H)
-#     R = np.dot(U, Vt)
-
-#     if np.linalg.det(R) < 0:
-#         Vt[-1, :] *= -1
-#         R = np.dot(U, Vt)
-
-#     # Step 6: Apply transformation to all atoms in the SMILES molecule
-#     coords_smiles = np.array([conf_smiles.GetAtomPosition(i) for i in range(mol_with_h.GetNumAtoms())])
-#     transformed_coords = np.dot(coords_smiles - centroid_smiles, R) + centroid_original
-
-#     # Update coordinates in the SMILES molecule
-#     for i, coord in enumerate(transformed_coords):
-#         conf_smiles.SetAtomPosition(i, coord)
-
-#     # Step 7: Save the transformed molecule as a PDB file
-#     with open(output_pdb, "w") as f:
-#         f.write(Chem.MolToPDBBlock(mol_with_h))
-
-#     print(f"Aligned and fixed molecule saved to {output_pdb}")
-# def align_and_fix_molecule(smiles: str, original_pdb: str, generated_pdb: str, output_pdb: str):
-#     """
-#     Align and fix a molecule based on SMILES and PDB structures.
-
-#     Args:
-#         smiles (str): SMILES string of the molecule.
-#         original_pdb (str): Path to the original PDB file.
-#         generated_pdb (str): Path to the generated PDB file with hydrogens.
-#         output_pdb (str): Path to save the aligned and fixed PDB file.
-#     """
-#     # Step 1: Load the original PDB molecule
-#     mol_original = Chem.MolFromPDBFile(original_pdb, removeHs=False)
-#     if not mol_original:
-#         raise ValueError("Could not parse the original PDB file.")
-#     conf_original = mol_original.GetConformer()
-
-#     # Step 2: Load the generated PDB molecule with hydrogens
-#     mol_generated = Chem.MolFromPDBFile(generated_pdb, removeHs=False)
-#     if not mol_generated:
-#         raise ValueError("Could not parse the generated PDB file.")
-#     conf_generated = mol_generated.GetConformer()
-
-#     # Step 3: Create a molecule from SMILES with correct connectivity and bond orders
-#     mol_smiles = Chem.MolFromSmiles(smiles)
-#     if not mol_smiles:
-#         raise ValueError("Invalid SMILES string.")
-
-#     mol_with_h = Chem.AddHs(mol_smiles)
-
-#     # Handle explicit protonation for atoms like O or P
-#     for atom in mol_with_h.GetAtoms():
-#         if atom.GetSymbol() in ["O"] and atom.GetFormalCharge() == -1:
-#             atom.SetFormalCharge(0)
-#             atom.SetNumExplicitHs(atom.GetNumExplicitHs() + 1)
-
-#     AllChem.EmbedMolecule(mol_with_h, useRandomCoords=False)
-#     AllChem.UFFOptimizeMolecule(mol_with_h)
-#     conf_smiles = mol_with_h.GetConformer()
-
-#     # Step 4: Align the heavy atoms of the generated molecule to the original PDB
-#     original_atoms = [
-#         (atom.GetSymbol(), i, conf_original.GetAtomPosition(i))
-#         for i, atom in enumerate(mol_original.GetAtoms()) if atom.GetSymbol() != "H"
-#     ]
-#     smiles_atoms = [
-#         (atom.GetSymbol(), i, conf_smiles.GetAtomPosition(i))
-#         for i, atom in enumerate(mol_with_h.GetAtoms()) if atom.GetSymbol() != "H"
-#     ]
-#     print(original_atoms)
-#     print(smiles_atoms)
-
-#     # Match atoms based on element type
-#     matched_coords_original = []
-#     matched_coords_smiles = []
-#     for (symbol_orig, index_orig, coord_orig), (symbol_smiles, index_smiles, coord_smiles) in zip(original_atoms, smiles_atoms):
-#         if symbol_orig == symbol_smiles:
-#             matched_coords_original.append(coord_orig)
-#             matched_coords_smiles.append(coord_smiles)
-
-#     if not matched_coords_original or not matched_coords_smiles:
-#         raise ValueError("Failed to find matching heavy atoms for alignment.")
-
-#     # Step 5: Compute alignment transformation (RMSD alignment)
-#     matched_coords_original = np.array(matched_coords_original)
-#     matched_coords_smiles = np.array(matched_coords_smiles)
-
-#     centroid_original = np.mean(matched_coords_original, axis=0)
-#     centroid_smiles = np.mean(matched_coords_smiles, axis=0)
-
-#     centered_original = matched_coords_original - centroid_original
-#     centered_smiles = matched_coords_smiles - centroid_smiles
-
-#     H = np.dot(centered_smiles.T, centered_original)
-#     U, S, Vt = np.linalg.svd(H)
-#     R = np.dot(U, Vt)
-
-#     if np.linalg.det(R) < 0:
-#         Vt[-1, :] *= -1
-#         R = np.dot(U, Vt)
-
-#     # # Step 6: Apply transformation to all atoms in the SMILES molecule
-#     # coords_smiles = np.array([conf_smiles.GetAtomPosition(i) for i in range(mol_with_h.GetNumAtoms())])
-#     # transformed_coords = np.dot(coords_smiles - centroid_smiles, R) + centroid_original
-
-#     # # Update coordinates in the SMILES molecule
-#     # for i, coord in enumerate(transformed_coords):
-#     #     conf_smiles.SetAtomPosition(i, coord)
-#     # Step 6: Apply transformation to all atoms in the SMILES molecule
-#     coords_smiles = np.array([list(conf_smiles.GetAtomPosition(i)) for i in range(mol_with_h.GetNumAtoms())])
-
-#     # Apply rotation and translation
-#     # First, center the coordinates around the centroid of SMILES
-#     centered_coords_smiles = coords_smiles - centroid_smiles
-
-#     # Apply the rotation matrix
-#     rotated_coords = np.dot(centered_coords_smiles, R.T)
-
-#     # Translate back to the original molecule's centroid
-#     transformed_coords = rotated_coords + centroid_original
-
-#     # Update coordinates in the SMILES molecule
-#     for i, coord in enumerate(transformed_coords):
-#         conf_smiles.SetAtomPosition(i, tuple(coord))
-
-#     # Step 7: Save the transformed molecule as a PDB file
-#     with open(output_pdb, "w") as f:
-#         f.write(Chem.MolToPDBBlock(mol_with_h))
-
-#     print(f"Aligned and fixed molecule saved to {output_pdb}")
-
-# def remove_numbers_from_atom_names(input_pdb, output_pdb):
-#     with open(input_pdb, 'r') as infile, open(output_pdb, 'w') as outfile:
-#         for line in infile:
-#             if line.startswith(("ATOM", "HETATM")):
-#                 # Extract the atom name and remove trailing numbers
-#                 atom_name = line[12:16].strip()
-#                 element = ''.join([char for char in atom_name if not char.isdigit()])
-#                 # Write the corrected line with modified atom name
-#                 outfile.write(line[:12] + element.ljust(4) + line[16:])
-#             else:
-#                 outfile.write(line)
-
-# def clean_and_fix_pdbqt(input_pdbqt, output_pdbqt):
-#     with open(input_pdbqt, 'r') as infile, open(output_pdbqt, 'w') as outfile:
-#         for line in infile:
-#             if line.startswith(("ATOM", "HETATM")):
-#                 # Clean atom names by removing numbers
-#                 atom_name = line[12:16].strip()
-#                 cleaned_name = ''.join([char for char in atom_name if not char.isdigit()])
-
-#                 # Extract the element type from column 13-16 (after cleaning)
-#                 element = cleaned_name.strip()[0]
-
-#                 # Write corrected line with cleaned atom name and element as atom type
-#                 new_line = (
-#                     line[:12] + cleaned_name.ljust(4) + line[16:76] + element.rjust(2) + line[78:]
-#                 )
-#                 outfile.write(new_line)
-#             else:
-#                 # Write other lines as they are
-#                 outfile.write(line)
-
 
 def rotation_matrix(axis, theta):
     """
@@ -1230,67 +923,6 @@ def protonate_oxygen(smiles: str) -> str:
     return protonated_smiles
 
 
-
-def save_full_hierarchy_atoms_with_connectivity(atoms_with_context, input_file_path, output_file_path):
-    """
-    Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom),
-    including connectivity (CONECT) records.
-
-    Args:
-        atoms_with_context (list): List of tuples (model, chain, residue, atom).
-        input_file_path (str): Path to the input structure file for connectivity.
-        output_file_path (str): Path to save the filtered PDB file.
-    """
-
-    # Create a custom selector
-    class FullHierarchySelector(Select):
-        def __init__(self, atoms_with_context):
-            self.selected_atoms = set(atom for _, _, _, atom in atoms_with_context)
-
-        def accept_atom(self, atom):
-            # Include only selected atoms
-            return atom in self.selected_atoms
-
-    # Use the structure from the first atom's model as a base
-    if atoms_with_context:
-        structure = atoms_with_context[0][0].get_parent()
-
-        # Write the filtered structure
-        io = PDBIO()
-        io.set_structure(structure)
-        io.save(output_file_path, select=FullHierarchySelector(atoms_with_context))
-
-        # Append CONECT records
-        add_connectivity(input_file_path, output_file_path, atoms_with_context)
-
-
-def add_connectivity(input_file_path, output_file_path, atoms_with_context):
-    """
-    Append CONECT records to the PDB file for preserved connectivity.
-
-    Args:
-        input_file_path (str): Path to the input structure file.
-        output_file_path (str): Path to save the updated PDB file with CONECT records.
-        atoms_with_context (list): List of tuples (model, chain, residue, atom).
-    """
-    atom_indices = {atom.serial_number for _, _, _, atom in atoms_with_context}
-    conect_records = []
-
-    with open(input_file_path, "r") as input_file:
-        for line in input_file:
-            if line.startswith("CONECT"):
-                fields = line.split()
-                atom_id = int(fields[1])
-                if atom_id in atom_indices:
-                    # Include only connectivity for selected atoms
-                    filtered_fields = [int(field) for field in fields[2:] if int(field) in atom_indices]
-                    conect_records.append(f"CONECT {atom_id:5}" + "".join(f"{id_:5}" for id_ in filtered_fields) + "\n")
-
-    # Append CONECT records to the output file
-    with open(output_file_path, "a") as output_file:
-        output_file.writelines(conect_records)
-
-
 def save_full_hierarchy_atoms(atoms_with_context, output_file_path):
     """
     Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom).
@@ -1337,9 +969,6 @@ def extract_substruct(
         criteria (str): "include" to keep specified atoms, "exclude" to remove them.
     """
 
-    print("insdie extract_substruct")
-    print(output_substruct_path)
-
     structure = get_protein_structure(input_file_path)
 
     substrate_atoms = []
@@ -1366,10 +995,8 @@ def extract_substruct(
 
     if criteria == "include":
         save_full_hierarchy_atoms(substrate_atoms, output_substruct_path)
-        # save_full_hierarchy_atoms_with_connectivity(substrate_atoms, input_file_path, output_substruct_path)
     else:
         save_full_hierarchy_atoms(rest_atoms, output_substruct_path)
-        # save_full_hierarchy_atoms_with_connectivity(rest_atoms, input_file_path, output_substruct_path)
 
     print(f"Substructure saved to {output_substruct_path}")
 
@@ -1383,6 +1010,7 @@ def dock(
     cofactor_dets: str = "cofactor",
     vina_dir: str = "zs/vina",
     residues4centriod: list = None,
+    from_pdb: bool = True,
     pH: float = 7.4,
     size_x=20.0,
     size_y=20.0,
@@ -1580,22 +1208,24 @@ def dock(
 
     conf_path = os.path.join(var_dir, f"{var_name}-{substrate_name}-{dock_opt}_conf.txt")
 
-    # Create config file
-    make_config_for_vina(
-        input_pdb_path=input_struct_path,
-        protein_pdbqt=protein_pdbqt,
-        ligand_pdbqt=ligand_pdbqt,
-        cofactor_pdbqts=cofactor_pdbqts,
-        conf_path=conf_path,
-        residues=residues4centriod,
-        substrate_chain_ids=ligand_chain_ids,
-        dock_opt=dock_opt,
-        size_x=size_x,
-        size_y=size_y,
-        size_z=size_z,
-        num_modes=num_modes,
-        exhaustiveness=exhaustiveness,
-    )
+    if not os.path.exists(conf_path):
+
+        # Create config file
+        make_config_for_vina(
+            input_pdb_path=input_struct_path,
+            protein_pdbqt=protein_pdbqt,
+            ligand_pdbqt=ligand_pdbqt,
+            cofactor_pdbqts=cofactor_pdbqts,
+            conf_path=conf_path,
+            residues=residues4centriod,
+            substrate_chain_ids=ligand_chain_ids,
+            dock_opt=dock_opt,
+            size_x=size_x,
+            size_y=size_y,
+            size_z=size_z,
+            num_modes=num_modes,
+            exhaustiveness=exhaustiveness,
+        )
 
     # Construct the base command
     cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb]
@@ -1650,6 +1280,7 @@ def dock_lib_parallel(
     cofactor_dets: str = "cofactor",
     vina_dir: str = "zs/vina",
     residues4centriod: list = None,
+    from_pdb: bool = True,
     pH: float = 7.4,
     size_x=20.0,
     size_y=20.0,
@@ -1691,6 +1322,7 @@ def dock_lib_parallel(
                 cofactor_dets=cofactor_dets,
                 vina_dir=vina_dir,
                 residues4centriod=residues4centriod,
+                from_pdb=from_pdb,
                 pH=pH,
                 size_x=size_x,
                 size_y=size_y,
@@ -1709,7 +1341,7 @@ def dock_lib_parallel(
             try:
                 future.result()  # Raises an exception if the task failed
             except Exception as e:
-                print(f"Task failed for {futures[future]}: {e}")
+                print(e)
 
 
 def make_config_for_vina(
@@ -1725,7 +1357,7 @@ def make_config_for_vina(
     size_y=20.0,
     size_z=20.0,
     num_modes=9,
-    exhaustiveness=32,
+    exhaustiveness=32
 ):
     """
     Create the config file for Vina, including cofactors if specified.

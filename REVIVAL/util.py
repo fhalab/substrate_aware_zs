@@ -349,7 +349,8 @@ def replace_residue_names_auto(
             if pattern.match(long_res_name):
                 detected_residues.add(long_res_name)
 
-    print(f"Detected residues to replace: {detected_residues}")
+    if len(detected_residues) > 0:
+        print(f"Detected residues to replace: {detected_residues}")
 
     # batch replace detected residues with new residue name
     with open(output_file, "w") as outfile:
