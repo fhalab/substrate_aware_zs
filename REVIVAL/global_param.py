@@ -745,6 +745,14 @@ LIB_INFO_DICT = deepcopy(
             "substrate-addH_chai_joint": [
                 ("B", "LIG", "B1"),
             ],
+            "substrate-double_bond_pairs_chai_joint": [
+                (("B", "LIG", "C1"), ("B", "LIG", "N1")),
+                (("B", "LIG", "C3"), ("B", "LIG", "C4")),
+            ],
+            "substrate_branches_chai_joint": {
+                "B": "B1",
+                "C": "C1"
+            },
             "cofactor-distances_joint": {
                 "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
             },  # if need to add H
@@ -799,6 +807,9 @@ LIB_INFO_DICT = deepcopy(
                 ("C", "LIG", "C19"),
                 ("C", "LIG", "O1"),
                 ("C", "LIG", "O2"),
+            ],
+            "substrate-addH_chai_joint": [
+                ("B", "LIG", "SI1"),
             ],
             "cofactor-distances_joint": {
                 "C-Si": (("B", 1, "LIG", "C_23", False), ("B", 1, "LIG", "SI_1", False))

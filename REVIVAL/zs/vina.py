@@ -277,6 +277,7 @@ def format_ligand(
     regen: bool = False,
     target_list_addh: list = None,
     double_bond_pairs=None,
+    branch_info=None
 ) -> str:
 
     """
@@ -362,12 +363,16 @@ def format_ligand(
         )
 
         if target_list_addh is not None and "borane" not in ligand_name.lower():
+            if "silane" in ligand_name.lower():
+                cutoff=2
+            else:
+                cutoff=1.6
             add_hydrogens_to_atoms(
                 input_pdb=ligand_pdb_prehydrogen_file,
                 output_pdb=ligand_pdb_file,
                 target_list=target_list_addh,
                 bond_length=1.0,
-                neighbor_cutoff=1.6,
+                neighbor_cutoff=cutoff,
                 double_bond_pairs=double_bond_pairs,
             )
             os.remove(ligand_pdb_prehydrogen_file)
@@ -378,6 +383,7 @@ def format_ligand(
                 target_atom=target_list_addh[0],
                 bond_length=1.0,
                 neighbor_cutoff=1.6,
+                double_bond_pairs=double_bond_pairs,
             )
         else:
             # rename the file
@@ -422,8 +428,18 @@ def format_ligand(
                 check=True,  # Raises CalledProcessError if the command fails
             )
 
+
             # now clean up
-            clean_pdbqt_file(ligand_pdbqt_temp_file, ligand_pdbqt_file)
+            if "borane" in ligand_name.lower():
+                # remove the -H from the boron
+                clean_boron_pdbqt_file(
+                    ligand_pdbqt_temp_file,
+                    ligand_pdbqt_file,
+                    branch_B=branch_info["B"],
+                    branch_C=branch_info["C"],
+                    )
+            else:
+                clean_pdbqt_file(ligand_pdbqt_temp_file, ligand_pdbqt_file)
 
             os.remove(ligand_pdbqt_temp_file)
 
@@ -617,10 +633,6 @@ def calculate_hydrogen_position(
         f"Unsupported geometry for atom '{atom_name}' with {n_neighbors} neighbors."
     )
 
-import numpy as np
-from Bio.PDB import PDBParser, PDBIO, Atom
-import re
-
 
 def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
     """
@@ -674,7 +686,8 @@ def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
 def add_hydrogens_to_boron(
     input_pdb: str,
     output_pdb: str,
-    target_atom=("B", "LIG", "B1"),
+    target_atom,
+    double_bond_pairs,
     bond_length=1.1,
     neighbor_cutoff=1.6,
 ):
@@ -713,7 +726,7 @@ def add_hydrogens_to_boron(
     # Add hydrogens to the structure
     for idx, h_coord in enumerate(hydrogen_positions, start=1):
         h_name = f"H{idx}"[:4].ljust(4)
-        new_atom = Atom.Atom(
+        new_atom = Atom(
             h_name.strip(),
             h_coord,
             bfactor=0.0,
@@ -729,7 +742,10 @@ def add_hydrogens_to_boron(
     # Save the modified structure
     io = PDBIO()
     io.set_structure(structure)
-    io.save(output_pdb)
+
+    write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs)
+
+    # io.save(output_pdb)
     print(f"Saved modified PDB to: {output_pdb}")
 
 
@@ -921,6 +937,80 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
 
         outf.write("END\n")
 
+
+def clean_boron_pdbqt_file(input_pdbqt: str, output_pdbqt: str, branch_B = "B1", branch_C = "C1"):
+
+    """
+    Group B1 and its hydrogens into a branch structure, and group the rest with C1.
+
+    Args:
+        input_pdbqt (str): Path to the input PDBQT file.
+        output_pdbqt (str): Path to the output PDBQT file.
+    """
+    try:
+        with open(input_pdbqt, "r") as infile, open(output_pdbqt, "w") as outfile:
+            lines = infile.readlines()
+            root_atoms = []
+            branch_atoms = []
+            branch_hydrogens = []
+
+            b1_serial = None
+            c1_serial = None
+
+            # Process each line and categorize atoms
+            for line in lines:
+                if line.startswith("TER"):
+                    continue  # Skip TER lines
+                if line.startswith("ATOM") or line.startswith("HETATM"):
+                    atom_serial = int(line[6:11].strip())
+                    atom_name = line[12:16].strip()
+
+                    if atom_name == branch_B:
+                        # update B to C
+                        atom_type = line[77:79].strip()
+                        assert atom_type == "B"  # Replace 'B' with 'C'
+                        line = f"{line[:77]}C {line[79:]}"
+                        branch_atoms.append(line)
+                        b1_serial = atom_serial
+                    elif atom_name == branch_C:
+                        root_atoms.append(line)
+                        c1_serial = atom_serial
+                    elif line[77:79].strip() == "HD":
+                        branch_hydrogens.append(line)
+                    else:
+                        root_atoms.append(line)
+
+            if b1_serial is None or c1_serial is None:
+                raise ValueError("Could not find B1 or C1 in the input PDBQT file.")
+
+            # Write header
+            for line in lines:
+                if not line.startswith("ATOM") and not line.startswith("HETATM") and not line.startswith("TER"):
+                    outfile.write(line)
+
+            # Write ROOT section
+            outfile.write("ROOT\n")
+            for atom in root_atoms:
+                outfile.write(atom)
+            outfile.write("ENDROOT\n")
+
+            # Write BRANCH section
+            outfile.write(f"BRANCH   {c1_serial}   {b1_serial}\n")
+            for atom in branch_atoms:
+                outfile.write(atom)
+            for hydrogen in branch_hydrogens:
+                outfile.write(hydrogen)
+            outfile.write(f"ENDBRANCH   {c1_serial}   {b1_serial}\n")
+
+            # Add torsional degrees of freedom
+            outfile.write("TORSDOF 1\n")
+
+        print(f"Processed PDBQT file saved to: {output_pdbqt}")
+
+    except Exception as e:
+        print(f"Error processing file: {e}")
+
+        
 
 def clean_pdbqt_file(input_pdbqt, output_pdbqt):
     """
@@ -1233,7 +1323,9 @@ def dock(
         raise ValueError("Substrate chains not implemented beyond 2")
 
     substrate_hinfo = lib_info.get(f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}", None)
-
+    substrate_db_pairs = lib_info.get(f"substrate-double_bond_pairs_{struct_tpye}_{input_struct_dock_opt}", None)
+    branch_info = lib_info.get(f"substrate_branches_{struct_tpye}_{input_struct_dock_opt}", None)
+    
     # Process the main ligand
     ligand_pdbqt = format_ligand(
         smiles=lib_info["substrate-smiles"],
@@ -1246,8 +1338,9 @@ def dock(
         ligand_info=ligand_info,
         ligand_chain_id=ligand_chain_id,
         target_list_addh=substrate_hinfo,
-        double_bond_pairs=None,
+        double_bond_pairs=substrate_db_pairs,
         regen=regen,
+        branch_info=branch_info
     )
 
     # Process all cofactors from the input pdb
@@ -1670,6 +1763,7 @@ def convert_pdbqt_to_pdb(pdbqt_file: str, pdb_file: str, disable_bonding=False) 
 
 real_number_pattern = r"[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?"
 score_re = re.compile(rf"REMARK VINA RESULT:\s*(?P<affinity>{real_number_pattern})")
+
 
 
 def merge_pdbqt(input_files: list, output_file_path: str):
