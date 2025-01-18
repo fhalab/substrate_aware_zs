@@ -742,6 +742,9 @@ LIB_INFO_DICT = deepcopy(
                 ("C", "LIG", "O1"),
                 ("C", "LIG", "O2"),
             ],
+            "substrate-addH_chai_joint": [
+                ("B", "LIG", "B1"),
+            ],
             "cofactor-distances_joint": {
                 "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
             },  # if need to add H

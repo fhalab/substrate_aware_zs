@@ -361,18 +361,30 @@ def format_ligand(
             output_file_path=ligand_pdb_prehydrogen_file,
         )
 
-        add_hydrogens_to_atoms(
-            input_pdb=ligand_pdb_prehydrogen_file,
-            output_pdb=ligand_pdb_file,
-            target_list=target_list_addh,
-            bond_length=1.0,
-            neighbor_cutoff=1.6,
-            double_bond_pairs=double_bond_pairs,
-        )
+        if target_list_addh is not None and "borane" not in ligand_name.lower():
+            add_hydrogens_to_atoms(
+                input_pdb=ligand_pdb_prehydrogen_file,
+                output_pdb=ligand_pdb_file,
+                target_list=target_list_addh,
+                bond_length=1.0,
+                neighbor_cutoff=1.6,
+                double_bond_pairs=double_bond_pairs,
+            )
+            os.remove(ligand_pdb_prehydrogen_file)
+        elif "borane" in ligand_name.lower():
+            add_hydrogens_to_boron(
+                input_pdb=ligand_pdb_prehydrogen_file,
+                output_pdb=ligand_pdb_file,
+                target_atom=target_list_addh[0],
+                bond_length=1.0,
+                neighbor_cutoff=1.6,
+            )
+        else:
+            # rename the file
+            os.rename(ligand_pdb_prehydrogen_file, ligand_pdb_file)
 
         # now remove the temp files
         os.remove(ligand_pdb_temp_file)
-        os.remove(ligand_pdb_prehydrogen_file)
         
         # Construct command
         try:
@@ -395,8 +407,11 @@ def format_ligand(
                 os.path.abspath(ligand_pdbqt_temp_file),
             ]
 
-            if if_substrate:
+            if if_substrate and "borane" not in ligand_name.lower():
                 command.remove("-xr")
+            elif "borane" in ligand_name.lower():
+                command.remove("--partialcharge")
+                command.remove("gasteiger")
 
             # Execute command and capture output
             subprocess.run(
@@ -601,6 +616,122 @@ def calculate_hydrogen_position(
     raise ValueError(
         f"Unsupported geometry for atom '{atom_name}' with {n_neighbors} neighbors."
     )
+
+import numpy as np
+from Bio.PDB import PDBParser, PDBIO, Atom
+import re
+
+
+def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
+    """
+    Calculate hydrogen positions for sp3 hybridization with tetrahedral geometry.
+
+    Args:
+        atom: The central atom (e.g., B in your case).
+        neighbors: List of neighboring atoms already bonded to the central atom.
+        bond_length: Desired bond length for the new H–X bond.
+
+    Returns:
+        List of np.ndarray: Coordinates for the new hydrogens.
+    """
+    atom_coord = np.array(atom.coord)
+    neighbor_coords = [np.array(neighbor.coord) for neighbor in neighbors]
+
+    # Case: 1 neighbor (sp³ hybridized, tetrahedral geometry for 3 Hs)
+    if len(neighbor_coords) == 1:
+        neighbor_vec = neighbor_coords[0] - atom_coord
+        neighbor_vec /= np.linalg.norm(neighbor_vec)
+
+        # Generate two orthogonal vectors to the neighbor_vec
+        ortho_vec1 = np.cross(neighbor_vec, [1, 0, 0])
+        if np.linalg.norm(ortho_vec1) < 1e-6:  # Handle edge case where neighbor_vec || [1, 0, 0]
+            ortho_vec1 = np.cross(neighbor_vec, [0, 1, 0])
+        ortho_vec1 /= np.linalg.norm(ortho_vec1)
+
+        ortho_vec2 = np.cross(neighbor_vec, ortho_vec1)
+        ortho_vec2 /= np.linalg.norm(ortho_vec2)
+
+        # Scale the bond length to place hydrogens correctly
+        tetrahedral_dirs = [
+            (-neighbor_vec + ortho_vec1 + ortho_vec2),   # First hydrogen direction
+            (-neighbor_vec - ortho_vec1 + ortho_vec2),  # Second hydrogen direction
+            (-neighbor_vec - ortho_vec2),               # Third hydrogen direction
+        ]
+
+        # Normalize and scale directions to bond length
+        h_positions = [
+            atom_coord + bond_length * (direction / np.linalg.norm(direction))
+            for direction in tetrahedral_dirs
+        ]
+        return h_positions
+
+
+    # Case: Unsupported geometries
+    else:
+        raise ValueError(f"Unsupported geometry for atom with {len(neighbor_coords)} neighbors.")
+
+
+def add_hydrogens_to_boron(
+    input_pdb: str,
+    output_pdb: str,
+    target_atom=("B", "LIG", "B1"),
+    bond_length=1.1,
+    neighbor_cutoff=1.6,
+):
+    """
+    Adds three hydrogens to a specified boron atom in the input PDB file.
+    Args:
+        input_pdb: Path to the input PDB file.
+        output_pdb: Path to save the modified PDB file.
+        target_atom: Tuple (chain_id, residue_name, atom_name) identifying the target boron atom.
+        bond_length: Distance for the H-B bond.
+        neighbor_cutoff: Cutoff distance to identify neighbors.
+    """
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("my_structure", input_pdb)
+    model = structure[0]
+
+    chain_id, residue_name, atom_name = target_atom
+
+    # Locate the target atom
+    chain = model[chain_id]
+    residue = next(res for res in chain if res.resname.strip() == residue_name)
+    atom = next(a for a in residue if a.get_name().strip() == atom_name)
+
+    # Find neighbors of the target atom
+    neighbors = []
+    for neighbor in residue.get_atoms():
+        if neighbor is atom:
+            continue
+        dist = atom - neighbor
+        if dist < neighbor_cutoff:
+            neighbors.append(neighbor)
+
+    # Calculate new hydrogen positions
+    hydrogen_positions = calculate_hydrogen_positions_sp3(atom, neighbors, bond_length)
+
+    # Add hydrogens to the structure
+    for idx, h_coord in enumerate(hydrogen_positions, start=1):
+        h_name = f"H{idx}"[:4].ljust(4)
+        new_atom = Atom.Atom(
+            h_name.strip(),
+            h_coord,
+            bfactor=0.0,
+            occupancy=1.0,
+            altloc=" ",
+            fullname=h_name,
+            serial_number=len(residue) + idx,
+            element="H",
+        )
+        residue.add(new_atom)
+        print(f"Added hydrogen {h_name.strip()} to {atom_name}")
+
+    # Save the modified structure
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(output_pdb)
+    print(f"Saved modified PDB to: {output_pdb}")
+
 
 
 def add_hydrogens_to_atoms(
@@ -1101,6 +1232,8 @@ def dock(
     else:
         raise ValueError("Substrate chains not implemented beyond 2")
 
+    substrate_hinfo = lib_info.get(f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}", None)
+
     # Process the main ligand
     ligand_pdbqt = format_ligand(
         smiles=lib_info["substrate-smiles"],
@@ -1112,9 +1245,7 @@ def dock(
         input_struct_path=clean_input_file,
         ligand_info=ligand_info,
         ligand_chain_id=ligand_chain_id,
-        target_list_addh=lib_info[
-            f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}"
-        ],
+        target_list_addh=substrate_hinfo,
         double_bond_pairs=None,
         regen=regen,
     )
@@ -1144,10 +1275,15 @@ def dock(
                     from_pdb=from_pdb,
                     input_struct_path=clean_input_file,
                     ligand_info=carbene_info,
-                    chain_id=cofactor_chain_id,
+                    ligand_chain_id=cofactor_chain_id,
                     regen=regen,
                 )
             )
+
+            if input_struct_dock_opt == "joint":
+                heme_exclude_info = carbene_info + ligand_info
+            else:
+                heme_exclude_info = carbene_info
 
             cofactor_pdbqts.append(
                 format_ligand(
@@ -1159,8 +1295,8 @@ def dock(
                     from_pdb=from_pdb,
                     input_struct_path=clean_input_file,
                     if_substrate=False,
-                    ligand_info=carbene_info,
-                    chain_id=cofactor_chain_id,
+                    ligand_info=heme_exclude_info,
+                    ligand_chain_id=cofactor_chain_id,
                     regen=regen,
                 )
             )
@@ -1175,7 +1311,7 @@ def dock(
                     from_pdb=from_pdb,
                     input_struct_path=clean_input_file,
                     ligand_info=None,
-                    chain_id=cofactor_chain_id,
+                    ligand_chain_id=cofactor_chain_id,
                     regen=regen,
                 )
             )
@@ -1431,7 +1567,7 @@ def make_config_for_vina(
 
         receptor_name = var_name + "_heme"
         # make an new subdir
-        merge_receptor_dir = checkNgen_folder(var_dir, receptor_name)
+        merge_receptor_dir = checkNgen_folder(os.path.join(var_dir, receptor_name))
 
         # Combine the protein and cofactor files
         receptor_pdbqt = os.path.join(merge_receptor_dir, f"{receptor_name}.pdbqt")

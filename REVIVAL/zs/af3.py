@@ -523,7 +523,7 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                 # Extract the score data for this replicate
                 for key in overall_keys:
                     var_data[f"{key}_{rep_index}"] = json_dict[key]
-                    var_data["mean_site_score"] = extract_site_scores(rep_atom_json, lib_sites)
+                    var_data[f"mean_site_score_{rep_index}"] = extract_site_scores(rep_atom_json, lib_sites)
 
                 # Process chain-level ptm and iptm scores
                 for i, chain in enumerate(chain_labels):
@@ -557,6 +557,11 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
         for key, values in score_sums.items():
             var_data[f"{key}_avg"] = np.mean(values) if values else None
             var_data[f"{key}_std"] = np.std(values) if values else None
+        
+        # add mean site score
+        mean_site_scores = [var_data[f"mean_site_score_{rep_index}"] for rep_index in rep_index_list if var_data.get(f"mean_site_score_{rep_index}") is not None]
+        var_data["mean_site_score_avg"] = np.mean(mean_site_scores)
+        var_data["mean_site_score_std"] = np.std(mean_site_scores)
 
         # Collect results
         results.append(var_data)
