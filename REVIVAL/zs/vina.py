@@ -35,7 +35,14 @@ from rdkit.Chem import AllChem
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name, get_protein_structure, get_chain_ids, get_chain_structure, replace_residue_names_auto
+from REVIVAL.util import (
+    checkNgen_folder,
+    get_file_name,
+    get_protein_structure,
+    get_chain_ids,
+    get_chain_structure,
+    replace_residue_names_auto,
+)
 
 warnings.filterwarnings("ignore")
 
@@ -74,6 +81,7 @@ def format_pdb(file_path: str, protein_dir: str, pH: float, regen=False):
 
 
 ##### helper functions for cleaning pdb #####
+
 
 def save_clean_protein(s, toFile: str, keep_chain="A", keep_all_protein_chains=True):
     """
@@ -209,11 +217,14 @@ def pdb_to_pdbqt_protein(input_path: str, output_path=None, pH: float = 7.4):
         fout.write("TER\n")
 
 
-### format ligand ### 
+### format ligand ###
 
-def prepare_ion(smiles: str, element: str, output_dir: str, input_struct_path: str, pH: float) -> str:
+
+def prepare_ion(
+    smiles: str, element: str, output_dir: str, input_struct_path: str, pH: float
+) -> str:
     """Handle ion extraction and conversion to PDBQT."""
-    
+
     if element is None or element == "":
         element = re.search(r"\[([A-Za-z]+)", smiles).group(1)
 
@@ -221,15 +232,21 @@ def prepare_ion(smiles: str, element: str, output_dir: str, input_struct_path: s
     ion_pdbqt_file = os.path.join(output_dir, f"{element}.pdbqt")
 
     # Extract ion from PDB
-    extract_ions(input_file_path=input_struct_path, output_file_path=ion_pdb_file, ion=element)
+    extract_ions(
+        input_file_path=input_struct_path, output_file_path=ion_pdb_file, ion=element
+    )
 
     # Convert to PDBQT using Open Babel
-    subprocess.run(["obabel", ion_pdb_file, "-O", ion_pdbqt_file, "--metal"], check=True)
+    subprocess.run(
+        ["obabel", ion_pdb_file, "-O", ion_pdbqt_file, "--metal"], check=True
+    )
 
     return ion_pdbqt_file
 
 
-def ligand_smiles2pdbqt(smiles: str, ligand_sdf_file: str, ligand_pdbqt_file: str, pH: float) -> None:
+def ligand_smiles2pdbqt(
+    smiles: str, ligand_sdf_file: str, ligand_pdbqt_file: str, pH: float
+) -> None:
     """Generate 3D coordinates, protonate, and save ligand."""
     smiles = Chem.CanonSmiles(smiles, useChiral=True)
     protonated_smiles = protonate_smiles(smiles, pH=pH)
@@ -259,7 +276,7 @@ def format_ligand(
     substruct_criteria: str = None,
     regen: bool = False,
     target_list_addh: list = None,
-    double_bond_pairs=None
+    double_bond_pairs=None,
 ) -> str:
 
     """
@@ -292,7 +309,9 @@ def format_ligand(
     ligand_pdbqt_file = os.path.join(this_ligand_dir, f"{ligand_name}.pdbqt")
     ligand_pdb_file = os.path.join(this_ligand_dir, f"{ligand_name}.pdb")
     ligand_pdb_temp_file = os.path.join(this_ligand_dir, f"{ligand_name}_temp.pdb")
-    ligand_pdb_prehydrogen_file = os.path.join(this_ligand_dir, f"{ligand_name}_prehydrogen.pdb")
+    ligand_pdb_prehydrogen_file = os.path.join(
+        this_ligand_dir, f"{ligand_name}_prehydrogen.pdb"
+    )
     # ligand_pdb_prealigned_file = os.path.join(this_ligand_dir, f"{ligand_name}_prealigned.pdb")
     ligand_sdf_file = os.path.join(this_ligand_dir, f"{ligand_name}.sdf")
 
@@ -311,9 +330,9 @@ def format_ligand(
             element=simple_ion if simple_ion in LIGAND_IONS else None,
             output_dir=this_ligand_dir,
             input_struct_path=input_struct_path,
-            pH=pH
+            pH=pH,
         )
-    
+
     # try to directly convert from pdb
     if from_pdb:
         print(f"Processing ligand {ligand_name} from {input_struct_path}")
@@ -326,14 +345,14 @@ def format_ligand(
                 output_substruct_path=os.path.abspath(ligand_pdb_temp_file),
                 info_list=ligand_info,
                 chain_id=ligand_chain_id,
-                criteria=substruct_criteria, # only include the ligand
+                criteria=substruct_criteria,  # only include the ligand
             )
 
         else:
             get_chain_structure(
-                input_file_path=input_struct_path, 
+                input_file_path=input_struct_path,
                 output_file_path=ligand_pdb_temp_file,
-                chain_id=ligand_chain_id
+                chain_id=ligand_chain_id,
             )
 
         print(ligand_pdb_temp_file, ligand_pdb_file)
@@ -341,7 +360,7 @@ def format_ligand(
         # get rid of ions as they will be handled separately
         remove_ions(
             input_file_path=ligand_pdb_temp_file,
-            output_file_path=ligand_pdb_prehydrogen_file
+            output_file_path=ligand_pdb_prehydrogen_file,
         )
 
         print("after removing ions")
@@ -350,14 +369,14 @@ def format_ligand(
             input_pdb=ligand_pdb_prehydrogen_file,
             output_pdb=ligand_pdb_file,
             target_list=target_list_addh,
-            bond_length = 1.0,
-            neighbor_cutoff = 1.6,
-            double_bond_pairs=double_bond_pairs
+            bond_length=1.0,
+            neighbor_cutoff=1.6,
+            double_bond_pairs=double_bond_pairs,
         )
 
         # mol = Chem.MolFromSmiles(smiles)
         # protonated_smiles = protonate_oxygen(protonate_smiles(smiles=Chem.MolToSmiles(mol, isomericSmiles=True), pH=pH))
-    
+
         # fixmolpdbhs(
         #     smiles=protonated_smiles,
         #     input_file_path=ligand_pdb_prehydrogen_file,
@@ -383,7 +402,9 @@ def format_ligand(
 
         # Construct command
         try:
-            ligand_pdbqt_temp_file = os.path.join(this_ligand_dir, f"{ligand_name}_temp.pdbqt")
+            ligand_pdbqt_temp_file = os.path.join(
+                this_ligand_dir, f"{ligand_name}_temp.pdbqt"
+            )
             # make -xr optional depends on the ligand
 
             command = [
@@ -394,20 +415,22 @@ def format_ligand(
                 # "--addexplicit",
                 "-xr",
                 # "-p", str(pH),
-                "--partialcharge", "gasteiger",
-                "-O", os.path.abspath(ligand_pdbqt_temp_file)
+                "--partialcharge",
+                "gasteiger",
+                "-O",
+                os.path.abspath(ligand_pdbqt_temp_file),
             ]
 
             if if_substrate:
                 command.remove("-xr")
-            
+
             # Execute command and capture output
             subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
-                check=True  # Raises CalledProcessError if the command fails
+                check=True,  # Raises CalledProcessError if the command fails
             )
 
             # now clean up
@@ -426,7 +449,10 @@ def format_ligand(
             return False
 
         # Validate output
-        if not os.path.isfile(ligand_pdbqt_file) or os.path.getsize(ligand_pdbqt_file) == 0:
+        if (
+            not os.path.isfile(ligand_pdbqt_file)
+            or os.path.getsize(ligand_pdbqt_file) == 0
+        ):
             raise ValueError(f"PDBQT file for {ligand_name} is empty or missing.")
 
         return ligand_pdbqt_file
@@ -438,7 +464,7 @@ def format_ligand(
             smiles=smiles,
             ligand_sdf_file=ligand_sdf_file,
             ligand_pdbqt_file=ligand_pdbqt_file,
-            pH=pH
+            pH=pH,
         )
 
     except Exception as e:
@@ -457,7 +483,7 @@ def format_ligand(
 #     # Load the molecule from SMILES (defines bond orders)
 #     # print("protonating smiles")
 #     # print(protonate_smiles(smiles=Chem.CanonSmiles(smiles, useChiral=True), pH=pH))
-    
+
 #     mol = Chem.MolFromSmiles(smiles)
 #     print("protonating smiles")
 #     print(smiles)
@@ -733,6 +759,7 @@ def format_ligand(
 #                 # Write other lines as they are
 #                 outfile.write(line)
 
+
 def rotation_matrix(axis, theta):
     """
     Return the 3x3 rotation matrix for rotating 'theta' radians about 'axis'.
@@ -744,13 +771,18 @@ def rotation_matrix(axis, theta):
     c = np.cos(theta)
     s = np.sin(theta)
     C = 1 - c
-    return np.array([
-        [x*x*C + c,   x*y*C - z*s, x*z*C + y*s],
-        [y*x*C + z*s, y*y*C + c,   y*z*C - x*s],
-        [z*x*C - y*s, z*y*C + x*s, z*z*C + c   ]
-    ])
+    return np.array(
+        [
+            [x * x * C + c, x * y * C - z * s, x * z * C + y * s],
+            [y * x * C + z * s, y * y * C + c, y * z * C - x * s],
+            [z * x * C - y * s, z * y * C + x * s, z * z * C + c],
+        ]
+    )
 
-def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pairs=None):
+
+def calculate_hydrogen_position(
+    atom, neighbors, bond_length=1.0, double_bond_pairs=None
+):
     """
     Calculate a new hydrogen coordinate for 'atom' based on:
       - number of existing neighbors
@@ -761,7 +793,7 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pa
         atom (Bio.PDB.Atom.Atom): The central atom (will receive H).
         neighbors (list[Bio.PDB.Atom.Atom]): already-bonded neighbors of 'atom'.
         bond_length (float): approx distance for the new H–X bond.
-        double_bond_pairs (dict or set or None): 
+        double_bond_pairs (dict or set or None):
             e.g. {("C3","N2"), ("N2","C3")}, marking certain bonds as double.
 
     Returns:
@@ -825,7 +857,7 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pa
             norm_d = np.linalg.norm(direction)
             if norm_d < 1e-12:
                 # fallback
-                direction = np.cross(v1, [0,0,1])
+                direction = np.cross(v1, [0, 0, 1])
                 if np.linalg.norm(direction) < 1e-12:
                     direction = np.array([1, 0, 0])
             else:
@@ -838,7 +870,7 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pa
         vec = atom_coord - np.array(neighbors[0].coord)
         nrm = np.linalg.norm(vec)
         if nrm < 1e-12:
-            vec = np.array([1,0,0])
+            vec = np.array([1, 0, 0])
         else:
             vec /= nrm
         return atom_coord + vec * bond_length
@@ -853,9 +885,9 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pa
         direction = -(v1 + v2)
         norm_d = np.linalg.norm(direction)
         if norm_d < 1e-12:
-            direction = np.cross(v1, [0,0,1])
+            direction = np.cross(v1, [0, 0, 1])
             if np.linalg.norm(direction) < 1e-12:
-                direction = np.array([1,0,0])
+                direction = np.array([1, 0, 0])
         else:
             direction /= norm_d
         return atom_coord + direction * bond_length
@@ -867,7 +899,7 @@ def calculate_hydrogen_position(atom, neighbors, bond_length=1.0, double_bond_pa
         direction = atom_coord - centroid
         norm_d = np.linalg.norm(direction)
         if norm_d < 1e-12:
-            direction = np.array([1,0,0])
+            direction = np.array([1, 0, 0])
         else:
             direction /= norm_d
         return atom_coord + direction * bond_length
@@ -884,7 +916,7 @@ def add_hydrogens_to_atoms(
     target_list,
     bond_length: float = 1.0,
     neighbor_cutoff: float = 1.6,
-    double_bond_pairs=None
+    double_bond_pairs=None,
 ):
     """
     1) Reads the PDB
@@ -896,7 +928,7 @@ def add_hydrogens_to_atoms(
          - Adds one new hydrogen
     4) Writes out a custom PDB that includes only the CONECT lines for the pairs in double_bond_pairs.
        (No distance-based guess for other bonds).
-       
+
     We assume double_bond_pairs is a list of 2-tuples:
       [ (("B","LIG","C3"), ("B","LIG","N2")), ... ]
     Each element is a pair of (chain, resname, atom_name).
@@ -910,7 +942,7 @@ def add_hydrogens_to_atoms(
 
     # --- Step A: find the largest existing H index ---
     largest_h_num = 0
-    pattern = re.compile(r'^H(\d+)$')
+    pattern = re.compile(r"^H(\d+)$")
     for chain in model:
         for residue in chain:
             for atom in residue:
@@ -937,7 +969,9 @@ def add_hydrogens_to_atoms(
                 tgt_res = res
                 break
         if not tgt_res:
-            raise ValueError(f"Residue '{residue_name}' not found in chain '{chain_id}'.")
+            raise ValueError(
+                f"Residue '{residue_name}' not found in chain '{chain_id}'."
+            )
 
         # find atom
         tgt_atom = None
@@ -964,7 +998,7 @@ def add_hydrogens_to_atoms(
             atom=tgt_atom,
             neighbors=neighbors,
             bond_length=bond_length,
-            double_bond_pairs=double_bond_pairs
+            double_bond_pairs=double_bond_pairs,
         )
 
         # create a unique H name
@@ -982,7 +1016,9 @@ def add_hydrogens_to_atoms(
         new_h_serial += 1
 
         tgt_res.add(new_atom)
-        print(f"Added H '{new_h_name.strip()}' to {atom_name} in {residue_name} (chain {chain_id})")
+        print(
+            f"Added H '{new_h_name.strip()}' to {atom_name} in {residue_name} (chain {chain_id})"
+        )
 
     # --- Step C: Write updated PDB with only the double-bond CONECT lines
     write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs)
@@ -1001,7 +1037,7 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
        HETATM (or ATOM) lines
        CONECT lines only for pairs we find in double_bond_pairs
     """
-    # 1) Flatten all atoms. We'll store a key => (chain, resname, atomname) 
+    # 1) Flatten all atoms. We'll store a key => (chain, resname, atomname)
     #    plus a big dictionary to get the assigned "serial"
     all_atoms = []
     atom_map = {}  # maps (chain, resname, atom_name) -> (atom_obj, serial)
@@ -1032,7 +1068,7 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
             # We'll assume residue id is an integer. For real code, check insertion codes etc.
             # Biopython residue .id -> (hetero_flag, seq_number, insertion_code)
             # We'll guess no insertion code for simplicity
-            seqnum = residue.id[1] if hasattr(atom_obj.parent, 'id') else 1
+            seqnum = residue.id[1] if hasattr(atom_obj.parent, "id") else 1
 
             line = (
                 f"{record_type:6s}{serial:5d} {a_name:<4s}"
@@ -1055,9 +1091,12 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
                 # optionally also the reverse if you want symmetrical lines:
                 outf.write(f"CONECT{s2:5d}{s1:5d}\n")
             else:
-                print(f"Warning: Could not find one of {a1} or {a2} in structure for CONECT.")
+                print(
+                    f"Warning: Could not find one of {a1} or {a2} in structure for CONECT."
+                )
 
         outf.write("END\n")
+
 
 def clean_pdbqt_file(input_pdbqt, output_pdbqt):
     """
@@ -1072,13 +1111,11 @@ def clean_pdbqt_file(input_pdbqt, output_pdbqt):
                 resname = line[17:20].strip()
                 chain_id = line[21].strip()
                 resseq = line[22:26].strip()
-                
+
                 if resname == "ACE" and chain_id == "A" and resseq == "0":
                     # Replace with 'UNL     1'
-                    line = (
-                        f"{line[:17]}UNL     1{line[26:]}"
-                    )
-            
+                    line = f"{line[:17]}UNL     1{line[26:]}"
+
             # Write the modified (or unmodified) line to the output
             outfile.write(line)
 
@@ -1118,7 +1155,7 @@ def extract_ions(input_file_path: str, output_file_path: str, ion: str) -> None:
     with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
         for line in infile:
             if line.startswith("ATOM") or line.startswith("HETATM"):
-                
+
                 fields = line.split()
                 if len(fields) >= 4:
                     atom_name = fields[2].strip()  # Atom name
@@ -1162,7 +1199,6 @@ def protonate_smiles(smiles: str, pH: float) -> str:
     return output.strip()
 
 
-
 def protonate_oxygen(smiles: str) -> str:
     """
     Protonate all [O-] groups in a SMILES string.
@@ -1174,10 +1210,10 @@ def protonate_oxygen(smiles: str) -> str:
     mol = Chem.MolFromSmiles(smiles)
     if not mol:
         raise ValueError(f"Invalid SMILES string: {smiles}")
-    
+
     # Add hydrogens explicitly
     mol = Chem.AddHs(mol)
-    
+
     # Iterate over atoms to find [O-] and adjust charges
     for atom in mol.GetAtoms():
         if atom.GetSymbol() == "O" and atom.GetFormalCharge() == -1:
@@ -1185,14 +1221,13 @@ def protonate_oxygen(smiles: str) -> str:
             atom.SetFormalCharge(0)
             # Adjust the number of implicit hydrogens
             atom.SetNumExplicitHs(1)
-    
+
     # Update the molecule
     Chem.SanitizeMol(mol)
-    
+
     # Generate the protonated SMILES
     protonated_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
     return protonated_smiles
-
 
 
 def save_full_hierarchy_atoms(atoms_with_context, output_file_path):
@@ -1255,7 +1290,9 @@ def extract_substruct(
                 for residue in chain:
                     for atom in residue:
                         match = any(
-                            chain.id == chain_id and residue.resname == resn and atom.name == name
+                            chain.id == chain_id
+                            and residue.resname == resn
+                            and atom.name == name
                             for chain_id, resn, name in info_list
                         )
                         if match:
@@ -1265,7 +1302,7 @@ def extract_substruct(
 
     print(f"Substrate atoms: {substrate_atoms}")
     print(f"Rest atoms: {rest_atoms}")
-    
+
     if criteria == "include":
         save_full_hierarchy_atoms(substrate_atoms, output_substruct_path)
     else:
@@ -1277,8 +1314,8 @@ def extract_substruct(
 ### docking ###
 def dock(
     input_struct_path: str,
-    dock_opt: str, #  ie "substrate",
-    score_only: bool, # = True,
+    dock_opt: str,  #  ie "substrate",
+    score_only: bool,  # = True,
     lib_name: str = None,
     cofactor_dets: str = "cofactor",
     vina_dir: str = "zs/vina",
@@ -1319,10 +1356,10 @@ def dock(
 
     # Auxiliary files
     vina_logfile = os.path.join(
-        var_dir, f"{var_name}-{substrate_name}{dock_opt}-{output_opt}_log.txt"
+        var_dir, f"{var_name}-{substrate_name}-{dock_opt}-{output_opt}_log.txt"
     )
     docked_ligand_pdb = os.path.join(
-        var_dir, f"{var_name}-{substrate_name}{dock_opt}-{output_opt}.pdb"
+        var_dir, f"{var_name}-{substrate_name}-{dock_opt}-{output_opt}.pdb"
     )
 
     if not rerun and os.path.isfile(docked_ligand_pdb):
@@ -1354,7 +1391,7 @@ def dock(
         raise ValueError("Neither 'joint' nor 'seperate' found in clean_input_file")
 
     ligand_info = lib_info[f"{substrate_name}-info"]
-    
+
     if len(ligand_chain_ids) == 1:
         ligand_chain_id = ligand_chain_ids[0]
         cofactor_chain_id = ligand_chain_id
@@ -1367,28 +1404,32 @@ def dock(
 
     # Process the main ligand
     ligand_pdbqt = format_ligand(
-            smiles=lib_info["substrate-smiles"],
-            ligand_name=substrate_name,
-            var_dir=var_dir,
-            pH=pH,
-            substruct_criteria="include",
-            from_pdb=from_pdb,
-            input_struct_path=clean_input_file,
-            ligand_info=ligand_info,
-            ligand_chain_id=ligand_chain_id,
-            target_list_addh = lib_info[f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}"],
-            double_bond_pairs=None,
-            regen = regen,
+        smiles=lib_info["substrate-smiles"],
+        ligand_name=substrate_name,
+        var_dir=var_dir,
+        pH=pH,
+        substruct_criteria="include",
+        from_pdb=from_pdb,
+        input_struct_path=clean_input_file,
+        ligand_info=ligand_info,
+        ligand_chain_id=ligand_chain_id,
+        target_list_addh=lib_info[
+            f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}"
+        ],
+        double_bond_pairs=None,
+        regen=regen,
     )
 
     # Process all cofactors from the input pdb
     cofactor_pdbqts = []
     for (cofactor_name, cofactor_smiles) in zip(
         LIB_INFO_DICT[lib_name][cofactor_dets],
-        LIB_INFO_DICT[lib_name][f"{cofactor_dets}-smiles"]
+        LIB_INFO_DICT[lib_name][f"{cofactor_dets}-smiles"],
     ):
 
-        print(f"Processing cofactor {cofactor_name} {cofactor_smiles} using {clean_input_file}")
+        print(
+            f"Processing cofactor {cofactor_name} {cofactor_smiles} using {clean_input_file}"
+        )
 
         if f"carbene-info_{input_struct_dock_opt}" in lib_info:
             # need to get carbene and then heme and Fe
@@ -1405,8 +1446,9 @@ def dock(
                     input_struct_path=clean_input_file,
                     ligand_info=carbene_info,
                     chain_id=cofactor_chain_id,
-                    regen = regen,
-            ))
+                    regen=regen,
+                )
+            )
 
             cofactor_pdbqts.append(
                 format_ligand(
@@ -1420,8 +1462,9 @@ def dock(
                     if_substrate=False,
                     ligand_info=carbene_info,
                     chain_id=cofactor_chain_id,
-                    regen = regen,
-            ))
+                    regen=regen,
+                )
+            )
 
             # handle Fe separately
             cofactor_pdbqts.append(
@@ -1434,8 +1477,9 @@ def dock(
                     input_struct_path=clean_input_file,
                     ligand_info=None,
                     chain_id=cofactor_chain_id,
-                    regen = regen,
-            ))
+                    regen=regen,
+                )
+            )
 
         # trpbs
         else:
@@ -1451,16 +1495,19 @@ def dock(
                     if_substrate=False,
                     ligand_chain_id=cofactor_chain_id,
                     ligand_info=ligand_info,
-                    target_list_addh = lib_info[f"cofactor-addH_{struct_tpye}_{input_struct_dock_opt}"],
-                    double_bond_pairs=lib_info[f"cofactor-double_bond_pairs_{struct_tpye}_{input_struct_dock_opt}"],
+                    target_list_addh=lib_info[
+                        f"cofactor-addH_{struct_tpye}_{input_struct_dock_opt}"
+                    ],
+                    double_bond_pairs=lib_info[
+                        f"cofactor-double_bond_pairs_{struct_tpye}_{input_struct_dock_opt}"
+                    ],
                     regen=regen,
-            ))
-    
+                )
+            )
+
     print(f"cofactor_pdbqts: {cofactor_pdbqts}")
 
-    conf_path = os.path.join(
-        var_dir, f"{var_name}-{substrate_name}{dock_opt}_conf.txt"
-    )
+    conf_path = os.path.join(var_dir, f"{var_name}-{substrate_name}{dock_opt}_conf.txt")
 
     # Create config file
     make_config_for_vina(
@@ -1481,11 +1528,11 @@ def dock(
 
     # Construct the base command
     cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb]
-    
+
     if score_only:
         cmd_list += ["--score_only"]
     else:
-        cmd_list += [ "--seed", str(seed)]
+        cmd_list += ["--seed", str(seed)]
         if num_cpus is not None:
             cmd_list += ["--cpu", str(num_cpus)]
 
@@ -1495,14 +1542,16 @@ def dock(
             cmd_list,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
-            check=True  # Ensures subprocess raises an exception on error
+            check=True,  # Ensures subprocess raises an exception on error
         )
 
         # Write the Vina output to the log file
         with open(vina_logfile, "w") as fout:
             fout.write(cmd_return.stdout.decode("utf-8"))
 
-        print(f"Vina run {'(score-only)' if score_only else ''} completed successfully. Log saved to: {vina_logfile}")
+        print(
+            f"Vina run {'(score-only)' if score_only else ''} completed successfully. Log saved to: {vina_logfile}"
+        )
         if not score_only:
             print(f"Docked ligand saved to: {docked_ligand_pdb}")
 
@@ -1515,16 +1564,18 @@ def dock(
     if not score_only:
         # Convert the docked PDBQT file to PDB if not in score-only mode
         convert_pdbqt_to_pdb(
-            pdbqt_file=docked_ligand_pdb, pdb_file=docked_ligand_pdb, disable_bonding=True
+            pdbqt_file=docked_ligand_pdb,
+            pdb_file=docked_ligand_pdb,
+            disable_bonding=True,
         )
 
-    return vina_logfile    
+    return vina_logfile
 
 
 def dock_lib_parallel(
     struct_dir: str,
-    dock_opt: str, #  ie "substrate",
-    score_only: bool, # = True,
+    dock_opt: str,  #  ie "substrate",
+    score_only: bool,  # = True,
     cofactor_dets: str = "cofactor",
     vina_dir: str = "zs/vina",
     residues4centriod: list = None,
@@ -1564,7 +1615,7 @@ def dock_lib_parallel(
                 lib_name=lib_name,
                 cofactor_dets=cofactor_dets,
                 vina_dir=vina_dir,
-                residues4centriod = residues4centriod,
+                residues4centriod=residues4centriod,
                 pH=pH,
                 size_x=size_x,
                 size_y=size_y,
@@ -1574,7 +1625,7 @@ def dock_lib_parallel(
                 regen=regen,
                 rerun=rerun,
                 num_cpus=num_cpus,
-                seed=seed
+                seed=seed,
             )
             for var_path in var_paths
         ]
@@ -1584,7 +1635,7 @@ def dock_lib_parallel(
                 future.result()  # Raises an exception if the task failed
             except Exception as e:
                 print(f"Task failed for {futures[future]}: {e}")
-                
+
 
 def make_config_for_vina(
     input_pdb_path: str,
@@ -1645,11 +1696,11 @@ def make_config_for_vina(
     if dock_opt == "all":
         receptor_pdbqt = protein_pdbqt
         cofactor2dock = deepcopy(cofactor_pdbqts)
-    
+
     # freeze cofactors as part of receptors
     elif dock_opt == "substrate":
         receptor_name = var_name + "_cofactors"
-        # make an new subdir 
+        # make an new subdir
         merge_receptor_dir = checkNgen_folder(os.path.join(var_dir, receptor_name))
 
         # Combine the protein and cofactor files
@@ -1667,12 +1718,12 @@ def make_config_for_vina(
         )
 
         cofactor2dock = None
-        
+
     # freeze heme but dock carbene and the substrate
     elif dock_opt == "substrate+carbene":
 
         receptor_name = var_name + "_heme"
-        # make an new subdir 
+        # make an new subdir
         merge_receptor_dir = checkNgen_folder(var_dir, receptor_name)
 
         # Combine the protein and cofactor files
@@ -1692,7 +1743,7 @@ def make_config_for_vina(
 
         # Combine the protein and cofactor files
         merge_pdbqt(
-            input_files=[protein_pdbqt]+cofactor2freeze,
+            input_files=[protein_pdbqt] + cofactor2freeze,
             output_file_path=receptor_pdbqt,
         )
 
@@ -1805,7 +1856,7 @@ def merge_pdbqt(input_files: list, output_file_path: str):
 
 def split_pdbqt(input_file, output_file_1, output_file_2):
     """
-    Splits a PDBQT file into two parts based on the 'TER' separator and 
+    Splits a PDBQT file into two parts based on the 'TER' separator and
     ensures the first output file always has more atoms than the second.
 
     Args:
@@ -1813,9 +1864,9 @@ def split_pdbqt(input_file, output_file_1, output_file_2):
         output_file_1 (str): Path to save the first split file.
         output_file_2 (str): Path to save the second split file.
     """
-    with open(input_file, 'r') as file:
+    with open(input_file, "r") as file:
         lines = file.readlines()
-        
+
     # Split the lines based on 'TER'
     first_part = []
     second_part = []
@@ -1843,13 +1894,15 @@ def split_pdbqt(input_file, output_file_1, output_file_2):
         num_atoms_1, num_atoms_2 = num_atoms_2, num_atoms_1
 
     # Save both parts into separate files
-    with open(output_file_1, 'w') as file:
+    with open(output_file_1, "w") as file:
         file.writelines(first_part)
 
-    with open(output_file_2, 'w') as file:
+    with open(output_file_2, "w") as file:
         file.writelines(second_part)
 
-    print(f"File split completed: {output_file_1} with {num_atoms_1} and {output_file_2} with {num_atoms_2} atoms.")
+    print(
+        f"File split completed: {output_file_1} with {num_atoms_1} and {output_file_2} with {num_atoms_2} atoms."
+    )
 
     return num_atoms_1, num_atoms_2
 
@@ -1899,8 +1952,9 @@ def calculate_centroid(coords: list) -> tuple:
     return centroid
 
 
-
-def calculate_chain_centroid(input_file: str, chain_ids: Union[list, str]) -> np.ndarray:
+def calculate_chain_centroid(
+    input_file: str, chain_ids: Union[list, str]
+) -> np.ndarray:
 
     """
     Calculate the geometric center (centroid) of all atoms in the specified chain(s).
@@ -1949,6 +2003,7 @@ def calculate_chain_centroid(input_file: str, chain_ids: Union[list, str]) -> np
 
 
 def extract_lowest_energy(file_path: str):
+
     with open(file_path, "r") as file:
         lines = file.readlines()
 
@@ -1970,10 +2025,29 @@ def extract_lowest_energy(file_path: str):
     return min(energies)
 
 
+def extract_binding_energy(log_file):
+    """
+    Extract the binding energy from an AutoDock Vina log file.
+
+    Args:
+        log_file (str): Path to the AutoDock Vina log file.
+
+    Returns:
+        float: Binding energy in kcal/mol, or None if not found.
+    """
+    with open(log_file, 'r') as file:
+        for line in file:
+            if "Estimated Free Energy of Binding" in line:
+                return float(line.split(':')[1].split()[0])
+
+
 class VinaResults(ZSData):
     def __init__(
         self,
         input_csv: str,
+        dock_opt: str,  #  ie "substrate",
+        score_only: bool,  # = True,
+        vina_struct_dir: str, # = "vina/chai/struct_joint",
         scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -1983,9 +2057,7 @@ class VinaResults(ZSData):
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
-        vina_dir: str = "vina",
-        vina_raw_dir: str = "",
-        vina_score_dir: str = "score",
+        vina_score_dirname: str = "score",
         num_rep: int = 5,
         cofactor_type: str = "",
         withsub: bool = True,
@@ -2032,13 +2104,15 @@ class VinaResults(ZSData):
         self._cofactor_append = f"_{cofactor_type}" if cofactor_type else ""
         self._vina_lib_name = f"{self.lib_name}{self._cofactor_append}"
 
-        self._vina_dir = os.path.join(self._zs_dir, vina_dir, vina_raw_dir)
+        self._vina_dir = os.path.join(self._zs_dir, vina_struct_dir)
         self._vina_score_dir = checkNgen_folder(
-            os.path.join(self._zs_dir, vina_dir, vina_score_dir)
+            os.path.join(self._zs_dir, vina_struct_dir, vina_score_dirname)
         )
         self._vina_lib_dir = os.path.join(self._vina_dir, self._vina_lib_name)
 
         self._num_rep = num_rep
+        self._dock_opt = dock_opt
+        self._output_opt = "score_only" if score_only else "docked"
 
         # for each row of the input csv, we will have a vina subfolder
         # ie I165A:I183A:Y301V_0 where 0 is the replicate number
@@ -2071,19 +2145,23 @@ class VinaResults(ZSData):
         scores = []
         for variant in tqdm(variants):
             for r in range(self._num_rep):
-                vina_log_files = glob(
-                    os.path.join(self._vina_lib_dir, f"{variant}_{r}", "*_log.txt")
+                vina_log_file = os.path.join(
+                    self._vina_lib_dir,
+                    f"{variant}_{r}",
+                    f"{variant}_{r}-{self.substrate_name}-{self._dock_opt}-{self._output_opt}_log.txt",
                 )
 
-                if len(vina_log_files) >= 1 and os.path.isfile(vina_log_files[0]):
-                    vina_score = extract_lowest_energy(vina_log_files[0])
-                    if len(vina_log_files) > 1:
-                        print(
-                            f"Multiple log files found for {variant}_{r}, using the first one."
-                        )
-                else:
-                    print(f"No log file found for {variant}_{r}")
-                    vina_score = np.nan  # Default value if the file does not exist
+                print(f"Extracting vina score for {variant}_{r} from {vina_log_file}")
+
+                try:
+                    if self._output_opt == "score_only":
+                        vina_score = extract_binding_energy(vina_log_file)
+                    else:
+                        vina_score = extract_lowest_energy(vina_log_file)
+                except Exception as e:
+                    print(f"Error in extracting vina score for {variant}_{r}: {e}")
+                    vina_score = np.nan
+
                 scores.append((variant, r, vina_score))
 
         # Create a DataFrame from scores
@@ -2114,12 +2192,21 @@ class VinaResults(ZSData):
 
     @property
     def vina_df_path(self):
-        return os.path.join(self._vina_score_dir, f"{self._vina_lib_name}.csv")
+        return os.path.join(
+            self._vina_score_dir,
+            f"{self._vina_lib_name}-{self._dock_opt}-{self._output_opt}.csv",
+        )
+
+    @property
+    def substrate_name(self):
+        return LIB_INFO_DICT[self.lib_name]["substrate"]
 
 
 def run_parse_vina_results(
+    dock_opt: str,  #  ie "substrate",
+    score_only: bool,  # = True,
+    vina_struct_dir: str, # = "vina/chai/struct_joint",
     pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
-    cofactor_type: str = "",
     kwargs: dict = {},
 ):
 
@@ -2129,7 +2216,7 @@ def run_parse_vina_results(
     Args:
     """
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
 
@@ -2137,4 +2224,9 @@ def run_parse_vina_results(
 
     for lib in lib_list:
         print(f"Running parse vina results for {lib}...")
-        VinaResults(input_csv=lib, cofactor_type=cofactor_type, **kwargs)
+        VinaResults(
+            input_csv=lib,
+            dock_opt=dock_opt,
+            score_only=score_only,
+            vina_struct_dir=vina_struct_dir,
+            **kwargs)

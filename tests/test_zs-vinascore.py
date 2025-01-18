@@ -38,15 +38,17 @@ if __name__ == "__main__":
     # )
 
     run_parse_vina_results(
-        pattern="data/meta/not_scaled/PfTrpB-*.csv",
-        cofactor_type="",
-        freeze_opt="cofactor"
+        pattern="data/meta/not_scaled/PfTrpB-4b*.csv",
+        dock_opt="substrate",
+        score_only=True,
+        vina_struct_dir="vina/chai/struct_joint",
     )
 
-    # def run_parse_vina_results(
-    #     pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
-    #     cofactor_type: str = "",
-    #     kwargs: dict = {},
-    # )
+    # run_parse_vina_results(
+    # dock_opt: str,  #  ie "substrate",
+    # score_only: bool,  # = True,
+    # vina_struct_dir: str, # = "vina/chai/struct_joint",
+    # pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
+    # kwargs: dict = {},
 
     f.close()

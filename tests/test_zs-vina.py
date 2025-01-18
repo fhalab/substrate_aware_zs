@@ -29,7 +29,7 @@ if __name__ == "__main__":
             struct_dir = struct_dir,
             dock_opt="substrate",
             score_only=True,
-            rerun=True,
+            rerun=False,
             cofactor_dets="cofactor",
         )
 
