@@ -366,8 +366,6 @@ def replace_residue_names_auto(
 
             outfile.write(line)
 
-    os.remove(pdb_file)  # Remove the original file
-
 
 def find_missing_str(longer: str, shorter: str) -> [str, str]:
     """

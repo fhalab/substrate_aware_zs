@@ -1230,6 +1230,67 @@ def protonate_oxygen(smiles: str) -> str:
     return protonated_smiles
 
 
+
+def save_full_hierarchy_atoms_with_connectivity(atoms_with_context, input_file_path, output_file_path):
+    """
+    Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom),
+    including connectivity (CONECT) records.
+
+    Args:
+        atoms_with_context (list): List of tuples (model, chain, residue, atom).
+        input_file_path (str): Path to the input structure file for connectivity.
+        output_file_path (str): Path to save the filtered PDB file.
+    """
+
+    # Create a custom selector
+    class FullHierarchySelector(Select):
+        def __init__(self, atoms_with_context):
+            self.selected_atoms = set(atom for _, _, _, atom in atoms_with_context)
+
+        def accept_atom(self, atom):
+            # Include only selected atoms
+            return atom in self.selected_atoms
+
+    # Use the structure from the first atom's model as a base
+    if atoms_with_context:
+        structure = atoms_with_context[0][0].get_parent()
+
+        # Write the filtered structure
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(output_file_path, select=FullHierarchySelector(atoms_with_context))
+
+        # Append CONECT records
+        add_connectivity(input_file_path, output_file_path, atoms_with_context)
+
+
+def add_connectivity(input_file_path, output_file_path, atoms_with_context):
+    """
+    Append CONECT records to the PDB file for preserved connectivity.
+
+    Args:
+        input_file_path (str): Path to the input structure file.
+        output_file_path (str): Path to save the updated PDB file with CONECT records.
+        atoms_with_context (list): List of tuples (model, chain, residue, atom).
+    """
+    atom_indices = {atom.serial_number for _, _, _, atom in atoms_with_context}
+    conect_records = []
+
+    with open(input_file_path, "r") as input_file:
+        for line in input_file:
+            if line.startswith("CONECT"):
+                fields = line.split()
+                atom_id = int(fields[1])
+                if atom_id in atom_indices:
+                    # Include only connectivity for selected atoms
+                    filtered_fields = [int(field) for field in fields[2:] if int(field) in atom_indices]
+                    conect_records.append(f"CONECT {atom_id:5}" + "".join(f"{id_:5}" for id_ in filtered_fields) + "\n")
+
+    # Append CONECT records to the output file
+    with open(output_file_path, "a") as output_file:
+        output_file.writelines(conect_records)
+
+
 def save_full_hierarchy_atoms(atoms_with_context, output_file_path):
     """
     Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom).
@@ -1305,8 +1366,10 @@ def extract_substruct(
 
     if criteria == "include":
         save_full_hierarchy_atoms(substrate_atoms, output_substruct_path)
+        # save_full_hierarchy_atoms_with_connectivity(substrate_atoms, input_file_path, output_substruct_path)
     else:
         save_full_hierarchy_atoms(rest_atoms, output_substruct_path)
+        # save_full_hierarchy_atoms_with_connectivity(rest_atoms, input_file_path, output_substruct_path)
 
     print(f"Substructure saved to {output_substruct_path}")
 
@@ -1362,14 +1425,22 @@ def dock(
         var_dir, f"{var_name}-{substrate_name}-{dock_opt}-{output_opt}.pdb"
     )
 
-    if not rerun and os.path.isfile(docked_ligand_pdb):
-        print(f"{docked_ligand_pdb} exists and rerun is False. Skipping")
+    if not rerun and os.path.isfile(vina_logfile):
+        print(f"{vina_logfile} exists and rerun is False. Skipping")
         return vina_logfile
 
+    # convert cif to pdb
+    pre_clean_input_file = os.path.join(var_dir, var_name + "_raw.pdb")
+    
+    # obabel input.cif -O output.pdb
+    cmd = f"obabel {input_struct_path} -O {pre_clean_input_file}"
+    subprocess.run(cmd, shell=True)
+    
     # clean input file
     clean_input_file = os.path.join(var_dir, var_name + ".pdb")
+
     replace_residue_names_auto(
-        input_file=input_struct_path,
+        input_file=pre_clean_input_file,
         output_file=clean_input_file,
     )
 
@@ -1507,7 +1578,7 @@ def dock(
 
     print(f"cofactor_pdbqts: {cofactor_pdbqts}")
 
-    conf_path = os.path.join(var_dir, f"{var_name}-{substrate_name}{dock_opt}_conf.txt")
+    conf_path = os.path.join(var_dir, f"{var_name}-{substrate_name}-{dock_opt}_conf.txt")
 
     # Create config file
     make_config_for_vina(
@@ -1602,6 +1673,10 @@ def dock_lib_parallel(
     lib_name = os.path.basename(struct_dir)
 
     print(f"Docking {struct_dir} with {dock_opt}")
+
+    struct_dets = struct_dir.split("zs/")[-1].split(lib_name)[0]
+
+    checkNgen_folder(os.path.join(vina_dir, struct_dets, lib_name))
 
     var_paths = sorted(glob(os.path.join(struct_dir, "*", "*.cif")))
 

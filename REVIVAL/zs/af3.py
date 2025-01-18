@@ -17,6 +17,7 @@ import numpy as np
 import pandas as pd
 
 from REVIVAL.preprocess import ZSData
+from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.util import checkNgen_folder, canonicalize_smiles, load_json
 
 
@@ -396,6 +397,27 @@ def run_af3_struct(
         AF3Struct(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
 
 
+def extract_site_scores(json_file_path, sites):
+    """
+    Extract scores for specific sites from the AlphaFold3 JSON output.
+
+    Args:
+    - json_file_path (str): Path to the JSON file.
+    - sites (list): List of residue positions (1-indexed) to extract.
+
+    Returns:
+    - dict: A dictionary mapping residue positions to their scores.
+    """
+    # Load the JSON file
+    data = load_json(json_file_path)
+    
+    # Extract scores (PLDDT values) from the "atom_plddts" field
+    plddt_scores = data.get("atom_plddts", [])
+    
+    # Extract scores for the specified sites
+    return np.array([plddt_scores[site - 1] for site in sites if site <= len(plddt_scores)]).mean()
+
+
 # TODO make a class
 def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
 
@@ -444,7 +466,9 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     output_dir = checkNgen_folder(
         os.path.dirname(mut_structure_dir).replace("struct", score_dir_name)
     )
+    
     lib_name = os.path.basename(mut_structure_dir)
+    lib_sites = list(LIB_INFO_DICT[lib_name]["positions"].values())
 
     # Prepare the score keys for data extraction
     overall_keys = ["ranking_score", "ptm", "iptm", "fraction_disordered"]
@@ -480,6 +504,9 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                 rep_json = os.path.join(
                     subfolder, f"{var_name}_summary_confidences.json"
                 )
+                rep_atom_json = os.path.join(
+                    subfolder, f"{var_name}_confidences.json"
+                )
             else:
                 # zs/af3/struct_joint/ParLQ/f89a/seed-1_sample-0/summary_confidences.json
                 rep_json = os.path.join(
@@ -487,12 +514,16 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                     f"seed-1_sample-{rep_index}",
                     "summary_confidences.json",
                 )
+                rep_atom_json = os.path.join(
+                    subfolder, f"seed-1_sample-{rep_index}", "confidences.json"
+                )
 
             try:
                 json_dict = load_json(rep_json)
                 # Extract the score data for this replicate
                 for key in overall_keys:
                     var_data[f"{key}_{rep_index}"] = json_dict[key]
+                    var_data["mean_site_score"] = extract_site_scores(rep_atom_json, lib_sites)
 
                 # Process chain-level ptm and iptm scores
                 for i, chain in enumerate(chain_labels):
