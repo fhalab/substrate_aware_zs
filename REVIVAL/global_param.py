@@ -30,7 +30,7 @@ TrpB_CHEM = {
         "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
         "[Na+]",
     ],
-    "substrate-addH_chai_joint": [
+    "substrate-addH_chai": [
         ("B", "LIG", "N1"),
     ],
 }
@@ -742,14 +742,14 @@ LIB_INFO_DICT = deepcopy(
                 ("C", "LIG", "O1"),
                 ("C", "LIG", "O2"),
             ],
-            "substrate-addH_chai_joint": [
+            "substrate-addH_chai": [
                 ("B", "LIG", "B1"),
             ],
-            "substrate-double_bond_pairs_chai_joint": [
+            "substrate-double_bond_pairs_chai": [
                 (("B", "LIG", "C1"), ("B", "LIG", "N1")),
                 (("B", "LIG", "C3"), ("B", "LIG", "C4")),
             ],
-            "substrate_branches_chai_joint": {
+            "substrate_branches_chai": {
                 "B": "B1",
                 "C": "C1"
             },
@@ -808,7 +808,7 @@ LIB_INFO_DICT = deepcopy(
                 ("C", "LIG", "O1"),
                 ("C", "LIG", "O2"),
             ],
-            "substrate-addH_chai_joint": [
+            "substrate-addH_chai": [
                 ("B", "LIG", "SI1"),
             ],
             "cofactor-distances_joint": {

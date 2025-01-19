@@ -394,6 +394,7 @@ def format_ligand(
         
         # Construct command
         try:
+
             ligand_pdbqt_temp_file = os.path.join(
                 this_ligand_dir, f"{ligand_name}_temp.pdbqt"
             )
@@ -413,9 +414,10 @@ def format_ligand(
                 os.path.abspath(ligand_pdbqt_temp_file),
             ]
 
-            if if_substrate and "borane" not in ligand_name.lower():
+            if if_substrate and ("borane" not in ligand_name.lower()):
                 command.remove("-xr")
-            elif "borane" in ligand_name.lower():
+
+            if ("borane" in ligand_name.lower()) or ("silane" in ligand_name.lower()):
                 command.remove("--partialcharge")
                 command.remove("gasteiger")
 
@@ -428,7 +430,6 @@ def format_ligand(
                 check=True,  # Raises CalledProcessError if the command fails
             )
 
-
             # now clean up
             if "borane" in ligand_name.lower():
                 # remove the -H from the boron
@@ -438,10 +439,10 @@ def format_ligand(
                     branch_B=branch_info["B"],
                     branch_C=branch_info["C"],
                     )
+            elif "silane" in ligand_name.lower():
+                os.rename(ligand_pdbqt_temp_file, ligand_pdbqt_file)
             else:
                 clean_pdbqt_file(ligand_pdbqt_temp_file, ligand_pdbqt_file)
-
-            os.remove(ligand_pdbqt_temp_file)
 
         except subprocess.CalledProcessError as e:
             # Handle errors
@@ -860,12 +861,34 @@ def add_hydrogens_to_atoms(
             f"Added H '{new_h_name.strip()}' to {atom_name} in {residue_name} (chain {chain_id})"
         )
 
-    # --- Step C: Write updated PDB with only the double-bond CONECT lines
-    write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs)
+    if double_bond_pairs is not None:
+        # --- Step C: Write updated PDB with specified double-bond CONECT lines
+        write_pdb_with_doublebonds(
+            structure=structure,
+            output_pdb=output_pdb,
+            double_bond_pairs=double_bond_pairs
+        )
+    # if "silane" in input_pdb:
+    #     temp_pdb = output_pdb.replace(".pdb", "_presifix.pdb")
+
+    #     io = PDBIO()
+    #     io.set_structure(structure)
+    #     io.save(temp_pdb)
+
+    #     update_si_type(input_pdb=temp_pdb, output_pdb=output_pdb)
+    #     # os.remove(temp_pdb)
+    
+    else:
+        # --- Step C: Write updated PDB
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(output_pdb)
+
+
     print(f"\nSaved updated PDB to: {output_pdb}")
 
 
-def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
+def write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs):
     """
     Write a PDB that includes ATOM/HETATM lines for all atoms in 'structure',
     plus CONECT lines ONLY for the pairs in 'double_bond_pairs'.
@@ -895,7 +918,7 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
                 serial_counter += 1
 
     # 2) Write out the lines
-    with open(out_pdb, "w") as outf:
+    with open(output_pdb, "w") as outf:
         # Write HETATM lines
         for key in all_atoms:
             (atom_obj, serial) = atom_map[key]
@@ -936,6 +959,28 @@ def write_pdb_with_doublebonds(structure, out_pdb, double_bond_pairs):
                 )
 
         outf.write("END\n")
+
+
+# def update_si_type(input_pdb: str, output_pdb: str):
+
+#     """
+#     Update the atom type `SI` to `Si` in a given Biopython structure.
+
+#     Args:
+#         structure: A Biopython structure object containing the atoms to be updated.
+
+#     Returns:
+#         None. The structure is updated in place.
+#     """
+
+#     with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
+#         for line in infile:
+#             # Process only ATOM or HETATM lines
+#             if line.startswith(("ATOM", "HETATM")):
+#                 # Replace atom type 'SI' (column 77-78) with 'Si'
+#                 if line[76:78].strip() == "SI":
+#                     line = line[:76] + "Si".ljust(2) + line[78:]
+#             outfile.write(line)
 
 
 def clean_boron_pdbqt_file(input_pdbqt: str, output_pdbqt: str, branch_B = "B1", branch_C = "C1"):
@@ -1010,7 +1055,6 @@ def clean_boron_pdbqt_file(input_pdbqt: str, output_pdbqt: str, branch_B = "B1",
     except Exception as e:
         print(f"Error processing file: {e}")
 
-        
 
 def clean_pdbqt_file(input_pdbqt, output_pdbqt):
     """
@@ -1048,8 +1092,8 @@ def remove_ions(input_file_path: str, output_file_path: str) -> None:
 
     with open(input_file_path, "r") as infile, open(output_file_path, "w") as outfile:
         for line in infile:
-            if not line.startswith("ATOM") or not any(
-                ion in line for ion in LIGAND_IONS
+            if not (line.startswith("ATOM") or line.startswith("HETATM")) or not any(
+                ion in line[76:78].strip() for ion in LIGAND_IONS
             ):
                 outfile.write(line)
 
@@ -1322,9 +1366,9 @@ def dock(
     else:
         raise ValueError("Substrate chains not implemented beyond 2")
 
-    substrate_hinfo = lib_info.get(f"substrate-addH_{struct_tpye}_{input_struct_dock_opt}", None)
-    substrate_db_pairs = lib_info.get(f"substrate-double_bond_pairs_{struct_tpye}_{input_struct_dock_opt}", None)
-    branch_info = lib_info.get(f"substrate_branches_{struct_tpye}_{input_struct_dock_opt}", None)
+    substrate_hinfo = lib_info.get(f"substrate-addH_{struct_tpye}", None)
+    substrate_db_pairs = lib_info.get(f"substrate-double_bond_pairs_{struct_tpye}", None)
+    branch_info = lib_info.get(f"substrate_branches_{struct_tpye}", None)
     
     # Process the main ligand
     ligand_pdbqt = format_ligand(
