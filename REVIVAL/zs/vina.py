@@ -277,7 +277,7 @@ def format_ligand(
     regen: bool = False,
     target_list_addh: list = None,
     double_bond_pairs=None,
-    branch_info=None
+    branch_info=None,
 ) -> str:
 
     """
@@ -315,11 +315,13 @@ def format_ligand(
 
     # Skip processing if file exists and regen is False
     if os.path.isfile(ligand_pdbqt_file) and not regen:
-        print(f"Skipping ligand {ligand_name} as {ligand_pdbqt_file} already exists and regen false.")
+        print(
+            f"Skipping ligand {ligand_name} as {ligand_pdbqt_file} already exists and regen false."
+        )
         return ligand_pdbqt_file
 
     print(f"Processing ligand {ligand_name}")
-    
+
     # Special handling for ions
     print("Checking for ions...")
     simple_ion = ligand_name.upper()[:2]
@@ -364,9 +366,9 @@ def format_ligand(
 
         if target_list_addh is not None and "borane" not in ligand_name.lower():
             if "silane" in ligand_name.lower():
-                cutoff=2
+                cutoff = 2
             else:
-                cutoff=1.6
+                cutoff = 1.6
             add_hydrogens_to_atoms(
                 input_pdb=ligand_pdb_prehydrogen_file,
                 output_pdb=ligand_pdb_file,
@@ -391,7 +393,7 @@ def format_ligand(
 
         # now remove the temp files
         os.remove(ligand_pdb_temp_file)
-        
+
         # Construct command
         try:
 
@@ -438,7 +440,7 @@ def format_ligand(
                     ligand_pdbqt_file,
                     branch_B=branch_info["B"],
                     branch_C=branch_info["C"],
-                    )
+                )
             elif "silane" in ligand_name.lower():
                 os.rename(ligand_pdbqt_temp_file, ligand_pdbqt_file)
             else:
@@ -484,6 +486,7 @@ def format_ligand(
 
 
 ### helper functions for prep ligand ###
+
 
 def rotation_matrix(axis, theta):
     """
@@ -657,7 +660,9 @@ def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
 
         # Generate two orthogonal vectors to the neighbor_vec
         ortho_vec1 = np.cross(neighbor_vec, [1, 0, 0])
-        if np.linalg.norm(ortho_vec1) < 1e-6:  # Handle edge case where neighbor_vec || [1, 0, 0]
+        if (
+            np.linalg.norm(ortho_vec1) < 1e-6
+        ):  # Handle edge case where neighbor_vec || [1, 0, 0]
             ortho_vec1 = np.cross(neighbor_vec, [0, 1, 0])
         ortho_vec1 /= np.linalg.norm(ortho_vec1)
 
@@ -666,9 +671,9 @@ def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
 
         # Scale the bond length to place hydrogens correctly
         tetrahedral_dirs = [
-            (-neighbor_vec + ortho_vec1 + ortho_vec2),   # First hydrogen direction
+            (-neighbor_vec + ortho_vec1 + ortho_vec2),  # First hydrogen direction
             (-neighbor_vec - ortho_vec1 + ortho_vec2),  # Second hydrogen direction
-            (-neighbor_vec - ortho_vec2),               # Third hydrogen direction
+            (-neighbor_vec - ortho_vec2),  # Third hydrogen direction
         ]
 
         # Normalize and scale directions to bond length
@@ -678,10 +683,11 @@ def calculate_hydrogen_positions_sp3(atom, neighbors, bond_length=1.0):
         ]
         return h_positions
 
-
     # Case: Unsupported geometries
     else:
-        raise ValueError(f"Unsupported geometry for atom with {len(neighbor_coords)} neighbors.")
+        raise ValueError(
+            f"Unsupported geometry for atom with {len(neighbor_coords)} neighbors."
+        )
 
 
 def add_hydrogens_to_boron(
@@ -748,7 +754,6 @@ def add_hydrogens_to_boron(
 
     # io.save(output_pdb)
     print(f"Saved modified PDB to: {output_pdb}")
-
 
 
 def add_hydrogens_to_atoms(
@@ -866,7 +871,7 @@ def add_hydrogens_to_atoms(
         write_pdb_with_doublebonds(
             structure=structure,
             output_pdb=output_pdb,
-            double_bond_pairs=double_bond_pairs
+            double_bond_pairs=double_bond_pairs,
         )
     # if "silane" in input_pdb:
     #     temp_pdb = output_pdb.replace(".pdb", "_presifix.pdb")
@@ -877,13 +882,12 @@ def add_hydrogens_to_atoms(
 
     #     update_si_type(input_pdb=temp_pdb, output_pdb=output_pdb)
     #     # os.remove(temp_pdb)
-    
+
     else:
         # --- Step C: Write updated PDB
         io = PDBIO()
         io.set_structure(structure)
         io.save(output_pdb)
-
 
     print(f"\nSaved updated PDB to: {output_pdb}")
 
@@ -983,7 +987,9 @@ def write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs):
 #             outfile.write(line)
 
 
-def clean_boron_pdbqt_file(input_pdbqt: str, output_pdbqt: str, branch_B = "B1", branch_C = "C1"):
+def clean_boron_pdbqt_file(
+    input_pdbqt: str, output_pdbqt: str, branch_B="B1", branch_C="C1"
+):
 
     """
     Group B1 and its hydrogens into a branch structure, and group the rest with C1.
@@ -1030,7 +1036,11 @@ def clean_boron_pdbqt_file(input_pdbqt: str, output_pdbqt: str, branch_B = "B1",
 
             # Write header
             for line in lines:
-                if not line.startswith("ATOM") and not line.startswith("HETATM") and not line.startswith("TER"):
+                if (
+                    not line.startswith("ATOM")
+                    and not line.startswith("HETATM")
+                    and not line.startswith("TER")
+                ):
                     outfile.write(line)
 
             # Write ROOT section
@@ -1294,21 +1304,53 @@ def dock(
     Args:
     - input_struct_path (str): Path to the input PDB file.
         ie. zs/chai/struct_joint/PfTrpB-4bromo/I165A:I183A:Y301V/I165A:I183A:Y301V_0.cif
+        ie. zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/seed-1_sample-0/model.cif
+        ie. zs/af3/struct_joint/PfTrpB-4bromo/i165a_i183a_y301v/i165a_i183a_y301v_model.cif
 
     """
 
-    var_name = get_file_name(input_struct_path)
-    if lib_name is None:
-        lib_name = os.path.basename(os.path.dirname(os.path.dirname(input_struct_path)))
-    lib_info = LIB_INFO_DICT[lib_name]
-    substrate_name = lib_info["substrate"]
+    if "joint" in input_struct_path:
+        input_struct_dock_opt = "joint"
+    elif "seperate" in input_struct_path:
+        input_struct_dock_opt = "seperate"
+    else:
+        raise ValueError("Neither 'joint' nor 'seperate' found in clean_input_file")
+
+    struct_tpye = "chai" if "chai" in input_struct_path else "af3"
+
+    if struct_tpye == "chai":
+        var_name = get_file_name(input_struct_path)
+        if lib_name is None:
+            lib_name = os.path.basename(
+                os.path.dirname(os.path.dirname(input_struct_path))
+            )
+
+    elif struct_tpye == "af3":
+        if lib_name is None:
+            lib_name = input_struct_path.split(f"{input_struct_dock_opt}/")[-1].split(
+                "/"
+            )[0]
+            print(lib_name)
+        var_base_name = (
+            input_struct_path.split(f"{lib_name}/")[-1]
+            .split("/")[0]
+            .replace("_", ":")
+            .upper()
+        )
+        rep_numb = (
+            input_struct_path.split("seed-1_sample-")[-1].split("/")[0]
+            if "seed-1_sample-" in input_struct_path
+            else "agg"
+        )
+        var_name = f"{var_base_name}_{rep_numb}"
+        print(var_name)
 
     struct_dets = input_struct_path.split("zs/")[-1].split(lib_name)[0]
-    struct_tpye = "chai" if "chai" in struct_dets else "af3"
-
-    output_opt = "score_only" if score_only else "docked"
-
     var_dir = checkNgen_folder(os.path.join(vina_dir, struct_dets, lib_name, var_name))
+
+    lib_info = LIB_INFO_DICT[lib_name]
+    substrate_name = lib_info["substrate"]
+    output_opt = "score_only" if score_only else "docked"
 
     # Auxiliary files
     vina_logfile = os.path.join(
@@ -1324,11 +1366,11 @@ def dock(
 
     # convert cif to pdb
     pre_clean_input_file = os.path.join(var_dir, var_name + "_raw.pdb")
-    
+
     # obabel input.cif -O output.pdb
     cmd = f"obabel {input_struct_path} -O {pre_clean_input_file}"
     subprocess.run(cmd, shell=True)
-    
+
     # clean input file
     clean_input_file = os.path.join(var_dir, var_name + ".pdb")
 
@@ -1347,13 +1389,6 @@ def dock(
 
     ligand_chain_ids = get_chain_ids(pdb_file_path=clean_input_file)[1:]
 
-    if "joint" in clean_input_file:
-        input_struct_dock_opt = "joint"
-    elif "seperate" in clean_input_file:
-        input_struct_dock_opt = "seperate"
-    else:
-        raise ValueError("Neither 'joint' nor 'seperate' found in clean_input_file")
-
     ligand_info = lib_info[f"{substrate_name}-info"]
 
     if len(ligand_chain_ids) == 1:
@@ -1367,9 +1402,11 @@ def dock(
         raise ValueError("Substrate chains not implemented beyond 2")
 
     substrate_hinfo = lib_info.get(f"substrate-addH_{struct_tpye}", None)
-    substrate_db_pairs = lib_info.get(f"substrate-double_bond_pairs_{struct_tpye}", None)
+    substrate_db_pairs = lib_info.get(
+        f"substrate-double_bond_pairs_{struct_tpye}", None
+    )
     branch_info = lib_info.get(f"substrate_branches_{struct_tpye}", None)
-    
+
     # Process the main ligand
     ligand_pdbqt = format_ligand(
         smiles=lib_info["substrate-smiles"],
@@ -1384,7 +1421,7 @@ def dock(
         target_list_addh=substrate_hinfo,
         double_bond_pairs=substrate_db_pairs,
         regen=regen,
-        branch_info=branch_info
+        branch_info=branch_info,
     )
 
     # Process all cofactors from the input pdb
@@ -1479,7 +1516,9 @@ def dock(
 
     print(f"cofactor_pdbqts: {cofactor_pdbqts}")
 
-    conf_path = os.path.join(var_dir, f"{var_name}-{substrate_name}-{dock_opt}_conf.txt")
+    conf_path = os.path.join(
+        var_dir, f"{var_name}-{substrate_name}-{dock_opt}_conf.txt"
+    )
 
     if not os.path.exists(conf_path):
 
@@ -1630,7 +1669,7 @@ def make_config_for_vina(
     size_y=20.0,
     size_z=20.0,
     num_modes=9,
-    exhaustiveness=32
+    exhaustiveness=32,
 ):
     """
     Create the config file for Vina, including cofactors if specified.
@@ -1807,7 +1846,6 @@ def convert_pdbqt_to_pdb(pdbqt_file: str, pdb_file: str, disable_bonding=False) 
 
 real_number_pattern = r"[-+]?[0-9]*\.?[0-9]+(e[-+]?[0-9]+)?"
 score_re = re.compile(rf"REMARK VINA RESULT:\s*(?P<affinity>{real_number_pattern})")
-
 
 
 def merge_pdbqt(input_files: list, output_file_path: str):
@@ -2016,10 +2054,10 @@ def extract_binding_energy(log_file):
     Returns:
         float: Binding energy in kcal/mol, or None if not found.
     """
-    with open(log_file, 'r') as file:
+    with open(log_file, "r") as file:
         for line in file:
             if "Estimated Free Energy of Binding" in line:
-                return float(line.split(':')[1].split()[0])
+                return float(line.split(":")[1].split()[0])
 
 
 class VinaResults(ZSData):
@@ -2028,7 +2066,7 @@ class VinaResults(ZSData):
         input_csv: str,
         dock_opt: str,  #  ie "substrate",
         score_only: bool,  # = True,
-        vina_struct_dir: str, # = "vina/chai/struct_joint",
+        vina_struct_dir: str,  # = "vina/chai/struct_joint",
         scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -2186,7 +2224,7 @@ class VinaResults(ZSData):
 def run_parse_vina_results(
     dock_opt: str,  #  ie "substrate",
     score_only: bool,  # = True,
-    vina_struct_dir: str, # = "vina/chai/struct_joint",
+    vina_struct_dir: str,  # = "vina/chai/struct_joint",
     pattern: Union[str, list] = "data/meta/not_scaled/*.csv",
     kwargs: dict = {},
 ):
@@ -2210,4 +2248,5 @@ def run_parse_vina_results(
             dock_opt=dock_opt,
             score_only=score_only,
             vina_struct_dir=vina_struct_dir,
-            **kwargs)
+            **kwargs,
+        )

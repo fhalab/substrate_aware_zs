@@ -30,9 +30,6 @@ TrpB_CHEM = {
         "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
         "[Na+]",
     ],
-    "substrate-addH_chai": [
-        ("B", "LIG", "N1"),
-    ],
 }
 
 LIB_INFO_DICT = deepcopy(
@@ -79,6 +76,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -100,6 +100,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O5"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -137,6 +150,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -158,6 +174,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -195,6 +224,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "BR1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -216,6 +248,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -253,6 +298,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -274,6 +322,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -311,6 +372,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C8"),
                 ("B", "LIG", "N1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -332,6 +396,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C5", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -356,6 +433,9 @@ LIB_INFO_DICT = deepcopy(
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
+            ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
             ],
             "56chloro-info": [
                 ("B", "LIG", "CL1"),
@@ -391,6 +471,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O5"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C4", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -429,6 +522,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "N2"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N3"),
                 ("B", "LIG", "O3"),
@@ -450,6 +546,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N2"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N3"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O5"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N3"), ("B", "LIG", "C12")),
+                (("B", "LIG", "C10"), ("B", "LIG", "C11")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C8", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
@@ -488,6 +597,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "N2"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N3"),
                 ("B", "LIG", "O3"),
@@ -509,6 +621,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N2"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N3"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N3"), ("B", "LIG", "C12")),
+                (("B", "LIG", "C10"), ("B", "LIG", "C11")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
@@ -546,6 +671,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "I1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -567,6 +695,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -604,6 +745,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "N1"),
                 ("B", "LIG", "I1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -625,6 +769,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O6"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C11")),
+                (("B", "LIG", "C9"), ("B", "LIG", "C10")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C6", False), ("B", 1, "LIG", "C9", False)),
                 "GLU-NH_1": (
@@ -662,6 +819,9 @@ LIB_INFO_DICT = deepcopy(
                 ("B", "LIG", "C9"),
                 ("B", "LIG", "N1"),
             ],
+            "substrate-addH_chai": [
+                ("B", "LIG", "N1"),
+            ],
             "cofactor-addH_chai_joint": [
                 ("B", "LIG", "N2"),
                 ("B", "LIG", "O3"),
@@ -683,6 +843,19 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N_1", True),
                 ),
             },  # if need to add H
+            "substrate-addH_af3": [
+                ("B", "LIG", "N1"),
+            ],
+            "cofactor-addH_af3_joint": [
+                ("B", "LIG", "N2"),
+                ("B", "LIG", "O2"),
+                ("B", "LIG", "O3"),
+                ("B", "LIG", "O5"),
+            ],
+            "cofactor-double_bond_pairs_af3_joint": [
+                (("B", "LIG", "N2"), ("B", "LIG", "C12")),
+                (("B", "LIG", "C10"), ("B", "LIG", "C11")),
+            ],
             "cofactor-distances_af3_joint": {
                 "C-C": (("B", 1, "LIG", "C7", False), ("B", 1, "LIG", "C10", False)),
                 "GLU-NH_1": (
@@ -753,6 +926,17 @@ LIB_INFO_DICT = deepcopy(
                 "B": "B1",
                 "C": "C1"
             },
+            "substrate-addH_af3": [
+                ("B", "LIG", "B1"),
+            ],
+            "substrate-double_bond_pairs_af3": [
+                (("B", "LIG", "C1"), ("B", "LIG", "N1")),
+                (("B", "LIG", "C3"), ("B", "LIG", "C4")),
+            ],
+            "substrate_branches_af3": {
+                "B": "B1",
+                "C": "C1"
+            },
             "cofactor-distances_joint": {
                 "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
             },  # if need to add H
@@ -809,6 +993,9 @@ LIB_INFO_DICT = deepcopy(
                 ("C", "LIG", "O2"),
             ],
             "substrate-addH_chai": [
+                ("B", "LIG", "SI1"),
+            ],
+            "substrate-addH_af3": [
                 ("B", "LIG", "SI1"),
             ],
             "cofactor-distances_joint": {
@@ -900,49 +1087,6 @@ LIB_INFO_DICT = deepcopy(
         },
     }
 )
-
-TmTrpB_LIBS = {
-    "TrpB3A": {
-        "positions": {1: 104, 2: 105, 3: 106},
-        "AAs": {1: "A", 2: "E", 3: "T"},
-    },
-    "TrpB3B": {
-        "positions": {1: 105, 2: 106, 3: 107},
-        "AAs": {1: "E", 2: "T", 3: "G"},
-    },
-    "TrpB3C": {
-        "positions": {1: 106, 2: 107, 3: 108},
-        "AAs": {1: "T", 2: "G", 3: "A"},
-    },
-    "TrpB3D": {
-        "positions": {1: 117, 2: 118, 3: 119},
-        "AAs": {1: "T", 2: "A", 3: "A"},
-    },
-    "TrpB3E": {
-        "positions": {1: 184, 2: 185, 3: 186},
-        "AAs": {1: "F", 2: "G", 3: "S"},
-    },
-    "TrpB3F": {
-        "positions": {1: 162, 2: 166, 3: 301},
-        "AAs": {1: "L", 2: "I", 3: "Y"},
-    },
-    "TrpB3G": {
-        "positions": {1: 227, 2: 228, 3: 301},
-        "AAs": {1: "V", 2: "S", 3: "Y"},
-    },
-    "TrpB3H": {
-        "positions": {1: 228, 2: 230, 3: 231},
-        "AAs": {1: "S", 2: "G", 3: "S"},
-    },
-    "TrpB3I": {
-        "positions": {1: 182, 2: 183, 3: 184},
-        "AAs": {1: "Y", 2: "V", 3: "F"},
-    },
-    "TrpB4": {
-        "positions": {1: 183, 2: 184, 3: 227, 4: 228},
-        "AAs": {1: "V", 2: "F", 3: "V", 4: "S"},
-    },
-}
 
 APPEND_INFO_COLS = [
     "enzyme",
