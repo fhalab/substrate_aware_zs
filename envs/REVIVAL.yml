@@ -35,6 +35,7 @@ dependencies:
   - jupyterlab
   - jupyter_bokeh
   - matplotlib
+  - mdanalysis
   - multipledispatch
   - mypy
   - networkx

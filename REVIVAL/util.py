@@ -4,11 +4,17 @@ Util functions
 
 from __future__ import annotations
 
+import re
 import os
+import json
 
 from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
 
+try:
+    from rdkit import Chem
+except:
+    pass
 
 # import pickle
 
@@ -66,6 +72,12 @@ def get_dir_name(file_path: str) -> str:
     return os.path.basename(os.path.dirname(file_path))
 
 
+def load_json(file_path: str) -> dict:
+    """Load JSON content from a file."""
+    with open(file_path, "r") as f:
+        return json.load(f)
+
+
 def read_parent_fasta(fasta_path: str) -> str:
 
     """
@@ -88,6 +100,31 @@ def read_parent_fasta(fasta_path: str) -> str:
     return str(sequences[0].seq)
 
 
+def get_protein_structure(file_path: str):
+
+    """
+    Get the parser based on the file extension
+
+    Args:
+    - file_path: str, the path to the file
+
+    Returns:
+    - PDBParser, the parser
+    """
+
+    # Check the file extension
+    file_extension = os.path.splitext(file_path)[1].lower()
+
+    if file_extension == ".pdb":
+        parser = PDBParser(QUIET=True)  # QUIET suppresses warnings
+    elif file_extension == ".cif":
+        parser = MMCIFParser(QUIET=True)
+    else:
+        raise ValueError("Unsupported file format. Please use a .pdb or .cif file.")
+
+    return parser.get_structure("protein", file_path)
+
+
 def get_chain_ids(pdb_file_path: str) -> list:
     """
     Extract chain IDs from a given PDB file.
@@ -98,8 +135,9 @@ def get_chain_ids(pdb_file_path: str) -> list:
     Returns:
     - list: A list of chain IDs in the PDB file.
     """
-    parser = PDBParser(QUIET=True)  # QUIET=True suppresses warnings
-    structure = parser.get_structure("structure", pdb_file_path)
+    # Parse the input PDB file
+
+    structure = get_protein_structure(pdb_file_path)
 
     # Extract chain IDs
     chain_ids = set()
@@ -107,35 +145,47 @@ def get_chain_ids(pdb_file_path: str) -> list:
         for chain in model:
             chain_ids.add(chain.id)
 
-    return list(chain_ids)
+    return sorted(list(chain_ids))
 
 
 def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: str):
-
     """
-    Get the chain given ID
+    Extract specified chains and save them to a new PDB file.
+
+    Args:
+        input_file_path (str): Path to the input PDB or CIF file.
+        output_file_path (str): Path to save the output PDB file.
+        chain_id (str): String of chain IDs to extract.
+            ie. "A", "A,B", "A,B,C", etc.
     """
+    # Check if input is a CIF file
+    structure = get_protein_structure(input_file_path)
 
-    # check if cif # TODO test
-    if os.path.splitext(input_file_path)[-1] == ".cif":
-        structure = convert_cif_to_pdb(
-            cif_file=input_file_path, pdb_file="", ifsave=False
-        )
+    # convert chain_id to a list
+    chain_ids = chain_id.split(",")
 
+    # Initialize PDBIO for writing the output
+    io = PDBIO()
+    extracted_chains = []
+
+    if output_file_path:
+        # Open the output file for writing
+        with open(output_file_path, "w") as fout:
+            for model in structure:
+                for chain in model:
+                    if chain.id in chain_ids:
+                        # Save the chain to a temporary file-like object
+                        io.set_structure(chain)
+                        io.save(fout)  # Save chain to the output file
+                        fout.write("\n")  # Add a newline for separation
+
+        print(f"Chains {', '.join(chain_ids)} have been saved to {output_file_path}")
     else:
-        # Parse the input PDB file
-        parser = PDBParser()
-        structure = parser.get_structure("protein", input_file_path)
-
-    # Iterate over the chains and replace the original chain ID with the modified chain ID
-    for model in structure:
-        for chain in model:
-            if chain.id == chain_id:
-                io = PDBIO()
-                io.set_structure(chain)
-                io.save(output_file_path)
-
-    print(f"Chain {chain_id} has been saved to {output_file_path}")
+        for model in structure:
+            for chain in model:
+                if chain.id in chain_ids:
+                    extracted_chains.append(chain)
+        return extracted_chains
 
 
 def modify_PDB_chain(
@@ -155,8 +205,7 @@ def modify_PDB_chain(
     """
 
     # Parse the input PDB file
-    parser = PDBParser()
-    structure = parser.get_structure("protein", input_file_path)
+    structure = get_protein_structure(input_file_path)
 
     # Iterate over the chains and replace the original chain ID with the modified chain ID
     for model in structure:
@@ -182,11 +231,9 @@ def convert_cif_to_pdb(cif_file: str, pdb_file: str = "", ifsave: bool = True):
     - cif_file (str): Path to the input CIF file.
     - pdb_file (str): Path to the output PDB file.
     """
-    # Create a CIF parser object
-    parser = MMCIFParser(QUIET=True)
 
     # Parse the CIF file
-    structure = parser.get_structure("structure", cif_file)
+    structure = get_protein_structure(cif_file)
 
     # Create a PDBIO object to write the structure to PDB format
     io = PDBIO()
@@ -218,8 +265,7 @@ def chop_pdb(
     """
 
     # Initialize the parser and structure
-    parser = PDB.PDBParser(QUIET=True)
-    structure = parser.get_structure("structure", input_pdb)
+    structure = get_protein_structure(input_pdb)
 
     # Initialize the writer
     io = PDB.PDBIO()
@@ -260,6 +306,66 @@ def pdb2seq(pdb_file_path: str, chain_id: str = "A") -> str:
     }
 
     return str(chains[[chain for chain in chains.keys() if chain_id in chain][0]])
+
+
+def replace_residue_names_auto(
+    input_file: str, 
+    output_file: str,
+    residue_prefix: str = "LIG",
+    new_residue: str = "LIG"):
+    """
+    Automatically detect and replace residue names in a PDB file that match a specific prefix.
+
+    Args:
+        input_file (str): Path to the input PDB file.
+        output_file (str): Path to save the modified PDB file.
+        residue_prefix (str): Prefix of residue names to replace (e.g., "LIG").
+        new_residue (str): New residue name to replace with.
+    """
+
+    # Convert CIF to PDB if necessary
+    if input_file.lower().endswith(".cif"):
+        pdb_file = os.path.splitext(input_file)[0] + ".pdb"
+        print(f"Converting CIF to PDB: {input_file} -> {pdb_file}")
+        
+        # Parse CIF and write as PDB
+        parser = MMCIFParser(QUIET=True)
+        structure = parser.get_structure("structure", input_file)
+        io = PDBIO()
+        io.set_structure(structure)
+        io.save(pdb_file)
+        input_file = pdb_file  # Use the converted PDB file as input
+
+    detected_residues = set()  # To store dynamically detected residue names
+    pattern = re.compile(f"^{residue_prefix}_\\w$")  # Regex to detect residues like LIG_B, LIG_C
+
+    with open(input_file, "r") as infile:
+        lines = infile.readlines()
+
+    # First pass: Detect residue names dynamically
+    for line in lines:
+        if line.startswith(("ATOM", "HETATM")):
+            long_res_name = line[17:22]
+            if pattern.match(long_res_name):
+                detected_residues.add(long_res_name)
+
+    if len(detected_residues) > 0:
+        print(f"Detected residues to replace: {detected_residues}")
+
+    # batch replace detected residues with new residue name
+    with open(output_file, "w") as outfile:
+        for line in lines:
+            if line.startswith(("ATOM", "HETATM")):
+                long_res_name = line[17:22]
+                if long_res_name in detected_residues:
+                    line = line.replace(long_res_name, new_residue)
+
+                # Clean up atom names by removing underscores
+                atom_name = line[12:16].strip()
+                cleaned_atom_name = atom_name.replace("_", "")
+                line = line[:12] + cleaned_atom_name.ljust(4) + line[16:]
+
+            outfile.write(line)
 
 
 def find_missing_str(longer: str, shorter: str) -> [str, str]:
@@ -337,3 +443,20 @@ def er2ee(er: str) -> float:
     )  # Split the ratio into major and minor components
     return (pdt1 - pdt2) / (pdt1 + pdt2) * 100  # Apply the EE formula
 
+
+def canonicalize_smiles(smiles_string: str) -> str:
+
+    """
+    A function to canonicalize a SMILES string.
+
+    Args:
+    - smiles_string (str): The input SMILES string.
+
+    Returns:
+    - str: The canonicalized SMILES string.
+    """
+
+    molecule = Chem.MolFromSmiles(smiles_string)
+    if molecule:
+        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
+        return canonical_smiles

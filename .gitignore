@@ -7,6 +7,10 @@ data2add
 data2add/
 data2add/*
 
+data2decide
+data2decide/
+data2decide/*
+
 logs
 logs/
 logs/*
@@ -30,6 +34,8 @@ zs/*
 SSMuLA-zs
 SSMuLA-zs/
 SSMuLA-zs/*
+
+sandbox/files/*
 
 !/REVIVAL/*
 !/REVIVAL/zs/ 
