@@ -4,7 +4,7 @@ A script for get docking scores from chai structures
 must use vina conda env
 """
 
-from concurrent.futures import ThreadPoolExecutor, as_completed
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from typing import Union, Tuple, Optional
 
 import logging
@@ -1621,9 +1621,14 @@ def dock_lib_parallel(
 
     checkNgen_folder(os.path.join(vina_dir, struct_dets, lib_name))
 
-    var_paths = sorted(glob(os.path.join(struct_dir, "*", "*.cif")))
+    if "af3" in struct_dir:
+        var_path_agg_path = sorted(glob(os.path.join(struct_dir, "*", "*.cif")))
+        var_rep_path = sorted(glob(os.path.join(struct_dir, "*", "*", "*.cif")))
+        var_paths = var_path_agg_path + var_rep_path
+    else:
+        var_paths = sorted(glob(os.path.join(struct_dir, "*", "*.cif")))
 
-    with ThreadPoolExecutor(max_workers=max_workers) as executor:
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
         futures = [
             executor.submit(
                 dock,
@@ -2132,6 +2137,7 @@ class VinaResults(ZSData):
         self._num_rep = num_rep
         self._dock_opt = dock_opt
         self._output_opt = "score_only" if score_only else "docked"
+        print(f"Vina docking option: {self._dock_opt}")
 
         # for each row of the input csv, we will have a vina subfolder
         # ie I165A:I183A:Y301V_0 where 0 is the replicate number
@@ -2170,7 +2176,7 @@ class VinaResults(ZSData):
                     f"{variant}_{r}-{self.substrate_name}-{self._dock_opt}-{self._output_opt}_log.txt",
                 )
 
-                print(f"Extracting vina score for {variant}_{r} from {vina_log_file}")
+                # print(f"Extracting vina score for {variant}_{r} from {vina_log_file}")
 
                 try:
                     if self._output_opt == "score_only":

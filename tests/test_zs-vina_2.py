@@ -24,14 +24,85 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for struct_dir in reversed(sorted(glob(("zs/chai/struct_joint/PfTrpB*")))):
+    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=64
+    #     )
+    
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=64
+    #     )
+
+    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=64
+    #     )
+    
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=64
+    #     )
+
+    for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=64
+        )
+    
+    for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=64
+        )
+
+    for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate",
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
+            max_workers=64
+        )
+    
+    for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=False,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=64
         )
 
-
+    
     f.close()

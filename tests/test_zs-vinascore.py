@@ -37,11 +37,61 @@ if __name__ == "__main__":
     #     freeze_opt=None
     # )
 
+    # run_parse_vina_results(
+    #     pattern="data/meta/not_scaled/*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="vina/chai/struct_joint",
+    # )
+
+    # run_parse_vina_results(
+    #     pattern="data/meta/not_scaled/*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="vina/chai/struct_seperate",
+    # )
+
+    # run_parse_vina_results(
+    #     pattern="data/meta/not_scaled/*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="vina/af3/struct_joint",
+    # )
+
+    # run_parse_vina_results(
+    #     pattern="data/meta/not_scaled/*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="vina/af3/struct_seperate",
+    # )
+
+
     run_parse_vina_results(
-        pattern="data/meta/not_scaled/PfTrpB-4b*.csv",
+        pattern="data/meta/not_scaled/*.csv",
         dock_opt="substrate",
-        score_only=True,
+        score_only=False,
         vina_struct_dir="vina/chai/struct_joint",
+    )
+
+    run_parse_vina_results(
+        pattern="data/meta/not_scaled/*.csv",
+        dock_opt="substrate",
+        score_only=False,
+        vina_struct_dir="vina/chai/struct_seperate",
+    )
+
+    run_parse_vina_results(
+        pattern="data/meta/not_scaled/*.csv",
+        dock_opt="substrate",
+        score_only=False,
+        vina_struct_dir="vina/af3/struct_joint",
+    )
+
+    run_parse_vina_results(
+        pattern="data/meta/not_scaled/*.csv",
+        dock_opt="substrate",
+        score_only=False,
+        vina_struct_dir="vina/af3/struct_seperate",
     )
 
     # run_parse_vina_results(
