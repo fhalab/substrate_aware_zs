@@ -5,7 +5,7 @@ from __future__ import annotations
 import os
 import subprocess
 from pathlib import Path
-
+from concurrent.futures import ProcessPoolExecutor
 from glob import glob
 from tqdm import tqdm
 
@@ -41,8 +41,37 @@ def run_plip(pdb_file: str, output_dir: str):
         print(f"PLIP execution failed for {pdb_file}. Check logs in {log_file}.")
         print(f"Error: {e}")
 
+def process_task(task):
+    """
+    Processes a single task, which includes converting CIF to PDB and running PLIP.
+    Args:
+        task (tuple): Contains input file, output directory, and regen flag.
+    """
+    cif_or_pdb_file, var_out_dir, variant_name, regen = task
 
-def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False):
+    var_xml = os.path.join(var_out_dir, "report.xml")
+
+    # Check if output already exists and skip if regen is False
+    if not regen and os.path.exists(var_xml):
+        print(f"PLIP results for {var_xml} already exist. Skipping...")
+        return
+
+    # Prepare the PDB file path
+    pdb_file = os.path.join(var_out_dir, f"{variant_name}.pdb")
+
+    # Convert CIF to PDB if necessary
+    if cif_or_pdb_file.endswith(".cif"):
+        convert_cif_to_pdb(cif_or_pdb_file, pdb_file, ifsave=True)
+    else:
+        # Copy PDB directly
+        checkNgen_folder(var_out_dir)
+        os.system(f"cp {cif_or_pdb_file} {pdb_file}")
+
+    # Run PLIP
+    run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
+
+
+def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False, max_workers: int = 64):
 
     """
     Get plip report for each of the variant in a given directory 
@@ -84,39 +113,28 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False):
     in_dir = os.path.normpath(in_dir)
     out_dir = checkNgen_folder(out_dir)
 
+    in_dir = os.path.normpath(in_dir)
+    out_dir = checkNgen_folder(out_dir)
+
+    tasks = []
+
     if os.path.basename(in_dir) == "structure":
         # Case 1: Directly under the folder
-        for file in tqdm(sorted(glob(f"{in_dir}/*.pdb"))):
+        for file in sorted(glob(f"{in_dir}/*.pdb")):
             variant_name = get_file_name(file)
             var_out_dir = checkNgen_folder(os.path.join(out_dir, "holo", variant_name))
-            var_xml = os.path.join(var_out_dir, "report.xml")
-
-            # check if the output directory already exists
-            if not regen and os.path.exists(var_xml):
-                print(f"PLIP results for {var_xml} already exist. Skipping...")
-                continue
-
-            # Use existing PDB file
-            pdb_output_path = os.path.join(var_out_dir, variant_name)
-            
-            # copy the file to the output directory
-            os.system(f"cp {file} {pdb_output_path}")
-
-            # Run PLIP
-            run_plip(pdb_file=pdb_output_path, output_dir=var_out_dir)
+            tasks.append((file, var_out_dir, variant_name, regen))
 
     elif "af3" in in_dir:
         agg_cif_files = glob(f"{in_dir}/*/*_model.cif")
         rep_cif_files = glob(f"{in_dir}/*/*/model.cif")
 
         # Case 2: Nested folders with CIF files
-        for cif_file in tqdm(sorted(agg_cif_files + rep_cif_files)):
-
+        for cif_file in sorted(agg_cif_files + rep_cif_files):
             lib_name = os.path.basename(in_dir)
             struct_dets = in_dir.split("af3/")[-1].split(f"/{lib_name}")[0]
-            
-            lib_out_dir = checkNgen_folder(os.path.join(out_dir, "af3", struct_dets, lib_name))
 
+            lib_out_dir = checkNgen_folder(os.path.join(out_dir, "af3", struct_dets, lib_name))
             variant_path = Path(cif_file).relative_to(Path(in_dir))
             variant_name = variant_path.parts[0].upper().replace("_", ":")
 
@@ -124,54 +142,21 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False):
                 rep_name = "agg"
             else:
                 rep_name = variant_path.parts[1].split("sample-")[-1]
-            
+
             var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, f"{variant_name}_{rep_name}"))
-
-            # check if the output directory already exists
-            var_xml = os.path.join(var_out_dir, "report.xml")
-
-            # check if the output directory already exists
-            if not regen and os.path.exists(var_xml):
-                print(f"PLIP results for {var_xml} already exist. Skipping...")
-                continue
-
-
-            # Convert CIF to PDB
-            pdb_file = os.path.join(var_out_dir, f"{variant_name}_{rep_name}.pdb")
-
-            convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
-
-            # Run PLIP
-            run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
+            tasks.append((cif_file, var_out_dir, f"{variant_name}_{rep_name}", regen))
 
     elif "chai" in in_dir:
         # Case 3: Nested folders with CIF files
-        for cif_file in tqdm(sorted(glob(f"{in_dir}/**/*.cif"))):
-
+        for cif_file in sorted(glob(f"{in_dir}/**/*.cif")):
             lib_name = os.path.basename(in_dir)
             struct_dets = in_dir.split("chai/")[-1].split(f"/{lib_name}")[0]
 
             lib_out_dir = checkNgen_folder(os.path.join(out_dir, "chai", struct_dets, lib_name))
-
             variant_name = get_file_name(cif_file)
-
-            # Prepare output directory
             var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, variant_name))
+            tasks.append((cif_file, var_out_dir, variant_name, regen))
 
-            # check if the output directory already exists
-            var_xml = os.path.join(var_out_dir, "report.xml")
-
-            # check if the output directory already exists
-            if not regen and os.path.exists(var_xml):
-                print(f"PLIP results for {var_xml} already exist. Skipping...")
-                continue
-
-
-            # Convert CIF to PDB
-            pdb_file = os.path.join(var_out_dir, f"{variant_name}.pdb")
-            convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
-
-            # Run PLIP
-            run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
-    
-    
+    # Parallelize the tasks using ProcessPoolExecutor
+    with ProcessPoolExecutor(max_workers=max_workers) as executor:
+        list(tqdm(executor.map(process_task, tasks), total=len(tasks)))
