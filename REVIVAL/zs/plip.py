@@ -12,7 +12,7 @@ from tqdm import tqdm
 from REVIVAL.util import checkNgen_folder, convert_cif_to_pdb, get_file_name
 
 
-def run_plip(pdb_file, output_dir):
+def run_plip(pdb_file: str, output_dir: str):
     """
     Runs the PLIP command for a given PDB file and stores the results in the output directory.
     """
@@ -42,7 +42,7 @@ def run_plip(pdb_file, output_dir):
         print(f"Error: {e}")
 
 
-def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
+def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False):
 
     """
     Get plip report for each of the variant in a given directory 
@@ -89,6 +89,12 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
         for file in tqdm(sorted(glob(f"{in_dir}/*.pdb"))):
             variant_name = get_file_name(file)
             var_out_dir = checkNgen_folder(os.path.join(out_dir, "holo", variant_name))
+            var_xml = os.path.join(var_out_dir, "report.xml")
+
+            # check if the output directory already exists
+            if not regen and os.path.exists(var_xml):
+                print(f"PLIP results for {var_xml} already exist. Skipping...")
+                continue
 
             # Use existing PDB file
             pdb_output_path = os.path.join(var_out_dir, variant_name)
@@ -97,7 +103,7 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
             os.system(f"cp {file} {pdb_output_path}")
 
             # Run PLIP
-            run_plip(pdb_output_path, var_out_dir)
+            run_plip(pdb_file=pdb_output_path, output_dir=var_out_dir)
 
     elif "af3" in in_dir:
         agg_cif_files = glob(f"{in_dir}/*/*_model.cif")
@@ -107,7 +113,8 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
         for cif_file in tqdm(sorted(agg_cif_files + rep_cif_files)):
 
             lib_name = os.path.basename(in_dir)
-            struct_dets = in_dir.split("af3/")[-1].split(lib_name)[1].split("/")[0]
+            struct_dets = in_dir.split("af3/")[-1].split(f"/{lib_name}")[0]
+            
             lib_out_dir = checkNgen_folder(os.path.join(out_dir, "af3", struct_dets, lib_name))
 
             variant_path = Path(cif_file).relative_to(Path(in_dir))
@@ -120,20 +127,30 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
             
             var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, f"{variant_name}_{rep_name}"))
 
+            # check if the output directory already exists
+            var_xml = os.path.join(var_out_dir, "report.xml")
+
+            # check if the output directory already exists
+            if not regen and os.path.exists(var_xml):
+                print(f"PLIP results for {var_xml} already exist. Skipping...")
+                continue
+
+
             # Convert CIF to PDB
             pdb_file = os.path.join(var_out_dir, f"{variant_name}_{rep_name}.pdb")
 
             convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
 
             # Run PLIP
-            run_plip(pdb_file, var_out_dir)
+            run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
 
     elif "chai" in in_dir:
         # Case 3: Nested folders with CIF files
         for cif_file in tqdm(sorted(glob(f"{in_dir}/**/*.cif"))):
 
             lib_name = os.path.basename(in_dir)
-            struct_dets = in_dir.split("chai/")[-1].split(lib_name)[1].split("/")[0]
+            struct_dets = in_dir.split("chai/")[-1].split(f"/{lib_name}")[0]
+
             lib_out_dir = checkNgen_folder(os.path.join(out_dir, "chai", struct_dets, lib_name))
 
             variant_name = get_file_name(cif_file)
@@ -141,11 +158,20 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
             # Prepare output directory
             var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, variant_name))
 
+            # check if the output directory already exists
+            var_xml = os.path.join(var_out_dir, "report.xml")
+
+            # check if the output directory already exists
+            if not regen and os.path.exists(var_xml):
+                print(f"PLIP results for {var_xml} already exist. Skipping...")
+                continue
+
+
             # Convert CIF to PDB
             pdb_file = os.path.join(var_out_dir, f"{variant_name}.pdb")
             convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
 
             # Run PLIP
-            run_plip(pdb_file, var_out_dir)
+            run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
     
     
