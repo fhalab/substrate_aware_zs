@@ -14,6 +14,30 @@ from copy import deepcopy
 # from REVIVAL.util import get_file_name
 
 
+AA_DICT = {
+            'A': 'ALA',
+            'R': 'ARG', 
+            'N': 'ASN',  
+            'D': 'ASP',  
+            'C': 'CYS', 
+            'E': 'GLU', 
+            'Q': 'GLN',  
+            'G': 'GLY',
+            'H': 'HIS',  
+            'I': 'ILE',  
+            'L': 'LEU',
+            'K': 'LYS',
+            'M': 'MET',  
+            'F': 'PHE',  
+            'P': 'PRO',
+            'S': 'SER',
+            'T': 'THR',  
+            'W': 'TRP',  
+            'Y': 'TYR', 
+            'V': 'VAL',
+        }
+
+
 TrpB_CHEM = {
     "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
     "cofactor-smiles": [

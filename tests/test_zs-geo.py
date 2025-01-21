@@ -1,5 +1,5 @@
 """
-Test the vina docking and extracting score.
+Test extracting distances etc from docked chai or af3 structures.
 """
 
 import sys

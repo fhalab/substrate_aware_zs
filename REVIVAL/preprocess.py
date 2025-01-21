@@ -126,6 +126,11 @@ class LibData:
         return len(self.lib_info["positions"])
 
     @property
+    def mut_pos_list(self) -> list:
+        """Return the list of positions"""
+        return list(self.lib_info["positions"].values())
+
+    @property
     def scale_type(self) -> str:
         """Return the scale type"""
         if self._scale_fit in ["max", "parent"]:

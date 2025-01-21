@@ -1,6 +1,7 @@
 # File to automatically run hydrophobicity calculations as a ZS
 # Author: Lukas Radtke {lradtke@caltech.edu}
 # Date: 16/12/24
+# Code reviewed by fzl
 
 import numpy as np
 import pandas as pd
@@ -12,12 +13,55 @@ import xmltodict
 from glob import glob
 from copy import deepcopy
 from tqdm import tqdm
-from scipy import stats
+# from scipy import stats
 import ipdb
 from rdkit import Chem
 from openbabel import pybel
 
 from REVIVAL.preprocess import ZSData
+from REVIVAL.utils import AA_DICT
+
+
+HOPP_WOODS_SCALE = {
+                        'ALA': -0.500,
+                        'ARG':  3.000,
+                        'ASN':  0.200,
+                        'ASP':  3.000,
+                        'CYS': -1.000,
+                        'GLN':  0.200,
+                        'GLU':  3.000,
+                        'GLY':  0.000,
+                        'HIS': -0.500,
+                        'ILE': -1.800,
+                        'LEU': -1.800,
+                        'LYS':  3.000,
+                        'MET': -1.300,
+                        'PHE': -2.500,
+                        'PRO':  0.000,
+                        'SER':  0.300,
+                        'THR': -0.400,
+                        'TRP': -3.400,
+                        'TYR': -2.300,
+                        'VAL': -1.500,
+                    }
+
+
+
+def calc_hydrophobitcity(active_site, scale):
+    """
+    Returns the hydrophobicity score of a variant given the active site dictionary and a hydrophobicity scale. 
+    """
+    hydrophobicity = 0
+    if isinstance(active_site, str):
+        active_site = ast.literal_eval(active_site)
+    for res in active_site[0].values():
+        if len(res) != 1:
+            hydrophobicity += scale[res]
+        else:
+            hydrophobicity += scale[AA_DICT[res]]
+    hydrophobicity = hydrophobicity / len(active_site) 
+    return hydrophobicity
+
 
 class HydroData(ZSData):
     def __init__(
@@ -64,71 +108,9 @@ class HydroData(ZSData):
         self.variant_structures_available = variant_structures_available    
         self.variant_structure_dir = variant_structure_dir
 
-        self.hopp_woods_scale = {
-                            'ALA': -0.500,
-                            'ARG':  3.000,
-                            'ASN':  0.200,
-                            'ASP':  3.000,
-                            'CYS': -1.000,
-                            'GLN':  0.200,
-                            'GLU':  3.000,
-                            'GLY':  0.000,
-                            'HIS': -0.500,
-                            'ILE': -1.800,
-                            'LEU': -1.800,
-                            'LYS':  3.000,
-                            'MET': -1.300,
-                            'PHE': -2.500,
-                            'PRO':  0.000,
-                            'SER':  0.300,
-                            'THR': -0.400,
-                            'TRP': -3.400,
-                            'TYR': -2.300,
-                            'VAL': -1.500,
-                        }
-
-        self.oneletter2threeletter =  {
-                                    'A': 'ALA',
-                                    'R': 'ARG', 
-                                    'N': 'ASN',  
-                                    'D': 'ASP',  
-                                    'C': 'CYS', 
-                                    'E': 'GLU', 
-                                    'Q': 'GLN',  
-                                    'G': 'GLY',
-                                    'H': 'HIS',  
-                                    'I': 'ILE',  
-                                    'L': 'LEU',
-                                    'K': 'LYS',
-                                    'M': 'MET',  
-                                    'F': 'PHE',  
-                                    'P': 'PRO',
-                                    'S': 'SER',
-                                    'T': 'THR',  
-                                    'W': 'TRP',  
-                                    'Y': 'TYR', 
-                                    'V': 'VAL',
-                                }
 
         self.inference()
 
-
-    def extract_mutated_residues(self, csv):
-        """
-        Extracts the mutations position and prepares them in the expected format for hydro (e.g. 'A165 A183 A301').
-        Assumes the same mutation positions within the entire campaign.
-        """
-        position_list = []
-        for _, row in csv.iterrows():
-            var = row[self._var_col_name]
-            mutated_pos = re.findall(r"\d+", var)
-            all_mutations = ['A'+mut for mut in mutated_pos]
-            for res in all_mutations:
-                if res not in position_list:
-                    position_list.append(res)
-        mutated_pos = ' '.join(position_list)
-        return mutated_pos
-    
 
     def extract_ca_coordinates(self, pdb_file):
         """
@@ -165,7 +147,7 @@ class HydroData(ZSData):
         return coordinates
 
 
-    def extract_active_site_by_radius_parent(self, pdb_path, radius_angstrom, mut_pos_idx, variant):
+    def extract_active_site_by_radius_parent(self, pdb_path, radius_angstrom, variant):
         """
         Extracts the active site residues from the parent PDB file using a radius from the ligand in cartesian space.
         Residues with their C-alpha atom within the radius will be added to the return dictionar with format: 
@@ -184,7 +166,7 @@ class HydroData(ZSData):
         active_site = {}
         for active_site_idx in active_site_ca_idx:
             active_site[str(active_site_idx)] = variant[self.seq_col_name][active_site_idx]
-        for i, mut_pos in enumerate(mut_pos_idx):
+        for i, mut_pos in enumerate(self.mut_pos_list):
             active_site[mut_pos] = variant[self._combo_col_name][i]     
         return active_site
 
@@ -226,72 +208,6 @@ class HydroData(ZSData):
                 active_site_res_parent[bs_residue['#text'][:-1]] = bs_residue['@aa']
         return active_site_res_parent
 
-    
-    def run_plip(self, csv):
-        """
-        Runs PLIP for each variant of a campaign csv and saves the plip report as .xml file.
-        If there is a PLIP report already present, the function omits creating a new one.
-        If a pdb file for the respective variant is not available, the parent structure will be used as a fallback.
-        """
-        for _, row in tqdm(csv.iterrows(), desc='Analyzing variants with PLIP...', ncols=1000):
-            enzyme = row[self.enzyme_col_name]
-            substrate = row[self.substrate_col_name]
-            var = row[self._var_col_name]
-            struc_pdb_path = os.path.join(self.variant_structure_dir, f'{enzyme}-{substrate}', f'{var}_0.pdb')
-
-            report_path = os.path.join(self.results_dir, 'plip_reports', f'{enzyme}-{substrate}_{var}')
-            
-            # check if a plip report has already been saved for this variant.
-            check_report_path = os.path.join(report_path, 'report.xml')
-            #if check_report_path == '/disk2/lukas/EnzymeOracle/data/results/plip_reports/PfTrpB-5cyano_I165K:I183G:Y301K/report.xml':
-            #    ipdb.set_trace()
-            if os.path.exists(check_report_path) == True:
-                pass
-            elif os.path.exists(struc_pdb_path) == False:
-                print(f'ERROR: Did not find pdb file for variant {os.path.basename(struc_pdb_path)}, using parent structure for PLIP.')
-                struc_pdb_path = os.path.join(self.structure_dir, f'{enzyme}-{substrate}.pdb')
-                working_directory = self.plip_dir
-                os.makedirs(report_path, exist_ok=True)
-                cli = ['python',
-                    '-m',
-                    'plip.plipcmd',
-                    '-f',
-                    struc_pdb_path,
-                    '--out',
-                    report_path,
-                    '--xml']
-                subprocess.run(cli, cwd=working_directory)
-            else:
-                working_directory = self.plip_dir
-                os.makedirs(report_path, exist_ok=True)
-                cli = ['python',
-                    '-m',
-                    'plip.plipcmd',
-                    '-f',
-                    struc_pdb_path,
-                    '--out',
-                    report_path,
-                    '--xml']
-                subprocess.run(cli, cwd=working_directory)
-                if os.path.exists(check_report_path) == False and check_report_path == '/disk2/lukas/EnzymeOracle/data/results/plip_reports/PfTrpB-5cyano_I165K:I183G:Y301K/report.xml':
-                    ipdb.set_trace()
-    
-
-    def calc_hydrophobitcity(self, active_site, scale):
-        """
-        Returns the hydrophobicity score of a variant given the active site dictionary and a hydrophobicity scale. 
-        """
-        hydrophobicity = 0
-        if isinstance(active_site, str):
-            active_site = ast.literal_eval(active_site)
-        for res in active_site[0].values():
-            if len(res) != 1:
-                hydrophobicity += scale[res]
-            else:
-                hydrophobicity += scale[self.oneletter2threeletter[res]]
-        hydrophobicity = hydrophobicity / len(active_site) 
-        return hydrophobicity
-
 
     def inference(self):
         # read the campaign data
@@ -305,8 +221,6 @@ class HydroData(ZSData):
 
         # prepares mutated position for the radius-based active site definition
         campaign_name = os.path.basename(self._input_csv[:-4])
-        mutated_positions = self.extract_mutated_residues(csv)
-        mut_pos_idx = [pos[1:] for pos in mutated_positions.split()]
 
         if self.variant_structures_available == True:
             self.run_plip(csv)
@@ -316,19 +230,19 @@ class HydroData(ZSData):
         for _, variant in tqdm(csv.iterrows(), desc=f'Creating comparison df, reading in campaign {os.path.basename(self._input_csv)}...'):
             
             # generating radius-based active site 
-            active_site_radius = self.extract_active_site_by_radius_parent(pdb, self.active_site_radius, mut_pos_idx, variant)
+            active_site_radius = self.extract_active_site_by_radius_parent(pdb, self.active_site_radius, self.mut_pos_list, variant)
             
             # generating plip-baed active site 
             if self.variant_structures_available == True:
                 xml_path = os.path.join(self.results_dir, 'plip_reports', f'{variant[self.enzyme_col_name]}-{variant[self.substrate_col_name]}_{variant[self._var_col_name]}', 'report.xml')
                 active_site_plip = self.extract_active_site_from_xml(xml_path)
-                for i, mut_pos in enumerate(mut_pos_idx):
+                for i, mut_pos in enumerate(self.mut_pos_list):
                     active_site_plip[mut_pos] = variant[self._combo_col_name][i]  
             else:
                 active_site_plip = {}
 
             gt_fitness = variant[self._fit_col_name]
-            new_row = {'campaign_name': campaign_name, 'mutated_positions':[mutated_positions], 'active_site_radius':[active_site_radius], 'active_site_plip':[active_site_plip], 'gt_fitness':gt_fitness, 'ZS1':[0.], 'ZS2':[0.]}
+            new_row = {'campaign_name': campaign_name, 'active_site_radius':[active_site_radius], 'active_site_plip':[active_site_plip], 'gt_fitness':gt_fitness, 'ZS1':[0.], 'ZS2':[0.]}
             rows.append(new_row)
 
         score_df = pd.DataFrame(data=rows)
@@ -339,12 +253,12 @@ class HydroData(ZSData):
         for n, row in tqdm(score_df.iterrows(), desc=f'Calulating ZS for variants...'):
             
             # calculate hydrophobicity with hopp scale and 10A active site definition
-            hydro_hopp_radius = self.calc_hydrophobitcity(row['active_site_radius'], self.hopp_woods_scale)
-            hydro_hopp_radius = (hydro_hopp_radius - (min(self.hopp_woods_scale.values()))) / (max(self.hopp_woods_scale.values()) - (min(self.hopp_woods_scale.values())))
+            hydro_hopp_radius = calc_hydrophobitcity(row['active_site_radius'], HOPP_WOODS_SCALE)
+            hydro_hopp_radius = (hydro_hopp_radius - (min(HOPP_WOODS_SCALE.values()))) / (max(HOPP_WOODS_SCALE.values()) - (min(HOPP_WOODS_SCALE.values())))
             
             # calculate hydrophobicity with hopp scale and PLIP active site definition
             if self.variant_structures_available == True:
-                hydro_hopp_PLIP = self.calc_hydrophobitcity(row['active_site_plip'], self.hopp_woods_scale)
+                hydro_hopp_PLIP = calc_hydrophobitcity(row['active_site_plip'], HOPP_WOODS_SCALE)
             else:
                 pass
 

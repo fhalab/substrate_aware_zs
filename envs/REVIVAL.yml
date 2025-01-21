@@ -41,6 +41,7 @@ dependencies:
   - networkx
   - nodejs
   - numpy
+  - openbabel
   - openpyxl
   - pandas
   - panel
@@ -73,6 +74,7 @@ dependencies:
     - iqplot==0.3.1
     - ninetysix
     - ordered-set
+    - plip
     - rdkit
     - sequence-models
     # https://github.com/debbiemarkslab/EVcouplings/archive/develop.zip install after the environment is created

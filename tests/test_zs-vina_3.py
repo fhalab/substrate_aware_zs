@@ -14,6 +14,8 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
+    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+
     # log outputs
     f = open(
         os.path.join(
@@ -35,7 +37,7 @@ if __name__ == "__main__":
             score_only=True,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
     for struct_dir in [
@@ -49,7 +51,7 @@ if __name__ == "__main__":
             score_only=True,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
 
@@ -64,7 +66,7 @@ if __name__ == "__main__":
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
     for struct_dir in [
@@ -78,7 +80,7 @@ if __name__ == "__main__":
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
 
@@ -94,7 +96,7 @@ if __name__ == "__main__":
             score_only=True,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
     for struct_dir in [
@@ -108,7 +110,7 @@ if __name__ == "__main__":
             score_only=True,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
 
@@ -123,7 +125,7 @@ if __name__ == "__main__":
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
     for struct_dir in [
@@ -137,7 +139,7 @@ if __name__ == "__main__":
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=48
+            max_workers=16
         )
     
     f.close()
