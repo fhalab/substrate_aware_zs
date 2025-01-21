@@ -6,9 +6,10 @@ import os
 import subprocess
 from pathlib import Path
 
+from glob import glob
 from tqdm import tqdm
 
-from REVIVAL.util import checkNgen_folder, convert_cif_to_pdb
+from REVIVAL.util import checkNgen_folder, convert_cif_to_pdb, get_file_name
 
 
 def run_plip(pdb_file, output_dir):
@@ -80,62 +81,69 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip"):
             zs/plip/chai/struct_joint/ParLQ/W56A:Y57C:L59S:Q60E:F89G_1/
     """
 
-    in_dir = Path(in_dir)
-    out_dir = Path(out_dir)
+    in_dir = os.path.normpath(in_dir)
+    out_dir = checkNgen_folder(out_dir)
 
-    if in_dir.name == "structure":
+    if os.path.basename(in_dir) == "structure":
         # Case 1: Directly under the folder
-        for file in tqdm(in_dir.glob("*.pdb")):
-            variant_name = file.stem
-            lib_out_dir = out_dir / "holo" / variant_name
+        for file in tqdm(sorted(glob(f"{in_dir}/*.pdb"))):
+            variant_name = get_file_name(file)
+            var_out_dir = checkNgen_folder(os.path.join(out_dir, "holo", variant_name))
 
             # Use existing PDB file
-            lib_out_dir.mkdir(parents=True, exist_ok=True)
-            pdb_output_path = lib_out_dir / file.name
-            pdb_output_path.write_bytes(file.read_bytes())
+            pdb_output_path = os.path.join(var_out_dir, variant_name)
+            
+            # copy the file to the output directory
+            os.system(f"cp {file} {pdb_output_path}")
 
             # Run PLIP
-            run_plip(pdb_output_path, lib_out_dir)
+            run_plip(pdb_output_path, var_out_dir)
 
-    elif "af3" in str(in_dir):
+    elif "af3" in in_dir:
+        agg_cif_files = glob(f"{in_dir}/*/*_model.cif")
+        rep_cif_files = glob(f"{in_dir}/*/*/model.cif")
+
         # Case 2: Nested folders with CIF files
-        for cif_file in tqdm(in_dir.glob("**/*.cif")):
-            variant_path = cif_file.relative_to(in_dir)
-            variant_name = variant_path.parts[0].upper().replace("_", ":")
-            rep_name = variant_path.parts[-2:]  # Extract sample and seed information
+        for cif_file in tqdm(sorted(agg_cif_files + rep_cif_files)):
 
-            # Prepare output directory
-            lib_out_dir = out_dir / "af3" / variant_path.parent
-            if "agg" in rep_name:
-                output_name = f"{variant_name}_agg"
+            lib_name = os.path.basename(in_dir)
+            struct_dets = in_dir.split("af3/")[-1].split(lib_name)[1].split("/")[0]
+            lib_out_dir = checkNgen_folder(os.path.join(out_dir, "af3", struct_dets, lib_name))
+
+            variant_path = Path(cif_file).relative_to(Path(in_dir))
+            variant_name = variant_path.parts[0].upper().replace("_", ":")
+
+            if "_model.cif" in cif_file:
+                rep_name = "agg"
             else:
-                output_name = f"{variant_name}_{rep_name[-1].split('-')[-1]}"
-            var_out_dir = lib_out_dir / output_name
-            var_out_dir.mkdir(parents=True, exist_ok=True)
+                rep_name = variant_path.parts[1].split("sample-")[-1]
+            
+            var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, f"{variant_name}_{rep_name}"))
 
             # Convert CIF to PDB
-            pdb_file = var_out_dir / cif_file.with_suffix(".pdb").name
-            convert_cif_to_pdb(cif_file, str(pdb_file), ifsave=True)
+            pdb_file = os.path.join(var_out_dir, f"{variant_name}_{rep_name}.pdb")
+
+            convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
 
             # Run PLIP
             run_plip(pdb_file, var_out_dir)
 
-    elif "chai" in str(in_dir):
+    elif "chai" in in_dir:
         # Case 3: Nested folders with CIF files
-        for cif_file in tqdm(in_dir.glob("**/*.cif")):
-            variant_path = cif_file.relative_to(in_dir)
-            variant_name = variant_path.parts[0].upper().replace("_", ":")
-            rep_name = variant_path.parts[-1].split("_")[-1]
+        for cif_file in tqdm(sorted(glob(f"{in_dir}/**/*.cif"))):
+
+            lib_name = os.path.basename(in_dir)
+            struct_dets = in_dir.split("chai/")[-1].split(lib_name)[1].split("/")[0]
+            lib_out_dir = checkNgen_folder(os.path.join(out_dir, "chai", struct_dets, lib_name))
+
+            variant_name = get_file_name(cif_file)
 
             # Prepare output directory
-            lib_out_dir = out_dir / "chai" / variant_path.parent
-            output_name = f"{variant_name}_{rep_name}"
-            var_out_dir = lib_out_dir / output_name
-            var_out_dir.mkdir(parents=True, exist_ok=True)
+            var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, variant_name))
 
             # Convert CIF to PDB
-            pdb_file = var_out_dir / cif_file.with_suffix(".pdb").name
-            convert_cif_to_pdb(cif_file, str(pdb_file), ifsave=True)
+            pdb_file = os.path.join(var_out_dir, f"{variant_name}.pdb")
+            convert_cif_to_pdb(cif_file, pdb_file, ifsave=True)
 
             # Run PLIP
             run_plip(pdb_file, var_out_dir)
