@@ -60,15 +60,15 @@ def process_task(task):
     pdb_file = os.path.join(var_out_dir, f"{variant_name}.pdb")
 
     # Convert CIF to PDB if necessary
-    if cif_or_pdb_file.endswith(".cif"):
-        # obabel input.cif -O output.pdb
-        cmd = f"obabel {cif_or_pdb_file} -O {pdb_file}"
-        subprocess.run(cmd, shell=True)
+    # if cif_or_pdb_file.endswith(".cif"):
+    # obabel input.cif -O output.pdb clean up the cif file
+    cmd = f"obabel {cif_or_pdb_file} -O {pdb_file} --remove HOH"
+    subprocess.run(cmd, shell=True)
 
-    else:
-        # Copy PDB directly
-        checkNgen_folder(var_out_dir)
-        os.system(f"cp {cif_or_pdb_file} {pdb_file}")
+    # else:
+    #     # Copy PDB directly
+    #     checkNgen_folder(var_out_dir)
+    #     os.system(f"cp {cif_or_pdb_file} {pdb_file}")
 
     # Run PLIP
     run_plip(pdb_file=pdb_file, output_dir=var_out_dir)
