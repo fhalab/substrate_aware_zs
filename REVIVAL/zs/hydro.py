@@ -18,8 +18,10 @@ import ipdb
 from rdkit import Chem
 from openbabel import pybel
 
+from Bio.PDB import PDBParser
+
 from REVIVAL.preprocess import ZSData
-from REVIVAL.utils import AA_DICT
+from REVIVAL.utils import AA_DICT, calculate_chain_centroid, get_protein_structure
 
 
 HOPP_WOODS_SCALE = {
@@ -46,7 +48,6 @@ HOPP_WOODS_SCALE = {
                     }
 
 
-
 def calc_hydrophobitcity(active_site, scale):
     """
     Returns the hydrophobicity score of a variant given the active site dictionary and a hydrophobicity scale. 
@@ -61,6 +62,100 @@ def calc_hydrophobitcity(active_site, scale):
             hydrophobicity += scale[AA_DICT[res]]
     hydrophobicity = hydrophobicity / len(active_site) 
     return hydrophobicity
+
+
+def get_ligand_centroid(pdb_file, ligand_info):
+    """
+    Calculates the centroid of a given list of atoms specified by chain, residue, and atom names.
+
+    Args:
+        pdb_file (str): Path to the PDB file.
+        ligand_info (list of tuples): List of atoms specified as (chain_id, residue_name, atom_name).
+
+    Returns:
+        tuple: Centroid coordinates as (x, y, z).
+    """
+
+    structure = get_protein_structure(pdb_file)
+
+    atom_coords = []
+
+    for chain_id, residue_name, atom_name in ligand_info:
+        for model in structure:
+            try:
+                chain = model[chain_id]
+                for residue in chain:
+                    # Match residue name (flexible: partial match, case insensitive)
+                    if residue_name.lower() in residue.resname.lower():
+                        # Match atom name (flexible: ignore underscores and case differences)
+                        for atom in residue:
+                            if atom_name.replace("_", "").lower() == atom.name.replace("_", "").lower():
+                                atom_coords.append(atom.coord)
+            except KeyError:
+                print(f"Chain {chain_id} not found in the structure.")
+                continue
+
+    if not atom_coords:
+        raise ValueError("No matching atoms found in the structure.")
+
+    # Calculate centroid
+    return np.mean(atom_coords, axis=0)
+
+
+def extract_active_site_by_radius(
+    pdb_file: str,
+    target_coord: np.array,
+    target_chain="A",
+    distance_threshold=10.0
+    ):
+
+    """
+    Extracts a list of amino acids in the specified chain whose centroids (side chain or CA for glycine)
+    are within a given distance from a specified (x, y, z) coordinate.
+
+    Args:
+        pdb_file (str): Path to the PDB file.
+        target_coord (np.array): Target (x, y, z) coordinate.
+        target_chain (str): Chain ID to search within (default is "A").
+        distance_threshold (float): Distance threshold in Ångströms.
+
+    Returns:
+        list: A list of tuples containing residue information
+              (e.g., [("GLY", 12), ("ALA", 25)]).
+    """
+
+    structure = get_protein_structure(pdb_file)
+
+    nearby_residues = []
+
+    # Iterate through all residues in the specified chain
+    for model in structure:
+        chain = model[target_chain]  # Access the specified chain
+        for residue in chain:
+            # Exclude backbone atoms (N, CA, C, O) and calculate centroid of side chain atoms
+            side_chain_atoms = [atom for atom in residue if atom.name not in {"N", "CA", "C", "O"}]
+
+            if not side_chain_atoms:
+                # Use the alpha carbon (CA) as the centroid for glycine
+                if residue.resname == "GLY" and "CA" in residue:
+                    ca_atom = residue["CA"]
+                    centroid = np.array(ca_atom.coord)
+                else:
+                    # Skip residues with no side chains or CA
+                    continue
+            else:
+                # Calculate the centroid of the side chain
+                side_chain_coords = np.array([atom.coord for atom in side_chain_atoms])
+                centroid = np.mean(side_chain_coords, axis=0)
+
+            # Calculate distance between target coordinate and residue centroid
+            distance = np.linalg.norm(centroid - target_coord)
+            if distance <= distance_threshold:
+                residue_info = (residue.resname, residue.id[1])
+                nearby_residues.append(residue_info)
+
+    return nearby_residues
+
 
 
 class HydroData(ZSData):
@@ -110,65 +205,6 @@ class HydroData(ZSData):
 
 
         self.inference()
-
-
-    def extract_ca_coordinates(self, pdb_file):
-        """
-        Extracts the coordinates of C_alpha atoms from a pdb file and returns them as a dict.
-        The dict is of format: key=residue_position_in_sequence: value=cartesian coordinates of C_alpha atom
-        """
-        coordinates = {}
-        with open(pdb_file, 'r') as file:
-            for line in file:
-                if line.startswith('ATOM'):
-                    atom_name = line[12:16].strip()
-                    res_index = int(line[22:26].strip())
-                    if atom_name == 'CA':
-                        x = float(line[30:38].strip())
-                        y = float(line[38:46].strip())
-                        z = float(line[46:54].strip())
-                        coordinates[res_index] = [x, y, z]
-        return coordinates
-
-
-    def extract_hetatm_coordinates(self, pdb_file):
-        """
-        Extracts all heteroatoms from a pdb file. 
-        Returns a nested list of all cartesian coordinates.
-        """
-        coordinates = []
-        with open(pdb_file, 'r') as file:
-            for line in file:
-                if line.startswith('HETATM') or 'LIG' in line:
-                        x = float(line[30:38].strip())
-                        y = float(line[38:46].strip())
-                        z = float(line[46:54].strip())
-                        coordinates.append([x, y, z])
-        return coordinates
-
-
-    def extract_active_site_by_radius_parent(self, pdb_path, radius_angstrom, variant):
-        """
-        Extracts the active site residues from the parent PDB file using a radius from the ligand in cartesian space.
-        Residues with their C-alpha atom within the radius will be added to the return dictionar with format: 
-        dict {key=str(index): value=str(threelettercode), }
-        """
-        hetatm_coords = self.extract_hetatm_coordinates(pdb_path)
-        ca_coords_idx = self.extract_ca_coordinates(pdb_path)
-        ca_coords = np.array(list(ca_coords_idx.values()))
-        ca_indices = np.array(list(ca_coords_idx.keys()))
-        active_site_ca_idx = []
-        for hetatm_coord in hetatm_coords:
-            hetatm_coords = np.array(hetatm_coord)
-            indices_within_radius = np.where(np.linalg.norm(ca_coords - hetatm_coord, axis=1) <= radius_angstrom)[0]
-            active_site_ca_idx.extend(ca_indices[indices_within_radius])
-        active_site_ca_idx = set(active_site_ca_idx)
-        active_site = {}
-        for active_site_idx in active_site_ca_idx:
-            active_site[str(active_site_idx)] = variant[self.seq_col_name][active_site_idx]
-        for i, mut_pos in enumerate(self.mut_pos_list):
-            active_site[mut_pos] = variant[self._combo_col_name][i]     
-        return active_site
 
 
     def extract_ligands_to_mol(self, pdb):

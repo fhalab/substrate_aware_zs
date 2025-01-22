@@ -9,7 +9,7 @@ from concurrent.futures import ProcessPoolExecutor
 from glob import glob
 from tqdm import tqdm
 
-from REVIVAL.util import checkNgen_folder, convert_cif_to_pdb, get_file_name
+from REVIVAL.util import checkNgen_folder, get_file_name
 
 
 def run_plip(pdb_file: str, output_dir: str):
@@ -61,7 +61,10 @@ def process_task(task):
 
     # Convert CIF to PDB if necessary
     if cif_or_pdb_file.endswith(".cif"):
-        convert_cif_to_pdb(cif_or_pdb_file, pdb_file, ifsave=True)
+        # obabel input.cif -O output.pdb
+        cmd = f"obabel {cif_or_pdb_file} -O {pdb_file}"
+        subprocess.run(cmd, shell=True)
+
     else:
         # Copy PDB directly
         checkNgen_folder(var_out_dir)
