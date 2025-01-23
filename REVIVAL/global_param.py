@@ -14,30 +14,6 @@ from copy import deepcopy
 # from REVIVAL.util import get_file_name
 
 
-AA_DICT = {
-            'A': 'ALA',
-            'R': 'ARG', 
-            'N': 'ASN',  
-            'D': 'ASP',  
-            'C': 'CYS', 
-            'E': 'GLU', 
-            'Q': 'GLN',  
-            'G': 'GLY',
-            'H': 'HIS',  
-            'I': 'ILE',  
-            'L': 'LEU',
-            'K': 'LYS',
-            'M': 'MET',  
-            'F': 'PHE',  
-            'P': 'PRO',
-            'S': 'SER',
-            'T': 'THR',  
-            'W': 'TRP',  
-            'Y': 'TYR', 
-            'V': 'VAL',
-        }
-
-
 TrpB_CHEM = {
     "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
     "cofactor-smiles": [
@@ -946,10 +922,7 @@ LIB_INFO_DICT = deepcopy(
                 (("B", "LIG", "C1"), ("B", "LIG", "N1")),
                 (("B", "LIG", "C3"), ("B", "LIG", "C4")),
             ],
-            "substrate_branches_chai": {
-                "B": "B1",
-                "C": "C1"
-            },
+            "substrate_branches_chai": {"B": "B1", "C": "C1"},
             "substrate-addH_af3": [
                 ("B", "LIG", "B1"),
             ],
@@ -957,10 +930,7 @@ LIB_INFO_DICT = deepcopy(
                 (("B", "LIG", "C1"), ("B", "LIG", "N1")),
                 (("B", "LIG", "C3"), ("B", "LIG", "C4")),
             ],
-            "substrate_branches_af3": {
-                "B": "B1",
-                "C": "C1"
-            },
+            "substrate_branches_af3": {"B": "B1", "C": "C1"},
             "cofactor-distances_joint": {
                 "C-B": (("B", 1, "LIG", "C_20", False), ("B", 1, "LIG", "B_1", False))
             },  # if need to add H

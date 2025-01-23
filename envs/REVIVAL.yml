@@ -71,6 +71,7 @@ dependencies:
     - chai_lab==0.1.0
     - docko
     - fair-esm
+    - freesasa
     - iqplot==0.3.1
     - ninetysix
     - ordered-set

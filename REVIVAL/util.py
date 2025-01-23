@@ -8,6 +8,7 @@ import re
 import os
 import json
 
+
 import numpy as np
 
 from Bio import SeqIO, pairwise2, PDB
@@ -226,6 +227,43 @@ def calculate_chain_centroid(
         raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
 
 
+def calculate_ligand_centroid(pdb_file: str, ligand_info: list):
+    """
+    Calculates the centroid of a given list of atoms specified by chain, residue, and atom names.
+
+    Args:
+        pdb_file (str): Path to the PDB file.
+        ligand_info (list of tuples): List of atoms specified as (chain_id, residue_name, atom_name).
+
+    Returns:
+        tuple: Centroid coordinates as (x, y, z).
+    """
+
+    structure = get_protein_structure(pdb_file)
+
+    atom_coords = []
+
+    for chain_id, residue_name, atom_name in ligand_info:
+        for model in structure:
+            try:
+                chain = model[chain_id]
+                for residue in chain:
+                    # Match residue name (flexible: partial match, case insensitive)
+                    if residue_name.lower() in residue.resname.lower():
+                        # Match atom name (flexible: ignore underscores and case differences)
+                        for atom in residue:
+                            if atom_name.replace("_", "").lower() == atom.name.replace("_", "").lower():
+                                atom_coords.append(atom.coord)
+            except KeyError:
+                print(f"Chain {chain_id} not found in the structure.")
+                continue
+
+    if not atom_coords:
+        raise ValueError("No matching atoms found in the structure.")
+
+    # Calculate centroid
+    return np.mean(atom_coords, axis=0)
+    
 
 def modify_PDB_chain(
     input_file_path: str,
@@ -499,3 +537,22 @@ def canonicalize_smiles(smiles_string: str) -> str:
     if molecule:
         canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
         return canonical_smiles
+
+
+def smiles2mol(smiles_string: str):
+    """
+    A function to convert a SMILES string to an RDKit molecule object.
+
+    Args:
+    - smiles_string (str): The input SMILES string.
+
+    Returns:
+    - RDKit molecule object.
+    """
+
+    mol = Chem.MolFromSmiles(smiles_string)
+    if mol:
+        mol = Chem.AddHs(mol)
+        return mol
+    else:
+        raise ValueError("Invalid SMILES string.")

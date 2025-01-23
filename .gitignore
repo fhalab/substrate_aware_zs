@@ -35,6 +35,8 @@ SSMuLA-zs
 SSMuLA-zs/
 SSMuLA-zs/*
 
+*.pdb
+
 sandbox/files/*
 
 !/REVIVAL/*

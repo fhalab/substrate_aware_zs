@@ -1,4 +1,7 @@
-"""Script for running PLIP on a PDB file."""
+# Modified from initial work by Lukas Radtke {lradtke@caltech.edu}
+"""
+Script for running PLIP on a PDB file.
+"""
 
 from __future__ import annotations
 
@@ -8,6 +11,8 @@ from pathlib import Path
 from concurrent.futures import ProcessPoolExecutor
 from glob import glob
 from tqdm import tqdm
+
+from lxml import etree
 
 from REVIVAL.util import checkNgen_folder, get_file_name
 
@@ -40,6 +45,7 @@ def run_plip(pdb_file: str, output_dir: str):
     except subprocess.CalledProcessError as e:
         print(f"PLIP execution failed for {pdb_file}. Check logs in {log_file}.")
         print(f"Error: {e}")
+
 
 def process_task(task):
     """
@@ -163,3 +169,77 @@ def run_lib_plip(in_dir: str, out_dir: str="zs/plip", regen: bool=False, max_wor
     # Parallelize the tasks using ProcessPoolExecutor
     with ProcessPoolExecutor(max_workers=max_workers) as executor:
         list(tqdm(executor.map(process_task, tasks), total=len(tasks)))
+
+
+def plip_xml2dict(xml_path: str) -> dict:
+
+    """
+    Parses an XML file and converts it to a dictionary.
+
+    Args:
+        xml_path (str): Path to the XML file.
+
+    Returns:
+        dict: Dictionary representation of the XML.
+    """
+
+    def xml2dict(element):
+        """
+        Recursively converts an lxml element to a dictionary.
+        """
+        # Base case: If the element has no children, return its text or attributes
+        if not len(element) and not element.attrib:
+            return element.text
+
+        # Start the dictionary with attributes if present
+        element_dict = {}
+        if element.attrib:
+            element_dict["@attributes"] = element.attrib
+
+        # Process child elements
+        for child in element:
+            child_dict = xml2dict(child)
+            if child.tag not in element_dict:
+                # First occurrence of the tag
+                element_dict[child.tag] = child_dict
+            else:
+                # Multiple occurrences of the same tag
+                if not isinstance(element_dict[child.tag], list):
+                    element_dict[child.tag] = [element_dict[child.tag]]
+                element_dict[child.tag].append(child_dict)
+
+        # Add element text if present and not just whitespace
+        if element.text and element.text.strip():
+            element_dict["#text"] = element.text.strip()
+
+        return element_dict
+
+    # Parse the XML file
+    tree = etree.parse(xml_path)
+    root = tree.getroot()
+
+    # Convert the root element to a dictionary
+    return xml2dict(root)
+
+
+def get_plip_active_site_list(xml_path: str) -> list:
+    """
+    Extracts the active site residues from a PLIP XML file.
+
+    Args:
+        xml_path (str): Path to the PLIP XML file.
+    
+    Returns:
+        list: List of active site residues.
+            ie [('MET', 12), ('LEU', 26), ('GLY', 37)]
+    """
+
+    # Parse the XML file
+    plip_dict = plip_xml2dict(xml_path)
+
+    # Extract the active site residues
+    active_site_list = []
+    for i in plip_dict["bindingsite"]["bs_residues"]["bs_residue"]:
+        active_site_list.append((i["@attributes"]["aa"], int(i["#text"][:-1])))
+
+    return active_site_list
