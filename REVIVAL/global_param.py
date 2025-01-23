@@ -14,6 +14,29 @@ from copy import deepcopy
 # from REVIVAL.util import get_file_name
 
 
+AA_DICT = {
+    'A': 'ALA',  # Alanine
+    'R': 'ARG',  # Arginine
+    'N': 'ASN',  # Asparagine
+    'D': 'ASP',  # Aspartic acid
+    'C': 'CYS',  # Cysteine
+    'E': 'GLU',  # Glutamic acid
+    'Q': 'GLN',  # Glutamine
+    'G': 'GLY',  # Glycine
+    'H': 'HIS',  # Histidine
+    'I': 'ILE',  # Isoleucine
+    'L': 'LEU',  # Leucine
+    'K': 'LYS',  # Lysine
+    'M': 'MET',  # Methionine
+    'F': 'PHE',  # Phenylalanine
+    'P': 'PRO',  # Proline
+    'S': 'SER',  # Serine
+    'T': 'THR',  # Threonine
+    'W': 'TRP',  # Tryptophan
+    'Y': 'TYR',  # Tyrosine
+    'V': 'VAL',  # Valine
+}
+
 TrpB_CHEM = {
     "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
     "cofactor-smiles": [
@@ -32,12 +55,34 @@ TrpB_CHEM = {
     ],
 }
 
-LIB_INFO_DICT = deepcopy(
+ENZYME_INFO_DICT = deepcopy(
     {
-        "5DW0": {
-            "enzyme": "PfTrpB",
-            "substrate": "",
-            "substrate-smiles": "",
+        "PfTrpB": {
+            "ligand-info":
+            [
+                ("A", "PLS", "N"),
+                ("A", "PLS", "CA"),
+                ("A", "PLS", "CB"),
+                ("A", "PLS", "OG"),
+                ("A", "PLS", "C"),
+                ("A", "PLS", "O"),
+                ("A", "PLS", "OXT"),
+                ("A", "PLS", "N1"),
+                ("A", "PLS", "C2"),
+                ("A", "PLS", "C2A"),
+                ("A", "PLS", "C3"),
+                ("A", "PLS", "O3"),
+                ("A", "PLS", "C4"),
+                ("A", "PLS", "C4A"),
+                ("A", "PLS", "C5"),
+                ("A", "PLS", "C6"),
+                ("A", "PLS", "C5A"),
+                ("A", "PLS", "O4P"),
+                ("A", "PLS", "P"),
+                ("A", "PLS", "O1P"),
+                ("A", "PLS", "O2P"),
+                ("A", "PLS", "O3P")
+            ],
             "inactivated-cofactor": ["PLP", "Na+"],
             "inactivated-cofactor-smiles": [
                 "O=Cc1c(O)c(C)ncc1COP(O)(O)=O",
@@ -54,7 +99,118 @@ LIB_INFO_DICT = deepcopy(
             "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
             "family": "TrpB",
             "project": "multi-substrate",
+            "PDBID": "5DW0"
         },
+        "Rma":{
+            "ligand-info": [
+                ("A", "SO4", "S"),
+                ("A", "SO4", "O1"),
+                ("A", "SO4", "O2"),
+                ("A", "SO4", "O3"),
+                ("A", "SO4", "O4"),
+                ("A", "HEC", "FE"),
+                ("A", "HEC", "CHA"),
+                ("A", "HEC", "CHB"),
+                ("A", "HEC", "CHC"),
+                ("A", "HEC", "CHD"),
+                ("A", "HEC", "NA"),
+                ("A", "HEC", "C1A"),
+                ("A", "HEC", "C2A"),
+                ("A", "HEC", "C3A"),
+                ("A", "HEC", "C4A"),
+                ("A", "HEC", "CMA"),
+                ("A", "HEC", "CAA"),
+                ("A", "HEC", "CBA"),
+                ("A", "HEC", "CGA"),
+                ("A", "HEC", "O1A"),
+                ("A", "HEC", "O2A"),
+                ("A", "HEC", "NB"),
+                ("A", "HEC", "C1B"),
+                ("A", "HEC", "C2B"),
+                ("A", "HEC", "C3B"),
+                ("A", "HEC", "C4B"),
+                ("A", "HEC", "CMB"),
+                ("A", "HEC", "CAB"),
+                ("A", "HEC", "CBB"),
+                ("A", "HEC", "NC"),
+                ("A", "HEC", "C1C"),
+                ("A", "HEC", "C2C"),
+                ("A", "HEC", "C3C"),
+                ("A", "HEC", "C4C"),
+                ("A", "HEC", "CMC"),
+                ("A", "HEC", "CAC"),
+                ("A", "HEC", "CBC"),
+                ("A", "HEC", "ND"),
+                ("A", "HEC", "C1D"),
+                ("A", "HEC", "C2D"),
+                ("A", "HEC", "C3D"),
+                ("A", "HEC", "C4D"),
+                ("A", "HEC", "CMD"),
+                ("A", "HEC", "CAD"),
+                ("A", "HEC", "CBD"),
+                ("A", "HEC", "CGD"),
+                ("A", "HEC", "O1D"),
+                ("A", "HEC", "O2D"),
+            ],
+            "family": "Rma",
+            "project": "MODIFY",
+            "PDBID": "3CP5"
+        },
+        "ParLQ":{
+            "ligand-info": [
+                ("B", "HEM", "CAA"),
+                ("B", "HEM", "CAB"),
+                ("B", "HEM", "CAC"),
+                ("B", "HEM", "CAD"),
+                ("B", "HEM", "NA"),
+                ("B", "HEM", "CBA"),
+                ("B", "HEM", "CBB"),
+                ("B", "HEM", "CBC"),
+                ("B", "HEM", "CBD"),
+                ("B", "HEM", "NB"),
+                ("B", "HEM", "CGA"),
+                ("B", "HEM", "CGD"),
+                ("B", "HEM", "ND"),
+                ("B", "HEM", "CHA"),
+                ("B", "HEM", "CHB"),
+                ("B", "HEM", "CHC"),
+                ("B", "HEM", "CHD"),
+                ("B", "HEM", "CMA"),
+                ("B", "HEM", "CMB"),
+                ("B", "HEM", "CMC"),
+                ("B", "HEM", "CMD"),
+                ("B", "HEM", "C1A"),
+                ("B", "HEM", "C1B"),
+                ("B", "HEM", "C1C"),
+                ("B", "HEM", "C1D"),
+                ("B", "HEM", "O1A"),
+                ("B", "HEM", "O1D"),
+                ("B", "HEM", "C2A"),
+                ("B", "HEM", "C2B"),
+                ("B", "HEM", "C2C"),
+                ("B", "HEM", "C2D"),
+                ("B", "HEM", "O2A"),
+                ("B", "HEM", "O2D"),
+                ("B", "HEM", "C3A"),
+                ("B", "HEM", "C3B"),
+                ("B", "HEM", "C3C"),
+                ("B", "HEM", "C3D"),
+                ("B", "HEM", "C4A"),
+                ("B", "HEM", "C4B"),
+                ("B", "HEM", "C4C"),
+                ("B", "HEM", "C4D"),
+                ("B", "HEM", "NAC"),
+                ("B", "HEM", "FE")
+            ],
+            "family": "ParLQ",
+            "project": "ALDE",
+
+        }
+    }
+)
+
+LIB_INFO_DICT = deepcopy(
+    {
         "PfTrpB-4bromo": {
             "enzyme": "PfTrpB",
             "substrate": "4bromo",

@@ -19,10 +19,12 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors, MolSurf
 
 import freesasa
-from MDAnalysis import Universe
+from MDAnalysis import Universe, AtomGroup
 import MDAnalysis as mda
+import tempfile
 
 from REVIVAL.zs.plip import get_plip_active_site_dict
+from REVIVAL.global_param import AA_DICT, ENZYME_INFO_DICT
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import (
     calculate_chain_centroid,
@@ -107,6 +109,53 @@ EISENBERG_CONSENSUS_SCALE = {
     "VAL": 1.080,
 }
 
+# Tien et al. 2013
+REFERENCE_SASA_THEOR = {
+    "GLY": 104.0,
+    "ALA": 129.0,
+    "SER": 155.0,
+    "PRO": 159.0,
+    "CYS": 167.0,
+    "THR": 172.0,
+    "VAL": 174.0,
+    "ASP": 193.0,
+    "ASN": 195.0,
+    "ILE": 197.0,
+    "LEU": 201.0,
+    "GLU": 223.0,
+    "MET": 224.0,
+    "HIS": 224.0,
+    "GLN": 225.0,
+    "LYS": 236.0,
+    "PHE": 240.0,
+    "TYR": 263.0,
+    "ARG": 274.0,
+    "TRP": 285.0,
+}
+# Tien et al. 2013
+REFERENCE_SASA_EMP = {
+    "GLY": 97.0,
+    "ALA": 121.0,
+    "SER": 143.0,
+    "PRO": 154.0,
+    "CYS": 148.0,
+    "THR": 163.0,
+    "VAL": 165.0,
+    "ASP": 187.0,
+    "ASN": 187.0,
+    "ILE": 195.0,
+    "LEU": 191.0,
+    "GLU": 214.0,
+    "MET": 203.0,
+    "HIS": 216.0,
+    "GLN": 214.0,
+    "LYS": 230.0,
+    "PHE": 228.0,
+    "TYR": 255.0,
+    "ARG": 265.0,
+    "TRP": 264.0,
+}
+
 
 HYDRO_SCALES = {
     "kd": KYTE_DOOLITTLE_SCALE,
@@ -135,8 +184,8 @@ def calc_hydrophobitcity(active_site_dict: dict, hydro_scale: str) -> np.float:
     hydrophobicity = 0
 
     for (site, res) in active_site_dict.items():
-
-        hydrophobicity += HYDRO_SCALES[hydro_scale][res]
+        if res in HYDRO_SCALES[hydro_scale]:
+            hydrophobicity += HYDRO_SCALES[hydro_scale][res]
 
     # normalize by the number of residues in the active site
     return hydrophobicity / len(active_site_dict)
@@ -262,6 +311,131 @@ def calculate_sasa_from_pdb(
     return sasa
 
 
+def get_original_resname(universe, resid):
+    """
+    Retrieve the residue name (resname) for a given residue ID (resid).
+
+    Args:
+        universe (MDAnalysis.Universe): The MDAnalysis Universe object.
+        resid (int): Residue ID.
+
+    Returns:
+        str: The residue name (resname) for the specified resid.
+    """
+    # Select the residue using resid
+    residue = universe.select_atoms(f"resid {resid}").residues
+    if len(residue) == 0:
+        raise ValueError(f"Residue with resid {resid} not found.")
+
+    # Return the residue name
+    return residue.resnames[0]
+
+
+# def apply_mutation(universe, mutation):
+#     """
+#     Apply a mutation to a protein structure.
+
+#     Args:
+#         universe (MDAnalysis.Universe): The MDAnalysis Universe object for the parent protein.
+#         mutation (tuple): Mutation specified as (resid, original_resname, new_resname).
+#                           Example: (56, "TRP", "ALA")
+
+#     Returns:
+#         MDAnalysis.Universe: Updated Universe with the mutation applied.
+#     """
+#     resid, original_resname, new_resname = mutation
+
+#     # Select the residue to mutate (ensure it's the Residue level)
+#     residue = universe.select_atoms(f"resid {resid} and resname {original_resname}").residues
+
+#     if len(residue) == 0:
+#         raise ValueError(f"Residue {original_resname} at {resid} not found in structure.")
+
+#     # Mutate the residue name
+#     residue.resnames = new_resname
+#     return universe
+
+
+def apply_mutation(universe, mutation):
+    """
+    Apply a mutation to a protein structure.
+
+    Args:
+        universe (MDAnalysis.Universe): The MDAnalysis Universe object.
+        mutation (tuple): Mutation specified as (resid, new_resname).
+                          Example: (56, "ALA")
+
+    Returns:
+        MDAnalysis.Universe: Updated Universe with the mutation applied.
+    """
+    resid, new_resname = mutation
+
+    # Get the original residue name
+    # original_resname = get_original_resname(universe, resid)
+
+    # Select the residue to mutate
+    residue = universe.select_atoms(f"resid {resid}").residues
+    if len(residue) == 0:
+        raise ValueError(f"Residue with resid {resid} not found in structure.")
+
+    # Mutate the residue name
+    residue.resnames = new_resname
+    return universe
+
+
+def calculate_variant_sasa(parent_pdb: str, mutations: dict):
+    """
+    Calculate SASA for a protein variant based on the parent structure.
+
+    Args:
+        parent_pdb (str): Path to the parent protein's PDB file.
+        mutations (dict): Dictionary of mutations, each specified as (resid new_resname).
+
+    Returns:
+        float: Solvent-accessible surface area (SASA) for the variant.
+    """
+    # Load the parent structure
+    universe = Universe(parent_pdb)
+
+    # Apply all mutations
+    for loc, aa in mutations.items():
+        universe = apply_mutation(universe, (loc, aa))
+
+    # Write the mutated structure to a temporary PDB file
+    temp_pdb = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False).name
+    universe.atoms.write(temp_pdb)  # Corrected file writing
+
+    # Calculate SASA using FreeSASA
+    structure = freesasa.Structure(temp_pdb)
+    sasa = freesasa.calc(structure).totalArea()
+
+    # Clean up
+    os.remove(temp_pdb)
+
+    return sasa
+
+
+def calculate_native_sasa(aa_list: list, ref_type: str) -> float:
+    """
+    Calculate the native SASA of a protein sequence.
+
+    Args:
+        aa_list (list): List of amino acids in the protein sequence.
+        ref_type (str): Reference SASA type ("emp" or "theor").
+
+    Returns:
+        float: Native SASA value.
+    """
+    if ref_type == "emp":
+        return sum(
+            [REFERENCE_SASA_EMP[aa] for aa in aa_list if aa in REFERENCE_SASA_EMP]
+        )
+    else:
+        return sum(
+            [REFERENCE_SASA_THEOR[aa] for aa in aa_list if aa in REFERENCE_SASA_THEOR]
+        )
+
+
 class HydroData(ZSData):
     def __init__(
         self,
@@ -269,6 +443,7 @@ class HydroData(ZSData):
         plip_dir: str,  # ie zs/plip/af3/struct_joint
         scale_fit: str = "parent",
         var_col_name: str = "var",
+        combo_col_name: str = "AAs",
         fit_col_name: str = "fitness",
         active_site_radius: int = 10,
         hydro_dir: str = "zs/hydro",
@@ -279,6 +454,7 @@ class HydroData(ZSData):
             input_csv=input_csv,
             scale_fit=scale_fit,
             var_col_name=var_col_name,
+            combo_col_name=combo_col_name,
             fit_col_name=fit_col_name,
         )
 
@@ -287,25 +463,37 @@ class HydroData(ZSData):
         self._active_site_radius = active_site_radius
         self._max_workers = max_workers
 
-        # TODO add opt for just pdb structure
-        self._struct_dock_type = "af3" if "af3" in plip_dir else "chai"
-        # rep list would be 0 to 4 for chai, 0 to 4 plus agg for af3
-        self._common_rep_list = [str(i) for i in range(5)]
-        self._rep_list = (
-            self._common_rep_list + ["agg"]
-            if "af3" in plip_dir
-            else self._common_rep_list
-        )
-
-        self._struct_dock_dets = "joint" if "joint" in plip_dir else "separate"
-
         print(f"Calculating hydrophobicity for {self.lib_name}...")
 
-        hydro_df = self._get_hydro_df()
+        # naive based on combo column
+        if "holo" in self._plip_dir or self._plip_dir is None:
+            hydro_df = self._get_naive_hydro_df()
+            # merge with the self.df to get fitness info
+            self._hydro_df = pd.merge(
+                self.df[[self._combo_col_name, self._fit_col_name]],
+                hydro_df,
+                on=self._combo_col_name,
+                how="outer",
+            )
+            self._hydro_df.to_csv(self.hydro_df_path, index=False)
 
-        # proecess the hydro_df
-        self._hydro_df = self._process_hydro_df(hydro_df)
-        self._hydro_df.to_csv(self.hydro_df_path, index=False)
+        else:
+            self._struct_dock_type = "af3" if "af3" in plip_dir else "chai"
+            # rep list would be 0 to 4 for chai, 0 to 4 plus agg for af3
+            self._common_rep_list = [str(i) for i in range(5)]
+            self._rep_list = (
+                self._common_rep_list + ["agg"]
+                if "af3" in plip_dir
+                else self._common_rep_list
+            )
+
+            self._struct_dock_dets = "joint" if "joint" in plip_dir else "separate"
+
+            hydro_df = self._get_hydro_df()
+
+            # proecess the hydro_df
+            self._hydro_df = self._process_hydro_df(hydro_df)
+            self._hydro_df.to_csv(self.hydro_df_path, index=False)
 
     def _process_hydro_df(self, df: pd.DataFrame) -> pd.DataFrame:
 
@@ -396,31 +584,6 @@ class HydroData(ZSData):
         # Convert successful hydrophobicity data to a DataFrame
         return pd.DataFrame(successes)
 
-    # def _get_hydro_df(self) -> pd.DataFrame:
-    #     """
-    #     Run the hydrophobicity calculations for each variant and replicate sequentially (no parallelism).
-    #     This is useful for debugging.
-    #     """
-    #     # Create a list of variant-replicate pairs
-    #     var_rep_pairs = [(var, rep) for var in self.df[self._var_col_name].unique() for rep in self._rep_list]
-
-    #     # Initialize a list to store results
-    #     hydro_data = []
-
-    #     # Sequentially process each variant-replicate pair
-    #     for var, rep in tqdm(var_rep_pairs, desc="Calculating hydrophobicity"):
-    #         try:
-    #             # Call the worker function directly for debugging
-    #             result = self._hydro_worker((var, rep))
-    #             hydro_data.append(result)
-    #         except Exception as e:
-    #             # Log the error
-    #             print(f"Error processing Variant {var}, Replicate {rep}: {e}")
-    #             hydro_data.append({"variant": var, "replicate": rep, "error": str(e)})
-
-    #     # Convert the results into a DataFrame
-    #     return pd.DataFrame(hydro_data)
-
     def _hydro_worker(self, pair):
         """
         Worker function for hydrophobicity calculation.
@@ -431,6 +594,124 @@ class HydroData(ZSData):
         except Exception as e:
             # Log the failure as a dictionary for easier debugging
             return {"variant": var, "replicate": rep, "error": str(e)}
+
+    def _get_combo_site_dict(self, combo: str) -> dict:
+        """Get the combo"""
+        return {int(s): AA_DICT[m] for s, m in zip(self.mut_pos_list, combo)}
+
+    def _modify_active_site_info(self, combo: str, active_site_info: dict) -> dict:
+
+        """
+        Modify the active site info based on the combo
+        """
+
+        # update from the parent to the combo
+        for s, m in zip(self.mut_pos_list, combo):
+            active_site_info[int(s)] = AA_DICT[m]
+
+        return active_site_info
+
+    def _get_naive_hydro_df(self) -> pd.DataFrame:
+
+        """
+        Calculate the hydrophobicity of a variant only based on the combo column
+        ie. AAA
+        """
+
+        hydro_data = []
+
+        # Create a list of variant-replicate pairs
+        combo_list = self.df[self._combo_col_name]
+
+        # for combo in combo_list:
+        #     hydro_data.append(self._get_naive_var_hydro(combo))
+
+        # return pd.DataFrame(hydro_data)
+
+        # Use ProcessPoolExecutor for parallel processing
+        with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
+            # Use executor.map with the worker function
+            hydro_data = list(
+                tqdm(
+                    executor.map(self._get_naive_var_hydro, combo_list),
+                    total=len(combo_list),
+                    desc="Calculating hydrophobicity",
+                )
+            )
+
+        # Separate successful and failed calculations
+        successes = [entry for entry in hydro_data if "error" not in entry]
+        failures = [entry for entry in hydro_data if "error" in entry]
+
+        # Log failed pairs
+        if failures:
+            print(f"\nFailed calculations for {len(failures)} variant-replicate pairs:")
+            for failure in failures:
+                print(
+                    f"Variant {failure['variant']}, Replicate {failure['replicate']}: {failure['error']}"
+                )
+
+        # Convert successful hydrophobicity data to a DataFrame
+        return pd.DataFrame(successes)
+
+    def _get_naive_var_hydro(self, combo: str) -> pd.dict:
+
+        """
+        Calculate the hydrophobicity of a variant only based on the combo column
+        ie. AAA
+        """
+
+        hydro_dict = deepcopy(self.subcof_hydro_dict)
+
+        # /disk2/fli/REVIVAL2/zs/plip/holo/ParLQ/ParLQ.pdb
+        parent_struct_path = os.path.join(
+            self._plip_dir, self.protein_name, self.protein_name + ".pdb"
+        )
+        xml_path = os.path.join(self._plip_dir, self.protein_name, "report.xml")
+
+        # get the active site residues
+        active_site_dict = {
+            "pocket-plip": get_plip_active_site_dict(xml_path=xml_path),
+            "pocket-combo": self._get_combo_site_dict(combo),
+            "pocket-ligandcentroid": self._modify_active_site_info(
+                combo=combo,
+                active_site_info=extract_active_site_by_radius(
+                    pdb_file=parent_struct_path,
+                    target_coord=calculate_ligand_centroid(
+                        pdb_file=parent_struct_path,
+                        ligand_info=ENZYME_INFO_DICT[self.protein_name]["ligand-info"],
+                    ),
+                ),
+            ),
+        }
+
+        # first get the sasa
+        for active_site_type, active_site_info in active_site_dict.items():
+            for sasa_type in ["emp", "theor"]:
+                hydro_dict[
+                    f"{active_site_type}-sasa-{sasa_type}"
+                ] = calculate_native_sasa(
+                    aa_list=list(active_site_info.values()), ref_type=sasa_type
+                )
+            hydro_dict[f"{active_site_type}-sasa-mut"] = calculate_variant_sasa(
+                parent_pdb=parent_struct_path, mutations=active_site_info
+            )
+
+        # Calculate hydrophobicity with three different scale
+        # nested for loop to calculate hydrophobicity for each active site method
+        # and each hydrophobicity scale
+        # key = f"active_site_dict[key]-{hydrophobicity scale option}"
+
+        for key in active_site_dict.keys():
+            for scale in HYDRO_SCALES.keys():
+                hydro_dict[f"{key}-{scale}"] = calc_hydrophobitcity(
+                    active_site_dict=active_site_dict[key], hydro_scale=scale
+                )
+
+        # also add in var and rep info
+        hydro_dict[self._combo_col_name] = combo
+
+        return hydro_dict
 
     def _get_var_hydro(self, var: str, rep: str) -> dict:
 
@@ -561,14 +842,19 @@ class HydroData(ZSData):
     @property
     def hydro_df_path(self) -> str:
         """Get the path to the hydrophobicity DataFrame"""
-        hydro_df_dir = checkNgen_folder(
-            os.path.join(
-                self._hydro_dir,
-                self._struct_dock_type,
-                f"struct_{self._struct_dock_dets}",
+
+        if "holo" in self._plip_dir or self._plip_dir is None:
+            hydro_df_dir = checkNgen_folder(os.path.join(self._hydro_dir, "holo"))
+            return os.path.join(hydro_df_dir, f"{self.lib_name}.csv")
+        else:
+            hydro_df_dir = checkNgen_folder(
+                os.path.join(
+                    self._hydro_dir,
+                    self._struct_dock_type,
+                    f"struct_{self._struct_dock_dets}",
+                )
             )
-        )
-        return os.path.join(hydro_df_dir, f"{self.lib_name}.csv")
+            return os.path.join(hydro_df_dir, f"{self.lib_name}.csv")
 
     @property
     def hydro_df(self) -> pd.DataFrame:
