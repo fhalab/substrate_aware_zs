@@ -51,7 +51,25 @@ if __name__ == "__main__":
     # cofactor_dets="cofactor"
     # )
 
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_joint")
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_seperate")
+    run_gen_chai_structure([
+        "data/meta/not_scaled/PfTrpB-4bromo.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        "data/meta/not_scaled/ParLQ.csv",
+    ],
+    gen_opt="apo"
+    )
+
+    run_gen_chai_structure([
+        "data/meta/not_scaled/PfTrpB-4bromo.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        "data/meta/not_scaled/ParLQ.csv",
+    ],
+    gen_opt="joint-cofactor-no-substrate",
+    cofactor_dets="inactive-cofactor"
+    )
+    # parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_joint")
+    # parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_seperate")
 
     f.close()

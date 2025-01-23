@@ -1036,9 +1036,10 @@ LIB_INFO_DICT = deepcopy(
             "cofactor-smiles": [
                 "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=C(C)C(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
             ],
-            "inactivated-cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "carbene_precursor": "diazo ester (Me-EDA)",
+            "carbene_precursor-smiles": "CC(C(OCC)=O)=[N+]=[N-]",
+            "inactivated-cofactor": ["heme c"],
             "inactivated-cofactor-smiles": [
-                "CC(C(OCC)=O)=[N+]=[N-]",
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
             "product": "organoborane",
@@ -1106,9 +1107,10 @@ LIB_INFO_DICT = deepcopy(
             "cofactor-smiles": [
                 "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=C(C)C(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
             ],
-            "inactived-cofactor": ["diazo ester (Me-EDA)", "heme c"],
+            "carbene_precursor": "diazo ester (Me-EDA)",
+            "carbene_precursor-smiles": "CC(C(OCC)=O)=[N+]=[N-]",
+            "inactivated-cofactor": ["heme c"],
             "inactivated-cofactor-smiles": [
-                "CC(C(OCC)=O)=[N+]=[N-]",
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
             "product": "organosilicon",
@@ -1167,9 +1169,10 @@ LIB_INFO_DICT = deepcopy(
             "cofactor-smiles": [
                 "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=CC(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
             ],
-            "inactivated-cofactor": ["ethyl diazoacetate (EDA)", "heme b"],
+            "carbene_precursor": "ethyl diazoacetate (EDA)",
+            "carbene_precursor-smiles": "[N-]=[N+]=CC(OCC)=O",
+            "inactivated-cofactor": ["heme b"],
             "inactivated-cofactor-smiles": [
-                "[N-]=[N+]=CC(OCC)=O",
                 "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
             ],  # heme b taken from pdb
             "product": "1,2-disubstituted cyclopropanes cis",

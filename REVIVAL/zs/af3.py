@@ -259,8 +259,12 @@ class AF3Struct(ZSData):
             "dialect": "alphafold3",
             "version": 2,
         }
+        if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
 
-        if self._gen_opt == "substrate-no-cofactor":
+                # do nothing
+                pass
+            
+        elif self._gen_opt == "substrate-no-cofactor":
 
             # add substrate
             json_data["sequences"].append(

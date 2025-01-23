@@ -19,6 +19,13 @@ from tqdm import tqdm
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder
 
+LigandMPNN_NOISE_DICT = {
+    5: "ligandmpnn_v_32_005_25.pt",
+    10: "ligandmpnn_v_32_010_25.pt",
+    20: "ligandmpnn_v_32_020_25.pt",
+    30: "ligandmpnn_v_32_030_25.pt",
+}
+
 
 class LigandmpnnData(ZSData):
     def __init__(
@@ -56,14 +63,7 @@ class LigandmpnnData(ZSData):
         self.noise_levels = noise_levels
         self.structure_dir = structure_dir
 
-        self.noise_dict = {
-            5: "ligandmpnn_v_32_005_25.pt",
-            10: "ligandmpnn_v_32_010_25.pt",
-            20: "ligandmpnn_v_32_020_25.pt",
-            30: "ligandmpnn_v_32_030_25.pt",
-        }
-
-        self.ligandmpnn_noise_models = [self.noise_dict[m] for m in self.noise_levels]
+        self.ligandmpnn_noise_models = [LigandMPNN_NOISE_DICT[m] for m in self.noise_levels]
 
         self.inference_path = os.path.join(self.ligandmpnn_dir, "score.py")
 
