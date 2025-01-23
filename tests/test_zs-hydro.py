@@ -3,6 +3,7 @@ Test plip
 """
 
 import sys
+
 import os
 from glob import glob
 
@@ -26,10 +27,19 @@ if __name__ == "__main__":
    
     # in_dir="data/structure", out_dir="zs/plip"
 
-    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/af3/struct_joint")
-    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/af3/struct_seperate")
+    # run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/af3/struct_joint")
+    # run_all_hydro(pattern=[
+    #     "data/meta/not_scaled/ParLQ.csv",
+    #     "data/meta/not_scaled/Rma-CB.csv",
+    #     "data/meta/not_scaled/Rma-CSi.csv",
+    #     ], plip_dir="zs/plip/af3/struct_seperate")
+
     run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/chai/struct_joint")
-    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/chai/struct_seperate")
+    run_all_hydro(pattern=[
+        "data/meta/not_scaled/ParLQ.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        ], plip_dir="zs/plip/chai/struct_seperate")
 
     f.close()
 

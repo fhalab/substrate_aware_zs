@@ -22,7 +22,7 @@ import freesasa
 from MDAnalysis import Universe
 import MDAnalysis as mda
 
-from REVIVAL.zs.plip import get_plip_active_site_list
+from REVIVAL.zs.plip import get_plip_active_site_dict
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import (
     calculate_chain_centroid,
@@ -34,7 +34,8 @@ from REVIVAL.util import (
     get_file_name,
 )
 
-warnings.filterwarnings("ignore")
+
+# warnings.filterwarnings("ignore")
 
 
 KYTE_DOOLITTLE_SCALE = {
@@ -114,13 +115,16 @@ HYDRO_SCALES = {
 }
 
 
-def calc_hydrophobitcity(active_site_list: list, hydro_scale: str) -> np.float:
+ACTIVE_SITE_TYPES = ["pocket-plip", "pocket-subcentroid", "pocket-subcofcentroid"]
+
+
+def calc_hydrophobitcity(active_site_dict: dict, hydro_scale: str) -> np.float:
     """
     Returns the hydrophobicity score of a variant given the active site dictionary and a hydrophobicity scale.
 
     Args:
-        active_site_list (list): List of residues in the active site.
-            ie. [('MET', 12), ('LEU', 26), ('GLY', 37)]
+        active_site_dict (dict): Dictionary of residues in the active site.
+            ie. {12: 'MET', 26: 'LEU', 37: 'GLY'}
         hydro_scale (dict): Dictionary of amino acid hydrophobicity values.
             ie. kd
 
@@ -130,17 +134,17 @@ def calc_hydrophobitcity(active_site_list: list, hydro_scale: str) -> np.float:
 
     hydrophobicity = 0
 
-    for (res, _) in active_site_list:
-       
+    for (site, res) in active_site_dict.items():
+
         hydrophobicity += HYDRO_SCALES[hydro_scale][res]
 
     # normalize by the number of residues in the active site
-    return hydrophobicity / len(active_site_list)
+    return hydrophobicity / len(active_site_dict)
 
 
 def extract_active_site_by_radius(
     pdb_file: str, target_coord: np.array, target_chain="A", distance_threshold=10.0
-):
+) -> dict:
 
     """
     Extracts a list of amino acids in the specified chain whose centroids (side chain or CA for glycine)
@@ -153,13 +157,13 @@ def extract_active_site_by_radius(
         distance_threshold (float): Distance threshold in Ångströms.
 
     Returns:
-        list: A list of tuples containing residue information
-              (e.g., [("GLY", 12), ("ALA", 25)]).
+        dict: A dictonary of tuples containing residue information
+              (e.g., {12: "GLY", 25: "ALA"}).
     """
 
     structure = get_protein_structure(pdb_file)
 
-    nearby_residues = []
+    nearby_residues = {}
 
     # Iterate through all residues in the specified chain
     for model in structure:
@@ -186,8 +190,7 @@ def extract_active_site_by_radius(
             # Calculate distance between target coordinate and residue centroid
             distance = np.linalg.norm(centroid - target_coord)
             if distance <= distance_threshold:
-                residue_info = (residue.resname, residue.id[1])
-                nearby_residues.append(residue_info)
+                nearby_residues[int(residue.id[1])] = residue.resname
 
     return nearby_residues
 
@@ -200,7 +203,7 @@ def calculate_sasa_from_pdb(
 
     Args:
         pdb_file (str): Path to the PDB file containing the protein.
-        active_site_residues (list of tuple): List of active site residues as (resname, resid).
+        active_site_residues (dict): Dict of active site residues as resid: resname.
         chains (list of str): List of chain identifiers to calculate SASA (e.g., ["B", "C"]).
         specific_atoms (list of tuple): List of specific atoms as (chain, residue, atom).
 
@@ -221,7 +224,7 @@ def calculate_sasa_from_pdb(
         selection_query = " or ".join(
             [
                 f"(resname {resname} and resid {resid} and segid A)"
-                for resname, resid in active_site_residues
+                for resid, resname in active_site_residues.items()
             ]
         )
         append_temp = "activesite"
@@ -229,12 +232,14 @@ def calculate_sasa_from_pdb(
         selection_query = " or ".join([f"segid {chain}" for chain in chains])
         append_temp = "chains"
     elif specific_atoms:
-        selection_query = " or ".join(
-            [
-                f"(segid {chain} and resname {resname} and name {atom})"
-                for chain, resname, atom in specific_atoms
-            ]
-        )
+        # Generate relaxed, case-insensitive selection query for specific atoms
+        broader_search_atoms = [
+            f"(segid {chain.upper()} and resname {resname.upper()} and "
+            f"(name {atom.upper()} or name {atom.replace('_', '').upper()} or "
+            f"name {atom.replace('_', '').upper()[:-1]}_{atom[-1]}))"
+            for chain, resname, atom in specific_atoms
+        ]
+        selection_query = " or ".join(broader_search_atoms)
         append_temp = "specificatoms"
 
     # Select atoms and validate
@@ -264,6 +269,7 @@ class HydroData(ZSData):
         plip_dir: str,  # ie zs/plip/af3/struct_joint
         scale_fit: str = "parent",
         var_col_name: str = "var",
+        fit_col_name: str = "fitness",
         active_site_radius: int = 10,
         hydro_dir: str = "zs/hydro",
         max_workers: int = 64,
@@ -273,6 +279,7 @@ class HydroData(ZSData):
             input_csv=input_csv,
             scale_fit=scale_fit,
             var_col_name=var_col_name,
+            fit_col_name=fit_col_name,
         )
 
         self._plip_dir = plip_dir
@@ -283,14 +290,72 @@ class HydroData(ZSData):
         # TODO add opt for just pdb structure
         self._struct_dock_type = "af3" if "af3" in plip_dir else "chai"
         # rep list would be 0 to 4 for chai, 0 to 4 plus agg for af3
-        rep_list = [str(i) for i in range(5)]
-        self._rep_list = rep_list + ["agg"] if "agg" in plip_dir else rep_list
+        self._common_rep_list = [str(i) for i in range(5)]
+        self._rep_list = (
+            self._common_rep_list + ["agg"]
+            if "af3" in plip_dir
+            else self._common_rep_list
+        )
 
         self._struct_dock_dets = "joint" if "joint" in plip_dir else "separate"
 
         print(f"Calculating hydrophobicity for {self.lib_name}...")
-        self._hydro_df = self._get_hydro_df()
+
+        hydro_df = self._get_hydro_df()
+
+        # proecess the hydro_df
+        self._hydro_df = self._process_hydro_df(hydro_df)
         self._hydro_df.to_csv(self.hydro_df_path, index=False)
+
+    def _process_hydro_df(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        if "agg" in self._rep_list:
+            # Separate rows where rep == "agg" for processing
+            agg_rows = df[df["rep"] == "agg"].copy()
+
+            # Append `_agg` to column names for agg rows
+            agg_rows.rename(
+                columns={col: f"{col}_agg" for col in self.cols_w_reps}, inplace=True
+            )
+
+        # Filter rows for rep in [0, 1, 2, 3, 4]
+        filtered_df = df[df["rep"].isin(self._common_rep_list)]
+
+        # Initialize a new DataFrame for results
+        result = pd.DataFrame()
+
+        # Process each column and compute values
+        for col in self.cols_w_reps:
+            # Pivot table to reshape data: `var` as index, `rep` values as columns
+            reshaped = filtered_df.pivot(
+                index=self._var_col_name, columns="rep", values=col
+            )
+
+            # Rename columns to include rep (e.g., pocket-plip-sasa_0, pocket-plip-sasa_1, ...)
+            reshaped.columns = [f"{col}_{rep}" for rep in reshaped.columns]
+
+            # Compute the average across rep values (ignoring NaN)
+            reshaped[f"{col}_avg"] = reshaped.mean(axis=1)
+
+            # Merge into the result DataFrame
+            result = pd.concat([result, reshaped], axis=1)
+
+        # Reset index for the result DataFrame
+        result.reset_index(inplace=True)
+
+        if "agg" in self._rep_list:
+            # Merge back `agg_rows`
+            merge_df = pd.merge(result, agg_rows, on=self._var_col_name, how="outer")
+        else:
+            merge_df = result
+
+        # merge with the self.df to get fitness info
+        return pd.merge(
+            self.df[[self._var_col_name, self._fit_col_name]],
+            merge_df,
+            on=self._var_col_name,
+            how="outer",
+        )
 
     # go through each variant from self.df and replicate and calculate the hydrophobicity
     # make it parallelizable and then save the results to a dataframe
@@ -356,7 +421,6 @@ class HydroData(ZSData):
     #     # Convert the results into a DataFrame
     #     return pd.DataFrame(hydro_data)
 
-
     def _hydro_worker(self, pair):
         """
         Worker function for hydrophobicity calculation.
@@ -375,8 +439,6 @@ class HydroData(ZSData):
         """
 
         var_rep_name = f"{var}_{rep}"
-
-        print(f"Calculating hydrophobicity for {var_rep_name}")
 
         # zs/plip/af3/struct_joint/ParLQ/F89A_0/F89A_0.pdb
         var_path = os.path.join(
@@ -405,10 +467,10 @@ class HydroData(ZSData):
             hydro_dict["substrate+cofactor-sasa"] = calculate_sasa_from_pdb(
                 pdb_file=var_path, chains=ligand_chain_ids[1:]
             )
-        
+
         # get the active site residues
         active_site_dict = {
-            "pocket-plip": get_plip_active_site_list(xml_path=xml_path),
+            "pocket-plip": get_plip_active_site_dict(xml_path=xml_path),
             "pocket-subcentroid": extract_active_site_by_radius(
                 pdb_file=var_path,
                 target_coord=calculate_ligand_centroid(
@@ -425,23 +487,21 @@ class HydroData(ZSData):
             ),
         }
 
-
         # first get the sasa
-        for active_site_type, active_site_list in active_site_dict.items():
+        for active_site_type, active_site_info in active_site_dict.items():
             hydro_dict[f"{active_site_type}-sasa"] = calculate_sasa_from_pdb(
-                pdb_file=var_path, active_site_residues=active_site_list
+                pdb_file=var_path, active_site_residues=active_site_info
             )
 
         # Calculate hydrophobicity with three different scale
         # nested for loop to calculate hydrophobicity for each active site method
         # and each hydrophobicity scale
         # key = f"active_site_dict[key]-{hydrophobicity scale option}"
-        
 
         for key in active_site_dict.keys():
             for scale in HYDRO_SCALES.keys():
                 hydro_dict[f"{key}-{scale}"] = calc_hydrophobitcity(
-                    active_site_list=active_site_dict[key], hydro_scale=scale
+                    active_site_dict=active_site_dict[key], hydro_scale=scale
                 )
 
         # also add in var and rep info
@@ -488,6 +548,15 @@ class HydroData(ZSData):
             hydro_dict[f"{mol_opt}-tpsa"] = Descriptors.TPSA(mol)
             hydro_dict[f"{mol_opt}-asa"] = MolSurf.LabuteASA(mol)
         return hydro_dict
+
+    @property
+    def cols_w_reps(self) -> list:
+        """Get the columns with replicate information"""
+        return [
+            f"{active_site_type}-{hydro}"
+            for active_site_type in ACTIVE_SITE_TYPES
+            for hydro in ["sasa"] + list(HYDRO_SCALES.keys())
+        ]
 
     @property
     def hydro_df_path(self) -> str:

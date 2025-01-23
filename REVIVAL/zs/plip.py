@@ -222,7 +222,7 @@ def plip_xml2dict(xml_path: str) -> dict:
     return xml2dict(root)
 
 
-def get_plip_active_site_list(xml_path: str) -> list:
+def get_plip_active_site_dict(xml_path: str) -> dict:
     """
     Extracts the active site residues from a PLIP XML file.
 
@@ -230,16 +230,24 @@ def get_plip_active_site_list(xml_path: str) -> list:
         xml_path (str): Path to the PLIP XML file.
     
     Returns:
-        list: List of active site residues.
-            ie [('MET', 12), ('LEU', 26), ('GLY', 37)]
+        dict: Dictionary of active site residues.
+            ie {12: 'MET', 26: 'LEU', 37: 'GLY'}
     """
 
     # Parse the XML file
     plip_dict = plip_xml2dict(xml_path)
 
     # Extract the active site residues
-    active_site_list = []
-    for i in plip_dict["bindingsite"]["bs_residues"]["bs_residue"]:
-        active_site_list.append((i["@attributes"]["aa"], int(i["#text"][:-1])))
+    active_site_dict = {}
 
-    return active_site_list
+    bindingsite = plip_dict["bindingsite"]
+
+    if isinstance(bindingsite, dict):
+        for i in bindingsite["bs_residues"]["bs_residue"]:
+            active_site_dict[int(i["#text"][:-1])] = i["@attributes"]["aa"]
+    else:
+        for i in bindingsite:
+            for j in i["bs_residues"]["bs_residue"]:
+                active_site_dict[int(j["#text"][:-1])] = j["@attributes"]["aa"]
+
+    return active_site_dict
