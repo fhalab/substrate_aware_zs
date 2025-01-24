@@ -1,19 +1,5 @@
 # Environments Set-Up
 
-### LigandMPNN
-
-(For developers instructions: [https://github.com/dauparas/LigandMPNN](https://github.com/dauparas/LigandMPNN))
-
-```python
-git clone https://github.com/dauparas/LigandMPNN.git
-cd LigandMPNN
-bash get_model_params.sh "./model_params"
-
-conda create -n ligandmpnn_env python=3.11.8
-pip3 install -r requirements.txt
-```
-
-- install PyTorch according to your build ([https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
 
 ### FlowSite
 

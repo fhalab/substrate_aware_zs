@@ -25,24 +25,22 @@ if __name__ == "__main__":
     sys.stdout = f
 
    
-    # in_dir="data/structure", out_dir="zs/plip"
+    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/af3/struct_joint")
+    run_all_hydro(pattern=[
+        "data/meta/not_scaled/ParLQ.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        ], plip_dir="zs/plip/af3/struct_seperate")
 
-    # run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/af3/struct_joint")
-    # run_all_hydro(pattern=[
-    #     "data/meta/not_scaled/ParLQ.csv",
-    #     "data/meta/not_scaled/Rma-CB.csv",
-    #     "data/meta/not_scaled/Rma-CSi.csv",
-    #     ], plip_dir="zs/plip/af3/struct_seperate")
+    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/chai/struct_joint")
+    run_all_hydro(pattern=[
+        "data/meta/not_scaled/ParLQ.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        ], plip_dir="zs/plip/chai/struct_seperate")
 
-    # run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/chai/struct_joint")
-    # run_all_hydro(pattern=[
-    #     "data/meta/not_scaled/ParLQ.csv",
-    #     "data/meta/not_scaled/Rma-CB.csv",
-    #     "data/meta/not_scaled/Rma-CSi.csv",
-    #     ], plip_dir="zs/plip/chai/struct_seperate")
+    run_all_hydro(pattern="data/meta/not_scaled/*", plip_dir="zs/plip/holo")
 
-    run_all_hydro(pattern="data/meta/not_scaled/PfTrpB*", plip_dir="zs/plip/holo")
-    run_all_hydro(pattern="data/meta/not_scaled/Rma*", plip_dir="zs/plip/holo")
 
     f.close()
 

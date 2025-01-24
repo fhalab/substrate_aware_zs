@@ -19,7 +19,7 @@ from rdkit import Chem
 from rdkit.Chem import Descriptors, MolSurf
 
 import freesasa
-from MDAnalysis import Universe, AtomGroup
+from MDAnalysis import Universe
 import MDAnalysis as mda
 import tempfile
 
@@ -37,9 +37,10 @@ from REVIVAL.util import (
 )
 
 
-# warnings.filterwarnings("ignore")
+warnings.filterwarnings("ignore")
 
 
+# Kyte and Doolittle 1982
 KYTE_DOOLITTLE_SCALE = {
     "ALA": 1.800,
     "ARG": -4.500,
@@ -63,6 +64,7 @@ KYTE_DOOLITTLE_SCALE = {
     "VAL": 4.200,
 }
 
+# Hopp and Woods 1983
 HOPP_WOODS_SCALE = {
     "ALA": -0.500,
     "ARG": 3.000,
@@ -86,6 +88,7 @@ HOPP_WOODS_SCALE = {
     "VAL": -1.500,
 }
 
+# Eisenberg et al. 1984
 EISENBERG_CONSENSUS_SCALE = {
     "ALA": 0.620,
     "ARG": -2.530,
@@ -132,6 +135,7 @@ REFERENCE_SASA_THEOR = {
     "ARG": 274.0,
     "TRP": 285.0,
 }
+
 # Tien et al. 2013
 REFERENCE_SASA_EMP = {
     "GLY": 97.0,
@@ -161,6 +165,8 @@ HYDRO_SCALES = {
     "kd": KYTE_DOOLITTLE_SCALE,
     "hw": HOPP_WOODS_SCALE,
     "ec": EISENBERG_CONSENSUS_SCALE,
+    "sasa-theor": REFERENCE_SASA_THEOR,
+    "sasa-emp": REFERENCE_SASA_EMP,
 }
 
 
@@ -329,31 +335,6 @@ def get_original_resname(universe, resid):
 
     # Return the residue name
     return residue.resnames[0]
-
-
-# def apply_mutation(universe, mutation):
-#     """
-#     Apply a mutation to a protein structure.
-
-#     Args:
-#         universe (MDAnalysis.Universe): The MDAnalysis Universe object for the parent protein.
-#         mutation (tuple): Mutation specified as (resid, original_resname, new_resname).
-#                           Example: (56, "TRP", "ALA")
-
-#     Returns:
-#         MDAnalysis.Universe: Updated Universe with the mutation applied.
-#     """
-#     resid, original_resname, new_resname = mutation
-
-#     # Select the residue to mutate (ensure it's the Residue level)
-#     residue = universe.select_atoms(f"resid {resid} and resname {original_resname}").residues
-
-#     if len(residue) == 0:
-#         raise ValueError(f"Residue {original_resname} at {resid} not found in structure.")
-
-#     # Mutate the residue name
-#     residue.resnames = new_resname
-#     return universe
 
 
 def apply_mutation(universe, mutation):
