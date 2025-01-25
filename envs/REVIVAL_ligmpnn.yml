@@ -1,8 +1,8 @@
 # For the general environment:
 # Install or update using
-# conda env update --file REVIVAL.yml --prune
+# conda env update --file REVIVAL_ligmpnn.yml --prune
 
-name: REVIVAL
+name: REVIVAL_ligmpnn
 channels:
   - pytorch
   - pyg
@@ -22,6 +22,7 @@ dependencies:
   - brokenaxes
   - cairosvg
   - colorcet
+  - dm-tree
   - firefox
   - flake8
   - geckodriver
@@ -36,6 +37,7 @@ dependencies:
   - jupyter_bokeh
   - matplotlib
   - mdanalysis
+  - ml-collections
   - multipledispatch
   - mypy
   - networkx
@@ -49,6 +51,7 @@ dependencies:
   - pdbfixer
   - pip
   - psutil
+  - prody
   - pyg>=2.0.3
   - pytables
   - pytorch=2.1.1           # for h100

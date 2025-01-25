@@ -35,7 +35,7 @@ class ChaiStruct(ZSData):
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
         chai_dir: str = "chai",
-        chai_struct_dir: str = "structure",
+        chai_struct_dir: str = "struct",
         gen_opt: str = "joint",
         cofactor_dets: str = "cofactor",
         ifrerun: bool = False,
@@ -125,7 +125,12 @@ class ChaiStruct(ZSData):
 
             input_fasta = f">protein|{self.lib_name}_{var}\n{seq}\n"
 
-            if self._gen_opt == "substrate-no-cofactor":
+            if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
+
+                # do nothing
+                pass
+            
+            elif self._gen_opt == "substrate-no-cofactor":
 
                 # add substrate
                 input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
@@ -285,7 +290,7 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     )
 
     output_dir = checkNgen_folder(
-        os.path.dirname(mut_structure_dir).replace("structure", score_dir_name)
+        os.path.dirname(mut_structure_dir).replace("struct", score_dir_name)
     )
     lib_name = os.path.basename(mut_structure_dir)
 

@@ -5,7 +5,7 @@ must use vina conda env
 """
 
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from typing import Union, Tuple, Optional
+from typing import Union
 
 import logging
 import subprocess
@@ -16,7 +16,6 @@ import os
 import re
 from glob import glob
 from tqdm import tqdm
-from pathlib import Path
 from copy import deepcopy
 
 import numpy as np
@@ -26,9 +25,8 @@ from rdkit.Chem.MolStandardize.rdMolStandardize import Uncharger
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile, PDBxFile
 from Bio import PDB
-from Bio.PDB import PDBParser, MMCIFParser, PDBIO, Select, MMCIFIO
+from Bio.PDB import PDBParser, PDBIO, Select, MMCIFIO
 from Bio.PDB.Atom import Atom
-
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -41,7 +39,10 @@ from REVIVAL.util import (
     get_protein_structure,
     get_chain_ids,
     get_chain_structure,
+    calculate_chain_centroid,
     replace_residue_names_auto,
+    protonate_smiles,
+    protonate_oxygen
 )
 
 warnings.filterwarnings("ignore")
@@ -1145,59 +1146,6 @@ def extract_ions(input_file_path: str, output_file_path: str, ion: str) -> None:
         )
 
 
-def protonate_smiles(smiles: str, pH: float) -> str:
-    """
-    Protonate SMILES string with OpenBabel at given pH
-
-    :param smiles: SMILES string of molecule to be protonated
-    :param pH: pH at which the molecule should be protonated
-    :return: SMILES string of protonated structure
-    """
-
-    # cmd list format raises errors, therefore one string
-    cmd = f'obabel -:"{smiles}" -ismi -ocan -p{pH}'
-    cmd_return = subprocess.run(cmd, capture_output=True, shell=True)
-    output = cmd_return.stdout.decode("utf-8")
-    logging.debug(output)
-
-    if cmd_return.returncode != 0:
-        print("WARNING! COULD NOT PROTONATE")
-        return None
-
-    return output.strip()
-
-
-def protonate_oxygen(smiles: str) -> str:
-    """
-    Protonate all [O-] groups in a SMILES string.
-
-    :param smiles: Input SMILES string with [O-] groups.
-    :return: Protonated SMILES string with [OH] instead of [O-].
-    """
-    # Parse the molecule
-    mol = Chem.MolFromSmiles(smiles)
-    if not mol:
-        raise ValueError(f"Invalid SMILES string: {smiles}")
-
-    # Add hydrogens explicitly
-    mol = Chem.AddHs(mol)
-
-    # Iterate over atoms to find [O-] and adjust charges
-    for atom in mol.GetAtoms():
-        if atom.GetSymbol() == "O" and atom.GetFormalCharge() == -1:
-            # Set the charge to neutral
-            atom.SetFormalCharge(0)
-            # Adjust the number of implicit hydrogens
-            atom.SetNumExplicitHs(1)
-
-    # Update the molecule
-    Chem.SanitizeMol(mol)
-
-    # Generate the protonated SMILES
-    protonated_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-    return protonated_smiles
-
-
 def save_full_hierarchy_atoms(atoms_with_context, output_file_path):
     """
     Save a PDB file containing atoms with full hierarchy (model, chain, residue, atom).
@@ -1976,51 +1924,40 @@ def calculate_centroid(coords: list) -> tuple:
     return centroid
 
 
-def calculate_chain_centroid(
-    input_file: str, chain_ids: Union[list, str]
-) -> np.ndarray:
+# def calculate_chain_centroid(
+#     input_file: str, chain_ids: Union[list, str]
+# ) -> np.ndarray:
 
-    """
-    Calculate the geometric center (centroid) of all atoms in the specified chain(s).
+#     """
+#     Calculate the geometric center (centroid) of all atoms in the specified chain(s).
 
-    Args:
-        input_file (str): Path to the input PDB or CIF file.
-        chain_ids (list of str): List of chain IDs to calculate the centroid for.
+#     Args:
+#         input_file (str): Path to the input PDB or CIF file.
+#         chain_ids (list of str): List of chain IDs to calculate the centroid for.
 
-    Returns:
-        tuple: The XYZ coordinates of the centroid.
-    """
+#     Returns:
+#         tuple: The XYZ coordinates of the centroid.
+#     """
 
-    # Determine the file type
-    file_extension = os.path.splitext(input_file)[-1].lower()
-    if file_extension == ".cif":
-        parser = MMCIFParser(QUIET=True)
-    elif file_extension == ".pdb":
-        parser = PDBParser(QUIET=True)
-    else:
-        raise ValueError(
-            "Unsupported file format. Only PDB and CIF files are supported."
-        )
+#     # Parse the structure
+#     structure = get_protein_structure(input_file)
 
-    # Parse the structure
-    structure = parser.get_structure("protein", input_file)
+#     coordinates = []
+#     chain_ids = [cid.upper() for cid in chain_ids]  # Ensure chain IDs are uppercase
 
-    coordinates = []
-    chain_ids = [cid.upper() for cid in chain_ids]  # Ensure chain IDs are uppercase
+#     for model in structure:
+#         for chain in model:
+#             if chain.id.upper() in chain_ids:
+#                 for residue in chain:
+#                     for atom in residue:
+#                         coordinates.append(atom.coord)
 
-    for model in structure:
-        for chain in model:
-            if chain.id.upper() in chain_ids:
-                for residue in chain:
-                    for atom in residue:
-                        coordinates.append(atom.coord)
-
-    # Calculate centroid
-    if coordinates:
-        centroid = np.mean(coordinates, axis=0)
-        return np.array(centroid).flatten()
-    else:
-        raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
+#     # Calculate centroid
+#     if coordinates:
+#         centroid = np.mean(coordinates, axis=0)
+#         return np.array(centroid).flatten()
+#     else:
+#         raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
 
 
 ###### extract docking scores ######

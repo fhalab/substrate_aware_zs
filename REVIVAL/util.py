@@ -7,6 +7,10 @@ from __future__ import annotations
 import re
 import os
 import json
+import logging
+import subprocess
+
+import numpy as np
 
 from Bio import SeqIO, pairwise2, PDB
 from Bio.PDB import PDBParser, PDBIO, MMCIFParser
@@ -187,6 +191,80 @@ def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: s
                     extracted_chains.append(chain)
         return extracted_chains
 
+
+def calculate_chain_centroid(
+    input_file: str, chain_ids
+) -> np.ndarray:
+
+    """
+    Calculate the geometric center (centroid) of all atoms in the specified chain(s).
+
+    Args:
+        input_file (str): Path to the input PDB or CIF file.
+        chain_ids (list of str): List of chain IDs to calculate the centroid for.
+
+    Returns:
+        tuple: The XYZ coordinates of the centroid.
+    """
+
+    # Parse the structure
+    structure = get_protein_structure(input_file)
+
+    coordinates = []
+    chain_ids = [cid.upper() for cid in chain_ids]  # Ensure chain IDs are uppercase
+
+    for model in structure:
+        for chain in model:
+            if chain.id.upper() in chain_ids:
+                for residue in chain:
+                    for atom in residue:
+                        coordinates.append(atom.coord)
+
+    # Calculate centroid
+    if coordinates:
+        centroid = np.mean(coordinates, axis=0)
+        return np.array(centroid).flatten()
+    else:
+        raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
+
+
+def calculate_ligand_centroid(pdb_file: str, ligand_info: list):
+    """
+    Calculates the centroid of a given list of atoms specified by chain, residue, and atom names.
+
+    Args:
+        pdb_file (str): Path to the PDB file.
+        ligand_info (list of tuples): List of atoms specified as (chain_id, residue_name, atom_name).
+
+    Returns:
+        tuple: Centroid coordinates as (x, y, z).
+    """
+
+    structure = get_protein_structure(pdb_file)
+
+    atom_coords = []
+
+    for chain_id, residue_name, atom_name in ligand_info:
+        for model in structure:
+            try:
+                chain = model[chain_id]
+                for residue in chain:
+                    # Match residue name (flexible: partial match, case insensitive)
+                    if residue_name.lower() in residue.resname.lower():
+                        # Match atom name (flexible: ignore underscores and case differences)
+                        for atom in residue:
+                            if atom_name.replace("_", "").lower() == atom.name.replace("_", "").lower():
+                                atom_coords.append(atom.coord)
+            except KeyError:
+                print(f"Chain {chain_id} not found in the structure.")
+                continue
+
+    if not atom_coords:
+        raise ValueError("No matching atoms found in the structure.")
+
+    # Calculate centroid
+    return np.mean(atom_coords, axis=0)
+    
 
 def modify_PDB_chain(
     input_file_path: str,
@@ -460,3 +538,95 @@ def canonicalize_smiles(smiles_string: str) -> str:
     if molecule:
         canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
         return canonical_smiles
+
+
+def smiles2mol(smiles_string: str):
+    """
+    A function to convert a SMILES string to an RDKit molecule object.
+
+    Args:
+    - smiles_string (str): The input SMILES string.
+
+    Returns:
+    - RDKit molecule object.
+    """
+
+    mol = Chem.MolFromSmiles(smiles_string)
+    if mol:
+        mol = Chem.AddHs(mol)
+        return mol
+    else:
+        raise ValueError("Invalid SMILES string.")
+
+
+def protonate_smiles(smiles: str, pH: float) -> str:
+    """
+    Protonate SMILES string with OpenBabel at given pH
+
+    :param smiles: SMILES string of molecule to be protonated
+    :param pH: pH at which the molecule should be protonated
+    :return: SMILES string of protonated structure
+    """
+
+    # cmd list format raises errors, therefore one string
+    cmd = f'obabel -:"{smiles}" -ismi -ocan -p{pH}'
+    cmd_return = subprocess.run(cmd, capture_output=True, shell=True)
+    output = cmd_return.stdout.decode("utf-8")
+    logging.debug(output)
+
+    if cmd_return.returncode != 0:
+        print("WARNING! COULD NOT PROTONATE")
+        return None
+
+    return output.strip()
+
+
+def protonate_oxygen(smiles: str) -> str:
+    """
+    Protonate all [O-] groups in a SMILES string.
+
+    :param smiles: Input SMILES string with [O-] groups.
+    :return: Protonated SMILES string with [OH] instead of [O-].
+    """
+    # Parse the molecule
+    mol = Chem.MolFromSmiles(smiles)
+    if not mol:
+        raise ValueError(f"Invalid SMILES string: {smiles}")
+
+    # Add hydrogens explicitly
+    mol = Chem.AddHs(mol)
+
+    # Iterate over atoms to find [O-] and adjust charges
+    for atom in mol.GetAtoms():
+        if atom.GetSymbol() == "O" and atom.GetFormalCharge() == -1:
+            # Set the charge to neutral
+            atom.SetFormalCharge(0)
+            # Adjust the number of implicit hydrogens
+            atom.SetNumExplicitHs(1)
+
+    # Update the molecule
+    Chem.SanitizeMol(mol)
+
+    # Generate the protonated SMILES
+    protonated_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
+    return protonated_smiles
+
+
+def add_hydrogens_to_smiles(smiles: str) -> str:
+    """
+    Add explicit hydrogens to a molecule represented by a SMILES string.
+
+    Args:
+        smiles (str): Input SMILES string.
+
+    Returns:
+        str: SMILES string with explicit hydrogens.
+    """
+    mol = Chem.MolFromSmiles(smiles)  # Parse SMILES to RDKit molecule
+    if not mol:
+        raise ValueError(f"Invalid SMILES string: {smiles}")
+    
+    mol_with_h = Chem.AddHs(mol)  # Add explicit hydrogens
+    smiles_with_h = Chem.MolToSmiles(mol_with_h)  # Convert back to SMILES
+    
+    return smiles_with_h

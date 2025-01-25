@@ -8,7 +8,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.ligandmpnn import run_ligandmpnn, LigandMPNN_MODEL_DICT
+from REVIVAL.zs.flowsite import run_flowsite
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -18,17 +18,16 @@ if __name__ == "__main__":
     # log outputs
     f = open(
         os.path.join(
-            checkNgen_folder("logs/zs/ligandmpnn"),
+            checkNgen_folder("logs/zs/flowsite"),
             f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out",
         ),
         "w",
     )
     sys.stdout = f
 
-    for noise in LigandMPNN_MODEL_DICT.keys():
-        run_ligandmpnn(
-            pattern="data/meta/not_scaled/*.csv",
-            noise_level=noise,
-        )
+    run_flowsite(
+        pattern="data/meta/not_scaled/*.csv",
+        kwargs={"regen": True}
+    )
         
     f.close()

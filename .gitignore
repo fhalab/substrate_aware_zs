@@ -15,6 +15,10 @@ logs
 logs/
 logs/*
 
+runs
+runs/
+runs/*
+
 results
 results/
 results/*
@@ -31,6 +35,8 @@ SSMuLA-zs
 SSMuLA-zs/
 SSMuLA-zs/*
 
+*.pdb
+
 sandbox/files/*
 
 !/REVIVAL/*
@@ -38,6 +44,8 @@ sandbox/files/*
 
 *.idea
 *.npy
+
+temp_hetatm.pdb
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
