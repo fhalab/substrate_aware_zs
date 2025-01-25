@@ -25,9 +25,8 @@ from rdkit.Chem.MolStandardize.rdMolStandardize import Uncharger
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile, PDBxFile
 from Bio import PDB
-from Bio.PDB import PDBParser, MMCIFParser, PDBIO, Select, MMCIFIO
+from Bio.PDB import PDBParser, PDBIO, Select, MMCIFIO
 from Bio.PDB.Atom import Atom
-
 
 from rdkit import Chem
 from rdkit.Chem import AllChem
@@ -42,6 +41,8 @@ from REVIVAL.util import (
     get_chain_structure,
     calculate_chain_centroid,
     replace_residue_names_auto,
+    protonate_smiles,
+    protonate_oxygen
 )
 
 warnings.filterwarnings("ignore")
@@ -1143,59 +1144,6 @@ def extract_ions(input_file_path: str, output_file_path: str, ion: str) -> None:
         print(
             f"Ions matching '{ion}' were successfully extracted to {output_file_path}."
         )
-
-
-def protonate_smiles(smiles: str, pH: float) -> str:
-    """
-    Protonate SMILES string with OpenBabel at given pH
-
-    :param smiles: SMILES string of molecule to be protonated
-    :param pH: pH at which the molecule should be protonated
-    :return: SMILES string of protonated structure
-    """
-
-    # cmd list format raises errors, therefore one string
-    cmd = f'obabel -:"{smiles}" -ismi -ocan -p{pH}'
-    cmd_return = subprocess.run(cmd, capture_output=True, shell=True)
-    output = cmd_return.stdout.decode("utf-8")
-    logging.debug(output)
-
-    if cmd_return.returncode != 0:
-        print("WARNING! COULD NOT PROTONATE")
-        return None
-
-    return output.strip()
-
-
-def protonate_oxygen(smiles: str) -> str:
-    """
-    Protonate all [O-] groups in a SMILES string.
-
-    :param smiles: Input SMILES string with [O-] groups.
-    :return: Protonated SMILES string with [OH] instead of [O-].
-    """
-    # Parse the molecule
-    mol = Chem.MolFromSmiles(smiles)
-    if not mol:
-        raise ValueError(f"Invalid SMILES string: {smiles}")
-
-    # Add hydrogens explicitly
-    mol = Chem.AddHs(mol)
-
-    # Iterate over atoms to find [O-] and adjust charges
-    for atom in mol.GetAtoms():
-        if atom.GetSymbol() == "O" and atom.GetFormalCharge() == -1:
-            # Set the charge to neutral
-            atom.SetFormalCharge(0)
-            # Adjust the number of implicit hydrogens
-            atom.SetNumExplicitHs(1)
-
-    # Update the molecule
-    Chem.SanitizeMol(mol)
-
-    # Generate the protonated SMILES
-    protonated_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-    return protonated_smiles
 
 
 def save_full_hierarchy_atoms(atoms_with_context, output_file_path):

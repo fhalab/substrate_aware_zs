@@ -20,16 +20,41 @@ pip install meeko
 ```
 
 ### LigandMPNN
-
-(For developers instructions: [https://github.com/dauparas/LigandMPNN](https://github.com/dauparas/LigandMPNN))
-
-```python
+* Get code and model parameters
+```
 git clone https://github.com/dauparas/LigandMPNN.git
 cd LigandMPNN
 bash get_model_params.sh "./model_params"
-
-conda create -n ligandmpnn_env python=3.11.8
-pip3 install -r requirements.txt
 ```
+* Modify the paths in `REVIVAL.zs.ligandmpnn` and/or `tests.test_zs-ligandmpnn` accordingly.
 
-- install PyTorch according to your build ([https://pytorch.org/get-started/locally/](https://pytorch.org/get-started/locally/))
+### FlowSite
+* Get code and moedel parameters
+```
+git clone https://github.com/HannesStark/FlowSite.git
+cd FlowSite
+mkdir model_params
+cd model_params
+```
+* Download the model parameters in a zip file based on the repo from [here](https://drive.google.com/file/d/1QGQ6U3BDlEZ682yv7dLo2wbuulOPArSY/view?usp=sharing).
+* Unzip as needed and check that there are subfolders called `lf5t55w4` and `b1ribx1a`
+* Modify the path in `REVIVAL.zs.ligandmpnn` and/or `tests.test_zs-ligandmpnn` accordingly.
+* Set up the conda environment
+```
+conda create -n flowsite python=3.10
+conda activate flowsite
+pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+pip install torch-scatter -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+pip install torch-sparse -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+pip install torch-cluster -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+pip install torch-spline-conv -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+pip install torch-geometric
+pip install rdkit
+pip install pyyaml wandb biopython spyrmsd einops biopandas plotly prody tqdm lightning imageio
+pip install e3nn
+```
+* Troubleshoot
+```
+pip uninstall numpy
+pip install numpy==1.23.5
+```

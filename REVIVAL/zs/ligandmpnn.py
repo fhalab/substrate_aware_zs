@@ -4,10 +4,9 @@
 
 from __future__ import annotations
 
-import subprocess
-import re
 import os
 import math
+import subprocess
 from glob import glob
 from tqdm import tqdm
 from copy import deepcopy
@@ -41,10 +40,10 @@ class LigandmpnnData(ZSData):
     def __init__(
         self,
         input_csv: str,
+        noise_level: int = 20,  # [5, 10, 20, 30]
         docked_struct_dir: str = "data/structure/docked",
         ligandmpnn_main_dir: str = LigandMPNN_MAIN_DIR,  # for running the .py file
         ligandmpnn_model_dir: str = LigandMPNN_MODEL_PARAM_DIR,  # for model .pt file
-        noise_level: int = 20,  # [5, 10, 20, 30]
         scale_fit: str = "parent",
         chain_id: str = "A",  # the chain for enzyme to be modifed
         combo_col_name: str = "AAs",
@@ -99,7 +98,7 @@ class LigandmpnnData(ZSData):
         )
 
         # get the score.py from the ligandmpnn path
-        self._infernece_script_path = os.path.join(ligandmpnn_main_dir, "score.py")
+        self._inference_script_path = os.path.join(ligandmpnn_main_dir, "score.py")
 
         # preprocess cif to pdb
         self._preprocess_cif()
@@ -150,7 +149,7 @@ class LigandmpnnData(ZSData):
 
         cli_ligandmpnn = [
             "python",
-            self._infernece_script_path,
+            self._inference_script_path,
             "--model_type",
             "ligand_mpnn",
             "--checkpoint_ligand_mpnn",
@@ -205,17 +204,15 @@ class LigandmpnnData(ZSData):
                 }
             )
 
-        
         return pd.DataFrame(score_df)
 
-    
     @property
     def mutated_pos_list(self) -> list:
         """
         Return a list of mutations for ligandmpnn: [A165, A183, A301]
         """
         return [str(self._chain_id) + str(pos) for pos in self.mut_pos_list]
-    
+
     @property
     def mutated_pos(self) -> str:
         """
@@ -286,7 +283,9 @@ class LigandmpnnData(ZSData):
         return self._score_df
 
 
-def run_ligandmpnn(pattern: str | list = None, kwargs: dict = {}):
+def run_ligandmpnn(
+    pattern: str | list = None, noise_level: int = 20, kwargs: dict = {}
+) -> None:
 
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
@@ -295,4 +294,4 @@ def run_ligandmpnn(pattern: str | list = None, kwargs: dict = {}):
 
     for lib in tqdm(lib_list):
         print(f"Running LigandMPNN for {lib}...")
-        LigandmpnnData(input_csv=lib, **kwargs)
+        LigandmpnnData(input_csv=lib, noise_level=noise_level, **kwargs)

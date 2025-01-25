@@ -57,8 +57,31 @@ if __name__ == "__main__":
     #     gpu_id="0"
     # )
 
-    parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_joint")
-    parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_seperate")
+
+
+    # run_af3_struct([
+    #     "data/meta/not_scaled/PfTrpB-4bromo.csv",
+    #     "data/meta/not_scaled/Rma-CB.csv",
+    #     "data/meta/not_scaled/Rma-CSi.csv",
+    #     "data/meta/not_scaled/ParLQ.csv",
+    # ],
+    # gen_opt="apo",
+    # gpu_id="0"
+    # )
+
+    run_af3_struct([
+        "data/meta/not_scaled/PfTrpB-4bromo.csv",
+        "data/meta/not_scaled/Rma-CB.csv",
+        "data/meta/not_scaled/Rma-CSi.csv",
+        "data/meta/not_scaled/ParLQ.csv",
+    ],
+    gen_opt="joint-cofactor-no-substrate",
+    cofactor_dets="inactivated-cofactor",
+    gpu_id="0"
+    )
+
+    # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_joint")
+    # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_seperate")
 
     # def run_af3_struct(
     #     pattern: str | list = "data/meta/not_scaled/*.csv", 
