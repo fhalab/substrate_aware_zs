@@ -27,6 +27,7 @@ if __name__ == "__main__":
 
     run_flowsite(
         pattern="data/meta/not_scaled/*.csv",
+        kwargs={"regen": True}
     )
         
     f.close()

@@ -3,22 +3,18 @@
 # Date: 06/12/24
 
 import os
-import re
 
 import subprocess
 from glob import glob
-# from tqdm import tqdm
+from tqdm import tqdm
 from copy import deepcopy
 
 import numpy as np
 import pandas as pd
 
-from rdkit import Chem
-
-# import torch
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, add_hydrogens_to_smiles
+from REVIVAL.util import checkNgen_folder
 
 
 FLOWSITE_MAIN_DIR = "/disk2/fli/FlowSite"
@@ -65,8 +61,8 @@ FLOWSITE_MODEL_DETS = {
 }
 
 FLOWSITE_DEFAULT_PARAMS = {
-    "num_inference": 10,
-    "batch_size": 10,
+    "num_inference": 100,
+    "batch_size": 64,
     "fake_constant_dur": 100000,
     "fake_decay_dur": 10,
     "fake_ratio_start": 0.2,
@@ -85,7 +81,6 @@ class FlowsiteData(ZSData):
         input_csv=str,
         scale_fit: str = "parent",
         combo_col_name: str = "AAs",
-        var_col_name: str = "var",
         fit_col_name: str = "fitness",
         chain_id: str = "A",
         dock_opt: str = "substrate",  # 'substrate' or 'joint'
@@ -98,6 +93,7 @@ class FlowsiteData(ZSData):
         flowsite_model_dir: str = FLOWSITE_MODEL_PARAM_DIR,  # for checkpoint .ckpt file
         flowsite_model_dets: dict = FLOWSITE_MODEL_DETS,
         flowsite_params: dict = FLOWSITE_DEFAULT_PARAMS,
+        regen: bool = False,
     ):
 
         """
@@ -106,8 +102,8 @@ class FlowsiteData(ZSData):
         The outputs inlucde:
             - The input pdb file under `input_struct` subfolder,
                 converted from cif or made a copy
-            - A .npy file saved under `raw_output` subfolder, with deminsions:
-                (1, num_residues, 21)
+            - A .npy file saved under `raw_output/lib_name/complexid0` subfolder, named `desgined_logits`
+                with deminsions: (num_inference, num_residues, 21)
             - The corresponding .csv file extracting the ZS scores saved under the `scores` subfolder
         """
 
@@ -115,7 +111,6 @@ class FlowsiteData(ZSData):
             input_csv=input_csv,
             scale_fit=scale_fit,
             combo_col_name=combo_col_name,
-            var_col_name=var_col_name,
             fit_col_name=fit_col_name,
         )
 
@@ -127,23 +122,40 @@ class FlowsiteData(ZSData):
         self._output_dir = output_dir
 
         self._inference_path = os.path.join(flowsite_main_dir, "inference.py")
-        
+
         self._model_dets = flowsite_model_dets[flowsite_model_opt]
         self._checkpoint_path = os.path.join(
             flowsite_model_dir, self._model_dets["checkpoint"]
         )
-        
+
         self._flowsite_params = flowsite_params
 
         self._flowsite_dets = f"{flowsite_inference_opt}_model{flowsite_model_opt}-{dock_opt}-{cofactor_dets}"
 
-        self._preprocess_struct()
+        if not regen and os.path.exists(self.raw_npy_path):
+            print(
+                f"Flowsite npy output already exists for {self.lib_name} and not regen."
+            )
 
-        print(f"Running flowsite for {self.lib_name}...")
-        self._run_flowsite()
+        else:
+            self._preprocess_struct()
+
+            print(f"Running flowsite for {self.lib_name}...")
+            self._run_flowsite()
 
         print(f"Creating score .csv for {self.lib_name}...")
-        # self.score_mut_file()
+        score_df = self._get_flowsite_score()
+
+        # merge the score_df with the input_df
+        self._score_df = pd.merge(
+            self.input_df[[self._combo_col_name, self._fit_col_name]],
+            score_df,
+            on=self._combo_col_name,
+            how="left",
+        )
+
+        # save the score_df to a csv file
+        self._score_df.to_csv(self.score_df_path, index=False)
 
     def _preprocess_struct(self) -> None:
         """
@@ -152,7 +164,7 @@ class FlowsiteData(ZSData):
 
         # check if the pdb file exists
         if not os.path.exists(self.pdb_path):
-           
+
             if os.path.exists(self.cif_path.replace(".cif", ".pdb")):
                 # copy the pdb file to the input_struct folder
                 subprocess.run(
@@ -189,19 +201,6 @@ class FlowsiteData(ZSData):
         else:
             raise ValueError(f"Invalid docking option: {self.dock_opt}")
 
-        # try: 
-        #     smiles = add_hydrogens_to_smiles(smiles)
-        # except:
-        #     pass
-
-        # set up run device
-        # cuda_available = torch.cuda.is_available()
-        # env = os.environ.copy()
-        # if cuda_available:
-        #     env['CUDA_VISIBLE_DEVICES'] = '0'
-        # else:
-        #     env.pop('CUDA_VISIBLE_DEVICES', None)
-
         # define console command and execute subprocess
         cli_cmd = [
             "python",
@@ -211,7 +210,7 @@ class FlowsiteData(ZSData):
             "--batch_size",
             str(self._flowsite_params["batch_size"]),
             "--out_dir",
-            os.path.abspath(self.raw_npz_dir),
+            os.path.abspath(self.raw_npy_dir),
             "--protein",
             os.path.abspath(self.pdb_path),
             "--pocket_def_residues",
@@ -261,11 +260,13 @@ class FlowsiteData(ZSData):
             "--pocket_residue_cutoff",
             str(self._flowsite_params["pocket_residue_cutoff"]),
         ]
-        print(cli_cmd)
-        process = subprocess.run(cli_cmd, capture_output=True, text=True)  # , env=env)
+
+        process = subprocess.run(cli_cmd, capture_output=True, text=True)
 
         # Print the outputs
-        print("Return Code:", process.returncode)  # Check if the process exited successfully
+        print(
+            "Return Code:", process.returncode
+        )  # Check if the process exited successfully
         print("Standard Output:", process.stdout)  # Output of the command
         print("Standard Error:", process.stderr)  # Error messages, if any
 
@@ -274,40 +275,35 @@ class FlowsiteData(ZSData):
             print("An error occurred while executing the command.")
             print("Error details:", process.stderr)
 
-    # def score_mut_file(self) -> None:
-    #     """
-    #     A function for extracting the ZS scores from flowsite output files and writing them to a csv.
-    #     """
+    def _get_flowsite_score(self) -> pd.DataFrame:
 
-    #     score_df = pd.DataFrame(columns=["variant", "gt_fitness", "zs_score"])
-    #     csv = pd.read_csv(self._input_csv, keep_default_na=False)
-    #     csv = csv[~csv.apply(lambda row: row.astype(str).str.contains(r"\*").any(), axis=1)].reset_index(drop=True)  # filters for stop codons, marked as '*'
+        """
+        Extracts the ZS scores from flowsite output files and writes them to a csv.
+        """
 
-    #     enzyme_name = csv['enzyme'][1] # assumes its the same enzyme for every variant
-    #     substrate_name = csv['substrate'][1] # assumes its the same enzyme for every variant
-    #     output_dir = os.path.join(self.results_dir, f'{enzyme_name}-{substrate_name}_inference', 'complexid0', 'designed_logits.npy')
+        score_df = []
 
-    #     # load flowsite output
-    #     ZS = np.load(output_dir)
+        for combo in self.input_df[self._combo_col_name]:
+            combo_scores = []
+            for rep in range(self._flowsite_params["num_inference"]):
+                raw_score = self.designed_logits[rep]
+                combo_scores.append(
+                    sum(
+                        [
+                            raw_score[i][FLOWSITE_AA_IDX[res]]
+                            for i, res in enumerate(combo)
+                        ]
+                    )
+                )
+            score_df.append(
+                {
+                    self._combo_col_name: combo,
+                    "flowsite_score": np.mean(combo_scores),
+                    "flowsite_std": np.std(combo_scores),
+                }
+            )
 
-    #     # extract ZS scores from flowsite output
-    #     rows = []
-    #     for _, variant in tqdm(csv.iterrows(), desc=f'Extracing ZS scores for {self._input_csv}'):
-    #         log_likelyhoods_avg = []
-    #         for i, res in enumerate(variant[self._combo_col_name]):
-    #             log_score = sum([ZS[inference][i][FLOWSITE_AA_IDX[res]] for inference in range(self.num_inference)])
-    #             log_likelyhoods_avg.append(log_score)
-    #         log_zs_score = sum(log_likelyhoods_avg)
-    #         rows.append({'variant': variant[self._var_col_name],
-    #                      'gt_fitness': variant[self._fit_col_name],
-    #                      'zs_score': log_zs_score})
-    #     score_df = pd.DataFrame(rows)
-    #     print(score_df['gt_fitness'].corr(score_df['zs_score'], method='spearman'))
-
-    #     # save score_df
-    #     score_df_path = os.path.join(self.results_dir, f'{os.path.basename(self._input_csv)[:-4]}_score_df.csv')
-    #     score_df.to_csv(score_df_path)
-    #     print(f'ZS score .csv file saved to {score_df_path}.')
+        return pd.DataFrame(score_df)
 
     @property
     def mutated_pos(self) -> str:
@@ -336,20 +332,29 @@ class FlowsiteData(ZSData):
         )
 
     @property
-    def raw_npz_dir(self) -> str:
+    def raw_npy_dir(self) -> str:
         """
         Path for the output .npy file under the `raw_output` subfolder.
         """
         return checkNgen_folder(
-            os.path.join(self._output_dir, "raw_output", self._flowsite_dets)
+            os.path.join(
+                self._output_dir, "raw_output", self._flowsite_dets, self.lib_name
+            )
         )
 
     @property
-    def raw_npz_path(self) -> str:
+    def raw_npy_path(self) -> str:
         """
-        Filepath to the corresponding .pt file for a given .csv of same name.
+        Filepath to the corresponding .npy file for a given .csv of same name.
         """
-        return os.path.join(self.raw_npz_dir, f"{self.lib_name}.npz")
+        return os.path.join(self.raw_npy_dir, "complexid0/designed_logits.npy")
+
+    @property
+    def designed_logits(self) -> np.ndarray:
+        """
+        Return the logits array
+        """
+        return np.load(self.raw_npy_path)
 
     @property
     def cif_path(self) -> str:
@@ -363,7 +368,9 @@ class FlowsiteData(ZSData):
         """
         Filepath to the corresponding .pdb file for a given .csv of same name.
         """
-        input_pdb_dir = checkNgen_folder(os.path.join(self._output_dir, "input_struct", self._flowsite_dets))
+        input_pdb_dir = checkNgen_folder(
+            os.path.join(self._output_dir, "input_struct", self._flowsite_dets)
+        )
 
         return os.path.join(input_pdb_dir, f"{self.lib_name}.pdb")
 
@@ -394,9 +401,9 @@ class FlowsiteData(ZSData):
 def run_flowsite(pattern: str | list = None, kwargs: dict = {}):
 
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
 
-    for lib in lib_list:
+    for lib in tqdm(lib_list):
         FlowsiteData(input_csv=lib, **kwargs)
