@@ -7,7 +7,7 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.triad import run_traid_gen_mut_file
+from REVIVAL.zs.triad import run_traid
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -22,10 +22,12 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_traid_gen_mut_file("data/meta/not_scaled/*.csv", kwargs={"withsub": False})
+    # run_traid("data/meta/not_scaled/*.csv", kwargs={"withsub": False, "cleanup": False})
+    run_traid(
+        "data/meta/not_scaled/*.csv",
+        in_structure_dir="data/structure/docked",
+        kwargs={"withsub": True, "cleanup": False}
+    )
 
-    """run_traid_gen_mut_file(
-    pattern: str | list = "data/meta/scale2parent/*.csv"
-    )"""
 
     f.close()

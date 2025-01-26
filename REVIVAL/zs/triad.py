@@ -27,29 +27,34 @@ class TriadData(ZSData):
         in_structure_dir: str = "data/structure", # data/structure for frompdb or data/structure/docked for docked
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
-        mut_col_name: str = "mut",
-        pos_col_name: str = "pos",
-        seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
-        seq_dir: str = "data/seq",
         triad_dir: str = TRIAD_DIR,
         output_dir: str = "zs/triad",
         withsub: bool = True,
         cleanup: bool = True,
         chain_id: str = "A",
-        num_cpus: int = 64,
+        num_cpus: int = 32,
+        rerun: bool = False
     ):
+        """
+        Run Triad
+
+        For running Triad, there will be subfolders:
+            - `struct_prep` for preping pdbs 
+            - `mut_file` for .mut files
+            - `struct_mut` for generated structure
+        For parsing scores, there will be `score` subfolder
+        
+        Within each, there will be subfolder with info about `withsub` or `cleanup`
+            ie `frompdb-cleanup`
+        """
 
         super().__init__(
             input_csv=input_csv,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
-            mut_col_name=mut_col_name,
-            pos_col_name=pos_col_name,
-            seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
             withsub=withsub,
-            seq_dir=seq_dir,
         )
 
         self._in_structure_dir = in_structure_dir
@@ -62,19 +67,43 @@ class TriadData(ZSData):
                 self._structure_dets += "-cleanup"
         else:
             self._structure_dets = "docked"
+            if self._in_structure_dir == "data/structure":
+                self._in_structure_dir = os.path.join(self._in_structure_dir, "docked")
 
         self._output_dir = checkNgen_folder(output_dir)
 
         self._chain_id = chain_id
         self._num_cpus = num_cpus
 
-        self._mut_list = self._generate_mut_file()
+        if not rerun and os.path.exists(self.triad_sum_txt):
+            print(f"{self.triad_sum_txt} exists and rerun is False")
+        
+        else:
+            self._mut_list = self._generate_mut_file()
 
-        # get the chain structure and run triad preparation
-        self._prepare_initial_structure()
+            # get the chain structure and run triad preparation
+            self._prepare_initial_structure()
 
-        # run triad to generate mutant structures and calculate energies
-        self._run_triad()
+            # run triad to generate mutant structures and calculate energies
+            self._run_triad()
+
+        # now parse scores
+        print(f"Parsing {self.triad_sum_txt} and save to {self.triad_csv}...")
+
+        # extract triad score into dataframe
+        triad_df = self._get_triad_score()
+
+        # merge to get fit
+        self._triad_df = pd.merge(
+            self.input_df[[self._combo_col_name, self._fit_col_name]],
+            triad_df, 
+            on =self._combo_col_name,
+            how="left"
+        )
+
+        self._triad_df.to_csv(
+            self.triad_csv, index=False
+        )
 
 
     def _generate_mut_file(self) -> None:
@@ -162,6 +191,68 @@ class TriadData(ZSData):
             )
 
 
+    def _get_triad_score(self) -> float:
+
+        """
+        A function to load the output of a triad analysis and get a score
+
+        Args:
+        - triad_output_file: str, the path to the triad output file
+        - WT_combo: str, the wildtype combo
+        - num_seqs: int, the number of sequences to load
+        """
+
+        # Load the output file
+        with open(self.triad_sum_txt) as f:
+
+            # Set some flags for starting analysis
+            solutions_started = False
+            record_start = False
+
+            # Begin looping over the file
+            summary_lines = []
+            for line in f:
+
+                # Start looking at data once we hit "solution"
+                # if "Solution" in line:
+                if "All sequences:" in line:
+                    solutions_started = True
+
+                # Once we have "Index" we can start recording the rest
+                if solutions_started and "Index" in line:
+                    record_start = True
+
+                # Record appropriate data
+                if record_start:
+
+                    # Strip the newline and split on whitespace
+                    summary_line = line.strip().split()
+
+                    if summary_line[0] == "Average":
+                        break
+                    else:
+                        # Otherwise, append the line
+                        summary_lines.append(summary_line)
+
+        # Build the dataframe with col ['Index', 'Tags', 'Score', 'Seq', 'Muts']
+        all_results = pd.DataFrame(summary_lines[1:], columns=summary_lines[0])
+        all_results["Triad_score"] = all_results["Score"].astype(float)
+
+        wt_chars = self.parent_aa
+        reconstructed_combos = [
+            "".join(
+                [char if char != "-" else wt_chars[i] for i, char in enumerate(seq)]
+            )
+            for seq in all_results.Seq.values
+        ]
+        all_results[self._combo_col_name] = reconstructed_combos
+
+        # Get the order
+        all_results["Triad_rank"] = np.arange(1, len(all_results) + 1)
+
+        return all_results[[self._combo_col_name, "Triad_score", "Triad_rank"]]
+
+
     @property
     def triad_mut_dir(self) -> str:
         """
@@ -190,7 +281,7 @@ class TriadData(ZSData):
         struct_ext = "pdb" if "frompdb" in self._structure_dets else "cif"
 
         return os.path.join(
-            self._structure_dir,
+            self._in_structure_dir,
             f"{self.zs_struct_name}.{struct_ext}",
         )
 
@@ -251,133 +342,19 @@ class TriadData(ZSData):
         """
         return self._mut_list
 
-
-class TriadResults(ZSData):
-    """
-    A class for parsing the triad results
-    """
-
-    def __init__(
-        self,
-        input_csv: str,
-        combo_col_name: str = "AAs",
-        var_col_name: str = "var",
-        mut_col_name: str = "mut",
-        pos_col_name: str = "pos",
-        seq_col_name: str = "seq",
-        fit_col_name: str = "fitness",
-        seq_dir: str = "data/seq",
-        zs_dir: str = "zs",
-        output_dir: str = "triad",
-        triad_rawouput_dir: str = "raw_output",
-        triad_processed_dir: str = "processed_output",
-        chain_id: str = "A",
-    ) -> None:
-
-        """
-        Args:
-        """
-
-        super().__init__(
-            input_csv=input_csv,
-            combo_col_name=combo_col_name,
-            var_col_name=var_col_name,
-            mut_col_name=mut_col_name,
-            pos_col_name=pos_col_name,
-            seq_col_name=seq_col_name,
-            fit_col_name=fit_col_name,
-            seq_dir=seq_dir,
-            zs_dir=zs_dir,
-        )
-
-        self._triad_rawouput_dir = checkNgen_folder(
-            os.path.join(zs_dir, output_dir, triad_rawouput_dir)
-        )
-        self._triad_processed_dir = checkNgen_folder(
-            os.path.join(zs_dir, output_dir, triad_processed_dir)
-        )
-
-        print(f"Parsing {self.triad_txt} and save to {self.triad_csv}...")
-
-        # extract triad score into dataframe
-        self._triad_df = self._get_triad_score()
-
-    def _get_triad_score(self) -> float:
-
-        """
-        A function to load the output of a triad analysis and get a score
-
-        Args:
-        - triad_output_file: str, the path to the triad output file
-        - WT_combo: str, the wildtype combo
-        - num_seqs: int, the number of sequences to load
-        """
-
-        # Load the output file
-        with open(self.triad_txt) as f:
-
-            # Set some flags for starting analysis
-            solutions_started = False
-            record_start = False
-
-            # Begin looping over the file
-            summary_lines = []
-            for line in f:
-
-                # Start looking at data once we hit "solution"
-                # if "Solution" in line:
-                if "All sequences:" in line:
-                    solutions_started = True
-
-                # Once we have "Index" we can start recording the rest
-                if solutions_started and "Index" in line:
-                    record_start = True
-
-                # Record appropriate data
-                if record_start:
-
-                    # Strip the newline and split on whitespace
-                    summary_line = line.strip().split()
-
-                    if summary_line[0] == "Average":
-                        break
-                    else:
-                        # Otherwise, append the line
-                        summary_lines.append(summary_line)
-
-        # Build the dataframe with col ['Index', 'Tags', 'Score', 'Seq', 'Muts']
-        all_results = pd.DataFrame(summary_lines[1:], columns=summary_lines[0])
-        all_results["Triad_score"] = all_results["Score"].astype(float)
-
-        wt_chars = self.parent_aa
-        reconstructed_combos = [
-            "".join(
-                [char if char != "-" else wt_chars[i] for i, char in enumerate(seq)]
-            )
-            for seq in all_results.Seq.values
-        ]
-        all_results["AAs"] = reconstructed_combos
-
-        # Get the order
-        all_results["Triad_rank"] = np.arange(1, len(all_results) + 1)
-
-        return all_results[["AAs", "Triad_score", "Triad_rank"]].to_csv(
-            self.triad_csv, index=False
-        )
-
     @property
-    def triad_txt(self) -> str:
-        """
-        A property for the triad txt
-        """
-        return os.path.join(self._triad_rawouput_dir, f"{self.lib_name}.txt")
+    def triad_score_dir(self) -> str:
+        """Folder for csv score files"""
+        return checkNgen_folder(
+            os.path.join(self._output_dir, "score", self._structure_dets)
+        )
 
     @property
     def triad_csv(self) -> str:
         """
         A property for the triad csv
         """
-        return os.path.join(self._triad_processed_dir, f"{self.lib_name}.csv")
+        return os.path.join(self.triad_score_dir, f"{self.lib_name}.csv")
 
     @property
     def triad_df(self) -> pd.DataFrame:
@@ -387,8 +364,10 @@ class TriadResults(ZSData):
         return self._triad_df
 
 
-def run_traid_gen_mut_file(
-    pattern = "data/meta/not_scaled/*.csv", kwargs: dict = {}
+def run_traid(
+    pattern = "data/meta/not_scaled/*.csv",
+    in_structure_dir = "data/structure",
+    kwargs: dict = {}
 ):
     """
     Run the triad gen mut file function for all libraries
@@ -402,25 +381,6 @@ def run_traid_gen_mut_file(
     else:
         lib_list = deepcopy(pattern)
 
-    for lib in lib_list:
-        print(f"Running triad gen mut file for {lib}...")
-        TriadData(input_csv=lib, **kwargs)
-
-
-def run_parse_triad_results(
-    pattern = "data/meta/not_scaled/*.csv", kwargs: dict = {}
-):
-
-    """
-    Run the parse triad results function for all libraries
-
-    Args:
-    """
-    if isinstance(pattern, str):
-        lib_list = sorted(glob(pattern))
-    else:
-        lib_list = deepcopy(pattern)
-
-    for lib in lib_list:
-        print(f"Running parse triad results for {lib}...")
-        TriadResults(input_csv=lib, **kwargs)
+    for lib in tqdm(lib_list):
+        print(f"Running triad for {lib}...")
+        TriadData(input_csv=lib, in_structure_dir=in_structure_dir, **kwargs)
