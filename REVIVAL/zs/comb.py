@@ -23,7 +23,6 @@ class ZSComb(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str,
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -45,7 +44,6 @@ class ZSComb(ZSData):
 
         super().__init__(
             input_csv,
-            scale_fit,
             combo_col_name,
             var_col_name,
             mut_col_name,
@@ -134,8 +132,7 @@ class ZSComb(ZSData):
 
 
 def run_all_combzs(
-    pattern: str = "data/meta/scale2parent/*",
-    scale_fit: str = "parent",
+    pattern: str = "data/meta/not_scaled/*",
     combo_col_name: str = "AAs",
     var_col_name: str = "var",
     mut_col_name: str = "mut",
@@ -169,7 +166,6 @@ def run_all_combzs(
 
         ZSComb(
             input_csv=p,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

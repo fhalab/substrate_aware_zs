@@ -152,7 +152,6 @@ class EVData(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
         ev_model_dir: str = "data/evmodel",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -168,7 +167,6 @@ class EVData(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

@@ -44,7 +44,6 @@ class LigandmpnnData(ZSData):
         docked_struct_dir: str = "data/structure/docked",
         ligandmpnn_main_dir: str = LigandMPNN_MAIN_DIR,  # for running the .py file
         ligandmpnn_model_dir: str = LigandMPNN_MODEL_PARAM_DIR,  # for model .pt file
-        scale_fit: str = "parent",
         chain_id: str = "A",  # the chain for enzyme to be modifed
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -76,7 +75,6 @@ class LigandmpnnData(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

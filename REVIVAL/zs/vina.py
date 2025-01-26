@@ -1924,42 +1924,6 @@ def calculate_centroid(coords: list) -> tuple:
     return centroid
 
 
-# def calculate_chain_centroid(
-#     input_file: str, chain_ids: Union[list, str]
-# ) -> np.ndarray:
-
-#     """
-#     Calculate the geometric center (centroid) of all atoms in the specified chain(s).
-
-#     Args:
-#         input_file (str): Path to the input PDB or CIF file.
-#         chain_ids (list of str): List of chain IDs to calculate the centroid for.
-
-#     Returns:
-#         tuple: The XYZ coordinates of the centroid.
-#     """
-
-#     # Parse the structure
-#     structure = get_protein_structure(input_file)
-
-#     coordinates = []
-#     chain_ids = [cid.upper() for cid in chain_ids]  # Ensure chain IDs are uppercase
-
-#     for model in structure:
-#         for chain in model:
-#             if chain.id.upper() in chain_ids:
-#                 for residue in chain:
-#                     for atom in residue:
-#                         coordinates.append(atom.coord)
-
-#     # Calculate centroid
-#     if coordinates:
-#         centroid = np.mean(coordinates, axis=0)
-#         return np.array(centroid).flatten()
-#     else:
-#         raise ValueError(f"No atoms found for the specified chain(s): {chain_ids}")
-
-
 ###### extract docking scores ######
 
 
@@ -2009,7 +1973,6 @@ class VinaResults(ZSData):
         dock_opt: str,  #  ie "substrate",
         score_only: bool,  # = True,
         vina_struct_dir: str,  # = "vina/chai/struct_joint",
-        scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -2030,7 +1993,6 @@ class VinaResults(ZSData):
         Args:
         - input_csv (str): The input CSV file, with `var_col_name` column
             ie. /disk2/fli/REVIVAL2/data/meta/not_scaled/PfTrpB-4bromo.csv
-        - scale_fit (str): The scaling of the fitness values.
         - combo_col_name (str): The column name for the combo.
         - var_col_name (str): The column name for the variant.
         - mut_col_name (str): The column name for the mutation.
@@ -2050,7 +2012,6 @@ class VinaResults(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

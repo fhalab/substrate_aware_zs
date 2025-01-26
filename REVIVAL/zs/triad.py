@@ -20,7 +20,7 @@ class TriadData(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
+        in_structure_dir: str = "data/structure", # data/structure for frompdb or data/structure/docked for docked
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -28,17 +28,13 @@ class TriadData(ZSData):
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
-        zs_dir: str = "zs",
-        triad_dir: str = "triad",
-        triad_mut_dir: str = "mut_file",
-        triad_struct_dir: str = "struct_file",
+        triad_dir: str = "zs/triad",
         withsub: bool = True,
         chain_id: str = "A",
     ):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,
@@ -47,16 +43,16 @@ class TriadData(ZSData):
             fit_col_name=fit_col_name,
             withsub=withsub,
             seq_dir=seq_dir,
-            zs_dir=zs_dir,
         )
 
-        self._triad_dir = checkNgen_folder(os.path.join(self._zs_dir, triad_dir))
-        self._triad_mut_dir = checkNgen_folder(
-            os.path.join(self._triad_dir, triad_mut_dir)
-        )
-        self._triad_struct_dir = checkNgen_folder(
-            os.path.join(self._triad_dir, triad_struct_dir)
-        )
+        self._in_structure_dir = in_structure_dir
+
+        if not withsub:
+            self._structure_dets = "frompdb"
+        else:
+            self._structure_dets = "docked"
+
+        self._triad_dir = checkNgen_folder(triad_dir)
 
         self._chain_id = chain_id
 
@@ -113,15 +109,38 @@ class TriadData(ZSData):
             chain_id=self._chain_id,
         )
 
+    
+    @property
+    def triad_mut_dir(self) -> str:
+        """
+        A property for the triad mut directory
+        """
+        return checkNgen_folder(
+            os.path.join(self._triad_dir, "mut_file", self._structure_dets)
+        )
+
+    @property
+    def triad_struct_dir(self) -> str:
+        """
+        A property for the triad struct directory
+        """
+        return checkNgen_folder(
+            os.path.join(self._triad_dir, "struct_file", self._structure_dets)
+        )
+    
+    
     @property
     def instruct_file(self) -> str:
+
         """
-        PDB file path to the esmif pdb file
+        PDB file path to the triad pdb file
         """
+
+        struct_ext = "pdb" if self._structure_dets == "frompdb" else "cif"
 
         return os.path.join(
             self._structure_dir,
-            f"{self.zs_struct_name}{os.path.splitext(self.structure_file)[-1]}",
+            f"{self.zs_struct_name}.{struct_ext}",
         )
 
     @property
@@ -131,10 +150,7 @@ class TriadData(ZSData):
         PDB file path to the triad pdb file
         """
 
-        return os.path.join(
-            self._triad_struct_dir,
-            f"{self.zs_struct_name}.pdb",
-        )
+        return os.path.join(self.triad_struct_dir, f"{self.zs_struct_name}.pdb")
 
     @property
     def prefixes(self) -> list:
@@ -151,7 +167,7 @@ class TriadData(ZSData):
         """
         A property for the mut file path
         """
-        return os.path.join(self._triad_mut_dir, f"{self.lib_name}.mut")
+        return os.path.join(self.triad_mut_dir, f"{self.lib_name}.mut")
 
     @property
     def mut_list(self) -> list:
@@ -169,7 +185,6 @@ class TriadResults(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -190,7 +205,6 @@ class TriadResults(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

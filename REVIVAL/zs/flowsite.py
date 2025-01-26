@@ -14,7 +14,8 @@ import pandas as pd
 
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder
+from REVIVAL.global_param import ENZYME_INFO_DICT
+from REVIVAL.util import checkNgen_folder, calculate_ligand_centroid
 
 
 FLOWSITE_MAIN_DIR = "/disk2/fli/FlowSite"
@@ -79,7 +80,6 @@ class FlowsiteData(ZSData):
     def __init__(
         self,
         input_csv=str,
-        scale_fit: str = "parent",
         combo_col_name: str = "AAs",
         fit_col_name: str = "fitness",
         chain_id: str = "A",
@@ -109,7 +109,6 @@ class FlowsiteData(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             fit_col_name=fit_col_name,
         )
@@ -129,8 +128,9 @@ class FlowsiteData(ZSData):
         )
 
         self._flowsite_params = flowsite_params
+        self._flowsite_inference_opt = flowsite_inference_opt
 
-        self._flowsite_dets = f"{flowsite_inference_opt}_model{flowsite_model_opt}-{dock_opt}-{cofactor_dets}"
+        self._flowsite_dets = f"{self._flowsite_inference_opt}_model{flowsite_model_opt}-{dock_opt}-{cofactor_dets}"
 
         if not regen and os.path.exists(self.raw_npy_path):
             print(
@@ -213,8 +213,6 @@ class FlowsiteData(ZSData):
             os.path.abspath(self.raw_npy_dir),
             "--protein",
             os.path.abspath(self.pdb_path),
-            "--pocket_def_residues",
-            str(self.mutated_pos),
             "--smiles",
             smiles,
             "--design_residues",
@@ -260,6 +258,21 @@ class FlowsiteData(ZSData):
             "--pocket_residue_cutoff",
             str(self._flowsite_params["pocket_residue_cutoff"]),
         ]
+
+        if self._flowsite_inference_opt == "pocket_def_center":
+            cli_cmd.extend(
+                [
+                    "--pocket_def_center",
+                    self.ligand_centroid,
+                ]
+            )
+        else:
+            cli_cmd.extend(
+                [
+                    "--pocket_def_residues",
+                    str(self.mutated_pos),
+                ]
+            )
 
         process = subprocess.run(cli_cmd, capture_output=True, text=True)
 
@@ -332,6 +345,16 @@ class FlowsiteData(ZSData):
         )
 
     @property
+    def ligand_centroid(self) -> np.ndarray:
+        """
+        Extracts the ligand centroid from the input pdb file.
+        """
+        return ",".join(map(str,calculate_ligand_centroid(
+            pdb_file=self.pdb_path,
+            ligand_info=ENZYME_INFO_DICT[self.protein_name]["ligand-info"]
+        )))
+
+    @property
     def raw_npy_dir(self) -> str:
         """
         Path for the output .npy file under the `raw_output` subfolder.
@@ -398,7 +421,11 @@ class FlowsiteData(ZSData):
         return self._score_df
 
 
-def run_flowsite(pattern: str | list = None, kwargs: dict = {}):
+def run_flowsite(
+    pattern: str | list = None,
+    flowsite_inference_opt: str = "pocket_def_residues",
+    flowsite_model_opt: int = 2,
+    kwargs: dict = {}):
 
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
@@ -406,4 +433,9 @@ def run_flowsite(pattern: str | list = None, kwargs: dict = {}):
         lib_list = deepcopy(pattern)
 
     for lib in tqdm(lib_list):
-        FlowsiteData(input_csv=lib, **kwargs)
+        FlowsiteData(
+            input_csv=lib,
+            flowsite_inference_opt=flowsite_inference_opt,
+            flowsite_model_opt=flowsite_model_opt,
+            **kwargs
+        )

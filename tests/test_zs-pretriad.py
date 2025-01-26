@@ -22,8 +22,7 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # run_traid_gen_mut_file("data/meta/not_scaled/D*.csv", kwargs={"withsub": False})
-    run_traid_gen_mut_file("data/meta/not_scaled/TmT*.csv", kwargs={"withsub": False})
+    run_traid_gen_mut_file("data/meta/not_scaled/*.csv", kwargs={"withsub": False})
 
     """run_traid_gen_mut_file(
     pattern: str | list = "data/meta/scale2parent/*.csv"

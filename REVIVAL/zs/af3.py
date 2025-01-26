@@ -25,7 +25,6 @@ class AF3Struct(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -46,7 +45,6 @@ class AF3Struct(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

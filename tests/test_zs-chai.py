@@ -61,9 +61,9 @@ if __name__ == "__main__":
     # )
 
     run_gen_chai_structure([
-        "data/meta/not_scaled/PfTrpB-4bromo.csv",
-        "data/meta/not_scaled/Rma-CB.csv",
-        "data/meta/not_scaled/Rma-CSi.csv",
+        # "data/meta/not_scaled/PfTrpB-4bromo.csv",
+        # "data/meta/not_scaled/Rma-CB.csv",
+        # "data/meta/not_scaled/Rma-CSi.csv",
         "data/meta/not_scaled/ParLQ.csv",
     ],
     gen_opt="joint-cofactor-no-substrate",

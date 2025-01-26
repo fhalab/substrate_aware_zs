@@ -25,7 +25,6 @@ class ChaiStruct(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "not_scaled",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -47,7 +46,6 @@ class ChaiStruct(ZSData):
 
         Args:
         - input_csv, str: The path to the input csv file
-        - scale_fit, str: The scale to fit the fitness to
         - combo_col_name, str: The column name for the combo
         - var_col_name, str: The column name for the variant
         - mut_col_name, str: The column name for the mutation
@@ -66,7 +64,6 @@ class ChaiStruct(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,

@@ -5,7 +5,6 @@ Preprocess the input data
 from __future__ import annotations
 
 import os
-from ast import literal_eval
 from glob import glob
 from tqdm import tqdm
 from copy import deepcopy
@@ -535,7 +534,7 @@ class ZSData(LibData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str,
+        scale_fit: str = "parent",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -556,7 +555,6 @@ class ZSData(LibData):
             ie [39, 40]
 
         input_csv: str,
-        scale_fit: str,
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         seq_col_name: str = "seq",

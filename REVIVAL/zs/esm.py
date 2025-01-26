@@ -28,7 +28,6 @@ class ESM(ZSData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str,
         esm_model_name: str = "esm2_t33_650M_UR50D",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -44,7 +43,6 @@ class ESM(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
             mut_col_name=mut_col_name,
@@ -234,7 +232,6 @@ class ESM(ZSData):
 
 def run_all_esm(
     pattern: str | list = "data/meta/not_scaled/*",
-    scale_fit: str = "none",
     esm_model_name: str = "esm2_t33_650M_UR50D",
     combo_col_name: str = "AAs",
     var_col_name: str = "var",
@@ -263,7 +260,6 @@ def run_all_esm(
 
         ESM(
             input_csv=p,
-            scale_fit=scale_fit,
             esm_model_name=esm_model_name,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,

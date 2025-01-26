@@ -422,7 +422,6 @@ class HydroData(ZSData):
         self,
         input_csv: str,
         plip_dir: str,  # ie zs/plip/af3/struct_joint
-        scale_fit: str = "parent",
         var_col_name: str = "var",
         combo_col_name: str = "AAs",
         fit_col_name: str = "fitness",
@@ -433,7 +432,6 @@ class HydroData(ZSData):
 
         super().__init__(
             input_csv=input_csv,
-            scale_fit=scale_fit,
             var_col_name=var_col_name,
             combo_col_name=combo_col_name,
             fit_col_name=fit_col_name,
