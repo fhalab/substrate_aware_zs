@@ -3,6 +3,7 @@ A script for preprocessing the data for the triad and extract energies
 """
 
 import os
+import subprocess
 
 from copy import deepcopy
 from glob import glob
@@ -13,7 +14,10 @@ import numpy as np
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, get_file_name, get_chain_structure
+from REVIVAL.util import checkNgen_folder, run_sh_command, get_file_name, get_chain_structure
+
+
+TRIAD_DIR = "/disk2/fli/triad/triad-2.1.3"
 
 
 class TriadData(ZSData):
@@ -28,9 +32,11 @@ class TriadData(ZSData):
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
-        triad_dir: str = "zs/triad",
+        triad_dir: str = TRIAD_DIR,
+        output_dir: str = "zs/triad",
         withsub: bool = True,
         chain_id: str = "A",
+        num_cpus: int = 64,
     ):
 
         super().__init__(
@@ -46,19 +52,25 @@ class TriadData(ZSData):
         )
 
         self._in_structure_dir = in_structure_dir
+        self._triad_dir = triad_dir
 
         if not withsub:
             self._structure_dets = "frompdb"
         else:
             self._structure_dets = "docked"
 
-        self._triad_dir = checkNgen_folder(triad_dir)
+        self._output_dir = checkNgen_folder(output_dir)
 
         self._chain_id = chain_id
+        self._num_cpus = num_cpus
 
         self._mut_list = self._generate_mut_file()
 
-        self._get_chain_structure()
+        # get the chain structure and run triad preparation
+        self._prepare_initial_structure()
+
+        # run triad to generate mutant structures and calculate energies
+        self._run_triad()
 
     def _generate_mut_file(self) -> None:
 
@@ -95,39 +107,65 @@ class TriadData(ZSData):
 
         return mut_list
 
-    def _get_chain_structure(self) -> str:
 
-        """
-        A function to get the chain structure
-        """
+    def _prepare_initial_structure(self):
+        """Run the proteinProcess.py script to prepare the initial structure."""
 
         print(f"Getting chain {self._chain_id} structure for {self.instruct_file}...")
 
-        return get_chain_structure(
+        # first get the chain structure
+        get_chain_structure(
             input_file_path=self.instruct_file,
             output_file_path=self.triad_instruct_file,
             chain_id=self._chain_id,
         )
 
-    
+        # then run traid preparation
+        run_sh_command(
+            f"{self._triad_dir}/triad.sh {self._triad_dir}/apps/preparation/proteinProcess.py "
+            f"-struct {os.path.abspath(self.triad_instruct_file)} "
+            f"-crosetta"
+        )
+
+        # ${TRIAD_DIR}/triad.sh ${TRIAD_DIR}/apps/preparation/proteinProcess.py -struct ${ORIG_PDB_DIR}/${NAME}.pdb -crosetta 
+
+
+    def _run_triad(self):
+        """Run the triad script with the given parameters."""
+
+        # change work dir
+        os.chdir(os.path.abspath(self.triad_structmut_dir))
+
+        run_sh_command(
+            f"{self._triad_dir}/tools/openmpi/bin/mpirun -np {str(self._num_cpus)} "
+            f"{self._triad_dir}/triad.sh {self._triad_dir}/apps/cleanSequences.py "
+            f"-struct {os.path.abspath(self.triad_prepped_file)} "
+            f"-rosetta "
+            f"-inputSequenceFormat pid "
+            f"-inputSequences {self.mut_path} "
+            f"-floatNearbyResidues "
+            f"-numPDBs={str(self.input_df_length-1)} "
+            f"-soft 2>&1 | tee {self.triad_sum_txt}"
+            )
+
+
     @property
     def triad_mut_dir(self) -> str:
         """
         A property for the triad mut directory
         """
         return checkNgen_folder(
-            os.path.join(self._triad_dir, "mut_file", self._structure_dets)
+            os.path.join(self._output_dir, "mut_file", self._structure_dets)
         )
 
     @property
-    def triad_struct_dir(self) -> str:
+    def triad_prepstruct_dir(self) -> str:
         """
         A property for the triad struct directory
         """
         return checkNgen_folder(
-            os.path.join(self._triad_dir, "struct_file", self._structure_dets)
+            os.path.join(self._output_dir, "struct_prep", self._structure_dets, self.zs_struct_name)
         )
-    
     
     @property
     def instruct_file(self) -> str:
@@ -150,7 +188,31 @@ class TriadData(ZSData):
         PDB file path to the triad pdb file
         """
 
-        return os.path.join(self.triad_struct_dir, f"{self.zs_struct_name}.pdb")
+        return os.path.join(self.triad_prepstruct_dir, f"{self.zs_struct_name}.pdb")
+
+    @property
+    def triad_prepped_file(self) -> str:
+        """
+        PDB file path to the triad pdb file
+        """
+
+        return self.triad_instruct_file.replace(".pdb", "_prepared.pdb")
+
+    @property
+    def triad_structmut_dir(self) -> str:
+        """
+        A property for the triad output directory
+        """
+        return checkNgen_folder(
+            os.path.join(self._output_dir, "struct_mut", self._structure_dets, self.lib_name)
+        )
+    
+    @property
+    def triad_sum_txt(self) -> str:
+        """
+        A property for the triad summary txt file path
+        """
+        return os.path.join(self.triad_structmut_dir, f"{self.lib_name}.txt")
 
     @property
     def prefixes(self) -> list:
@@ -193,7 +255,7 @@ class TriadResults(ZSData):
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
         zs_dir: str = "zs",
-        triad_dir: str = "triad",
+        output_dir: str = "triad",
         triad_rawouput_dir: str = "raw_output",
         triad_processed_dir: str = "processed_output",
         chain_id: str = "A",
@@ -216,10 +278,10 @@ class TriadResults(ZSData):
         )
 
         self._triad_rawouput_dir = checkNgen_folder(
-            os.path.join(zs_dir, triad_dir, triad_rawouput_dir)
+            os.path.join(zs_dir, output_dir, triad_rawouput_dir)
         )
         self._triad_processed_dir = checkNgen_folder(
-            os.path.join(zs_dir, triad_dir, triad_processed_dir)
+            os.path.join(zs_dir, output_dir, triad_processed_dir)
         )
 
         print(f"Parsing {self.triad_txt} and save to {self.triad_csv}...")

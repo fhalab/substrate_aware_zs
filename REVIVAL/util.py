@@ -630,3 +630,11 @@ def add_hydrogens_to_smiles(smiles: str) -> str:
     smiles_with_h = Chem.MolToSmiles(mol_with_h)  # Convert back to SMILES
     
     return smiles_with_h
+
+
+def run_sh_command(command):
+    """Run a shell command."""
+    try:
+        subprocess.run(command, shell=True, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred: {e}")

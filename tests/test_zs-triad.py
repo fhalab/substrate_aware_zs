@@ -15,7 +15,7 @@ if __name__ == "__main__":
     # log outputs
     f = open(
         os.path.join(
-            checkNgen_folder("logs/zs/triad/pre"),
+            checkNgen_folder("logs/zs/triad"),
             f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out",
         ),
         "w",
