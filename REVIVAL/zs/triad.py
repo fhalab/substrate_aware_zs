@@ -14,10 +14,10 @@ import numpy as np
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, run_sh_command, get_file_name, get_chain_structure
+from REVIVAL.util import checkNgen_folder, run_sh_command, get_file_name, get_chain_structure, remove_hetatm
 
 
-TRIAD_DIR = "/disk2/fli/triad/triad-2.1.3"
+TRIAD_DIR = "/home/bwittmann/triad/triad-2.1.3"
 
 
 class TriadData(ZSData):
@@ -35,6 +35,7 @@ class TriadData(ZSData):
         triad_dir: str = TRIAD_DIR,
         output_dir: str = "zs/triad",
         withsub: bool = True,
+        cleanup: bool = True,
         chain_id: str = "A",
         num_cpus: int = 64,
     ):
@@ -53,9 +54,12 @@ class TriadData(ZSData):
 
         self._in_structure_dir = in_structure_dir
         self._triad_dir = triad_dir
+        self._cleanup = cleanup
 
         if not withsub:
             self._structure_dets = "frompdb"
+            if cleanup:
+                self._structure_dets += "-cleanup"
         else:
             self._structure_dets = "docked"
 
@@ -71,6 +75,7 @@ class TriadData(ZSData):
 
         # run triad to generate mutant structures and calculate energies
         self._run_triad()
+
 
     def _generate_mut_file(self) -> None:
 
@@ -120,11 +125,21 @@ class TriadData(ZSData):
             chain_id=self._chain_id,
         )
 
+        temp_pdb = self.triad_instruct_file.replace(".pdb", "_temp.pdb")
+
+        # clean up hetatm
+        if self._cleanup:
+            remove_hetatm(input_pdb=self.triad_instruct_file, output_pdb=temp_pdb)
+        
+            # rename temp to overwrite the self.triad_instruct_file
+            os.rename(temp_pdb, self.triad_instruct_file)
+        
         # then run traid preparation
         run_sh_command(
             f"{self._triad_dir}/triad.sh {self._triad_dir}/apps/preparation/proteinProcess.py "
             f"-struct {os.path.abspath(self.triad_instruct_file)} "
-            f"-crosetta"
+            f"-crosetta",
+            working_dir=os.path.abspath(self.triad_prepstruct_dir)
         )
 
         # ${TRIAD_DIR}/triad.sh ${TRIAD_DIR}/apps/preparation/proteinProcess.py -struct ${ORIG_PDB_DIR}/${NAME}.pdb -crosetta 
@@ -133,19 +148,17 @@ class TriadData(ZSData):
     def _run_triad(self):
         """Run the triad script with the given parameters."""
 
-        # change work dir
-        os.chdir(os.path.abspath(self.triad_structmut_dir))
-
         run_sh_command(
             f"{self._triad_dir}/tools/openmpi/bin/mpirun -np {str(self._num_cpus)} "
             f"{self._triad_dir}/triad.sh {self._triad_dir}/apps/cleanSequences.py "
             f"-struct {os.path.abspath(self.triad_prepped_file)} "
             f"-rosetta "
             f"-inputSequenceFormat pid "
-            f"-inputSequences {self.mut_path} "
+            f"-inputSequences {os.path.abspath(self.mut_path)} "
             f"-floatNearbyResidues "
             f"-numPDBs={str(self.input_df_length-1)} "
-            f"-soft 2>&1 | tee {self.triad_sum_txt}"
+            f"-soft 2>&1 | tee {os.path.abspath(self.triad_sum_txt)}",
+            working_dir=os.path.abspath(self.triad_structmut_dir)
             )
 
 
@@ -174,7 +187,7 @@ class TriadData(ZSData):
         PDB file path to the triad pdb file
         """
 
-        struct_ext = "pdb" if self._structure_dets == "frompdb" else "cif"
+        struct_ext = "pdb" if "frompdb" in self._structure_dets else "cif"
 
         return os.path.join(
             self._structure_dir,
@@ -375,7 +388,7 @@ class TriadResults(ZSData):
 
 
 def run_traid_gen_mut_file(
-    pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}
+    pattern = "data/meta/not_scaled/*.csv", kwargs: dict = {}
 ):
     """
     Run the triad gen mut file function for all libraries
@@ -385,7 +398,7 @@ def run_traid_gen_mut_file(
     """
 
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
 
@@ -395,7 +408,7 @@ def run_traid_gen_mut_file(
 
 
 def run_parse_triad_results(
-    pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}
+    pattern = "data/meta/not_scaled/*.csv", kwargs: dict = {}
 ):
 
     """
@@ -404,7 +417,7 @@ def run_parse_triad_results(
     Args:
     """
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
 

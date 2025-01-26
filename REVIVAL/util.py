@@ -446,6 +446,60 @@ def replace_residue_names_auto(
             outfile.write(line)
 
 
+from Bio.PDB import PDBParser, PDBIO, Select
+
+class ResidueRemover(Select):
+    def __init__(self, residues_to_remove):
+        """
+        residues_to_remove: list of residue names to remove (e.g., ['PLS', 'NA'])
+        """
+        self.residues_to_remove = residues_to_remove
+
+    def accept_residue(self, residue):
+        """Return False if the residue should be removed."""
+        if residue.get_resname() in self.residues_to_remove:
+            return False
+        return True
+
+
+def remove_residues_from_pdb(
+    input_pdb: str, 
+    output_pdb: str, 
+    residues_to_remove: list
+):
+    """
+    Remove specified residues from a PDB file.
+
+    Args:
+        input_pdb (str): Path to the input PDB file.
+        output_pdb (str): Path to save the modified PDB file.
+        residues_to_remove (list): List of residue names to remove (e.g., ['PLS', 'NA']).
+    """
+    # Parse the input PDB file
+    parser = PDBParser(QUIET=True)
+    structure = parser.get_structure("protein", input_pdb)
+
+    # Save the modified structure to a new PDB file
+    io = PDBIO()
+    io.set_structure(structure)
+    io.save(output_pdb, select=ResidueRemover(residues_to_remove))
+
+
+def remove_hetatm(input_pdb: str, output_pdb: str):
+    """
+    Remove all HETATM entries from a PDB file.
+
+    Args:
+        input_pdb (str): Path to the input PDB file.
+        output_pdb (str): Path to save the modified PDB file.
+    """
+    with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
+        for line in infile:
+            # Write the line to the output file if it doesn't start with "HETATM"
+            if not line.startswith("HETATM"):
+                outfile.write(line)
+
+
 def find_missing_str(longer: str, shorter: str) -> [str, str]:
     """
     A function for finding the missing part of a string
@@ -632,9 +686,15 @@ def add_hydrogens_to_smiles(smiles: str) -> str:
     return smiles_with_h
 
 
-def run_sh_command(command):
-    """Run a shell command."""
+def run_sh_command(command, working_dir=None):
+    """
+    Run a shell command in a specified directory.
+
+    Parameters:
+    - command: The shell command to execute.
+    - working_dir: The directory where the command will be run (optional).
+    """
     try:
-        subprocess.run(command, shell=True, check=True)
+        subprocess.run(command, shell=True, check=True, cwd=working_dir)
     except subprocess.CalledProcessError as e:
         print(f"Error occurred: {e}")
