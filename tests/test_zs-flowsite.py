@@ -25,17 +25,11 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_flowsite(
-        pattern="data/meta/not_scaled/*.csv",
-        flowsite_inference_opt = "pocket_def_residues",
-        flowsite_model_opt=1
-    )
-
     for opt in [1,2]:
         run_flowsite(
             pattern="data/meta/not_scaled/*.csv",
-            flowsite_inference_opt = "pocket_def_center",
+            flowsite_inference_opt = "pocket_def_residues",
             flowsite_model_opt=opt
-        )   
+        )
     
     f.close()

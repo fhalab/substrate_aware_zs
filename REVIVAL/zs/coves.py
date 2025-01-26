@@ -1133,7 +1133,7 @@ def run_coves(
     )
 
     if withsub:
-        pdb_file = os.path.join(data_dir, structure_dir, lib + ".pdb")
+        pdb_file = os.path.join(data_dir, structure_dir, "docked", lib + ".cif")
     else:
         pdb_file = os.path.join(data_dir, structure_dir, LIB_INFO_DICT[lib]["enzyme"] + ".pdb")
 

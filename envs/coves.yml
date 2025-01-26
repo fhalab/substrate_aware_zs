@@ -11,6 +11,7 @@ channels:
 dependencies:
   - python=3.9
   - numpy # =1.19.4
+  - pandas
   - pip
   - pyg
   - pytorch # =1.8.1
@@ -24,3 +25,8 @@ dependencies:
     - atom3d # =0.2.1
     - blackcellmagic
     - rdkit
+
+# troubleshoot
+# pip install torch==2.1.0+cu121 torchvision==0.16.0+cu121 torchaudio==2.1.0+cu121 -f https://download.pytorch.org/whl/torch_stable.html
+# pip install torch-cluster -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
+# pip install numpy==1.23.5
