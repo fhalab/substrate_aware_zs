@@ -97,6 +97,7 @@ class ChaiStruct(ZSData):
         self._ifrerun = ifrerun
         self._torch_device = torch_device
 
+        # TODO can make the following more concise
         if samesub:
             self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
             self._sub_dets = self.lib_info["substrate"]

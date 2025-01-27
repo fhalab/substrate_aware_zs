@@ -541,6 +541,12 @@ class ZSData(LibData):
         pos_col_name: str = "pos",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
+        sub_col_name: str = "substrate",
+        subsmiles_col_name: str = "substrate_smiles",
+        cof_col_name: str = "cofactor",
+        cofsmiles_col_name: str = "cofactor_smiles",
+        joint_col_name: str = "joint",
+        jointsmiles_col_name: str = "joint_smiles",
         protein_name: str = "",
         withsub: bool = True,
         seq_dir: str = "data/seq",
@@ -579,6 +585,11 @@ class ZSData(LibData):
 
         self._mut_col_name = mut_col_name
         self._pos_col_name = pos_col_name
+        self._sub_col_name = sub_col_name
+        self._subsmiles_col_name = subsmiles_col_name
+        self._cof_col_name = cof_col_name
+        self._cofsmiles_col_name = cofsmiles_col_name
+        self._joint_col_name = joint_col_name
         self._withsub = withsub
 
         self._zs_dir = checkNgen_folder(zs_dir)

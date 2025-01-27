@@ -57,8 +57,6 @@ if __name__ == "__main__":
     #     gpu_id="0"
     # )
 
-
-
     # run_af3_struct([
     #     "data/meta/not_scaled/PfTrpB-4bromo.csv",
     #     "data/meta/not_scaled/Rma-CB.csv",
@@ -69,15 +67,37 @@ if __name__ == "__main__":
     # gpu_id="0"
     # )
 
+    # run_af3_struct([
+    #     "data/meta/not_scaled/PfTrpB-4bromo.csv",
+    #     "data/meta/not_scaled/Rma-CB.csv",
+    #     "data/meta/not_scaled/Rma-CSi.csv",
+    #     "data/meta/not_scaled/ParLQ.csv",
+    # ],
+    # gen_opt="joint-cofactor-no-substrate",
+    # cofactor_dets="inactivated-cofactor",
+    # gpu_id="0"
+    # )
+
     run_af3_struct([
-        "data/meta/not_scaled/PfTrpB-4bromo.csv",
-        "data/meta/not_scaled/Rma-CB.csv",
-        "data/meta/not_scaled/Rma-CSi.csv",
-        "data/meta/not_scaled/ParLQ.csv",
+        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
+        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
     ],
-    gen_opt="joint-cofactor-no-substrate",
-    cofactor_dets="inactivated-cofactor",
-    gpu_id="0"
+    gen_opt="joint",
+    cofactor_dets="cofactor",
+    gpu_id="0",
+    samesub=False,
+    kwargs={"af3_dir": "af3_substratescope"}
+    )
+
+    run_af3_struct([
+        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
+        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
+    ],
+    gen_opt="seperate",
+    cofactor_dets="cofactor",
+    gpu_id="0",
+    samesub=False,
+    kwargs={"af3_dir": "af3_substratescope"}
     )
 
     # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_joint")

@@ -36,6 +36,7 @@ class AF3Struct(ZSData):
         af3_dir: str = "af3",
         gen_opt: str = "joint",
         cofactor_dets: str = "cofactor",
+        samesub: bool = False,
         ifrerun: bool = False,
         full_model_path: str = "/disk2/fli/af3_inference/model",
         full_db_path: str = "/disk2/fli/af3_inference/databases",
@@ -66,11 +67,16 @@ class AF3Struct(ZSData):
 
         self._af3_dir = checkNgen_folder(os.path.join(self._zs_dir, f"{af3_dir}"))
 
+        if self.lib_name not in LIB_INFO_DICT:
+            protein_name = self.lib_name.split("-")[0]
+        else:
+            protein_name = self.protein_name
+
         self._af3_msa_insubdir = checkNgen_folder(
-            os.path.join(self._af3_dir, "msa_in", self.protein_name)
+            os.path.join(self._af3_dir, "msa_in", protein_name)
         )
         self._af3_msa_subdir = checkNgen_folder(
-            os.path.join(self._af3_dir, "msa", self.protein_name)
+            os.path.join(self._af3_dir, "msa", protein_name)
         )
 
         self._af3_json_subdir = checkNgen_folder(
@@ -80,17 +86,6 @@ class AF3Struct(ZSData):
         self._af3_struct_subdir = checkNgen_folder(
             os.path.join(self._af3_dir, f"struct_{self._gen_opt}", self.lib_name)
         )
-
-        self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
-        self._sub_dets = self.lib_info["substrate"]
-
-        self._cofactor_smiles = canonicalize_smiles(
-            ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
-        )
-        self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
-
-        self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
-        self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
 
         # Parallelizing MSA generation only
         with concurrent.futures.ProcessPoolExecutor(
@@ -112,18 +107,59 @@ class AF3Struct(ZSData):
                 except Exception as e:
                     print(f"Error in parallel execution: {e}")
 
-        # now do the inferences and the _gen_var_msa step will simply check the path
-        for (
-            var,
-            seq,
-        ) in tqdm(self.df[[self._var_col_name, self._seq_col_name]].values):
+        if samesub:
+            self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
+            self._sub_dets = self.lib_info["substrate"]
 
-            rename_var = var.replace(":", "_")
-
-            var_msa_outpath = self._gen_var_msa(var=rename_var, seq=seq)
-            self._run_var_inference(
-                var=rename_var, seq=seq, var_msa_outpath=var_msa_outpath
+            self._cofactor_smiles = canonicalize_smiles(
+                ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
             )
+            self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
+
+            self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
+            self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
+
+            # now do the inferences and the _gen_var_msa step will simply check the path
+            for (
+                var,
+                seq,
+            ) in tqdm(self.df[[self._var_col_name, self._seq_col_name]].values):
+
+                rename_var = var.replace(":", "_")
+
+                var_msa_outpath = self._gen_var_msa(var=rename_var, seq=seq)
+                self._run_var_inference(
+                    var=rename_var, seq=seq, var_msa_outpath=var_msa_outpath
+                )
+
+        else:
+            for (var, seq, sub, sub_smiles, cofactor, cofactor_smiles, rxn_id,) in tqdm(
+                self.df[
+                    [
+                        self._var_col_name,
+                        self._seq_col_name,
+                        "substrate",
+                        "substrate-smiles",
+                        "cofactor",
+                        "cofactor-smiles",
+                        "rxn_id",
+                    ]
+                ].values
+            ):
+
+                rename_var = var.replace(":", "_")
+
+                var_msa_outpath = self._gen_var_msa(var=rename_var, seq=seq)
+                self._run_var_diffsub_inference(
+                    var=rename_var,
+                    seq=seq,
+                    var_msa_outpath=var_msa_outpath,
+                    sub=sub,
+                    sub_smiles=sub_smiles,
+                    cofactor=cofactor,
+                    cofactor_smiles=cofactor_smiles,
+                    rxn_id=rxn_id,
+                )
 
     def _gen_var_msa(self, var, seq):
 
@@ -259,9 +295,9 @@ class AF3Struct(ZSData):
         }
         if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
 
-                # do nothing
-                pass
-            
+            # do nothing
+            pass
+
         elif self._gen_opt == "substrate-no-cofactor":
 
             # add substrate
@@ -372,11 +408,158 @@ class AF3Struct(ZSData):
             )
             print(f"Error: {e}")
 
+    def _run_var_diffsub_inference(
+        self,
+        var,
+        seq,
+        var_msa_outpath,
+        sub,
+        sub_smiles,
+        cofactor,
+        cofactor_smiles,
+        rxn_id,
+    ):
+
+        """
+        A method to generate the AlphaFold3 JSON files for each variant.
+        """
+
+        var_name = var.lower() + "_" + str(rxn_id).lower()
+
+        var_dir = os.path.join(self._af3_struct_subdir, var_name)
+
+        # the output cif file
+        model_cif = os.path.join(var_dir, f"{var_name}_model.cif")
+
+        # del the folder if the model is not there but the folder exists
+        if os.path.exists(var_dir) and not os.path.exists((model_cif)):
+            os.system(f"sudo rm -r {var_dir}")
+
+        # check if the output model exists and ifrerun is False
+        if os.path.exists(model_cif) and not self._ifrerun:
+            print(
+                f"Structures for {var_name} already exist at {self._af3_struct_subdir}. Skipping..."
+            )
+            return
+
+        msa_json = load_json(var_msa_outpath).get("sequences", [])[0].get("protein", {})
+
+        # Create the JSON structure
+        json_data = {
+            "name": f"{var_name}",
+            "sequences": [
+                {
+                    "protein": {
+                        "id": "A",
+                        "sequence": f"{seq}",
+                        "modifications": msa_json.get("modifications", None),
+                        "unpairedMsa": msa_json.get("unpairedMsa", None),
+                        "pairedMsa": msa_json.get("pairedMsa", None),
+                        "templates": msa_json.get("templates", None),
+                    }
+                }
+            ],
+            "modelSeeds": [1],
+            "dialect": "alphafold3",
+            "version": 2,
+        }
+        if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
+
+            # do nothing
+            pass
+
+        elif self._gen_opt == "substrate-no-cofactor":
+
+            # add substrate
+            json_data["sequences"].append({"ligand": {"id": "B", "smiles": sub_smiles}})
+
+        elif self._gen_opt == "joint-cofactor-no-substrate":
+
+            json_data["sequences"].append(
+                {"ligand": {"id": "C", "smiles": cofactor_smiles}}
+            )
+
+        elif self._gen_opt == "seperate":
+
+            # add substrate
+            json_data["sequences"].append({"ligand": {"id": "B", "smiles": sub_smiles}})
+
+            # add cofactor
+            json_data["sequences"].append(
+                {"ligand": {"id": "C", "smiles": cofactor_smiles}}
+            )
+
+        else:
+
+            joint_smiles = sub_smiles + "." + cofactor_smiles
+
+            json_data["sequences"].append(
+                {"ligand": {"id": "B", "smiles": joint_smiles}}
+            )
+
+        # Save each JSON to a separate file
+        json_file_path = os.path.join(self._af3_json_subdir, f"{var_name}.json")
+        with open(json_file_path, "w") as json_file:
+            json.dump(json_data, json_file, indent=4)
+            print(f"JSON file saved to {json_file_path}")
+
+        # run the docker command
+        docker_command = [
+            "sudo",
+            "docker",
+            "run",
+            # "-it",
+            # "--env", f"CUDA_VISIBLE_DEVICES={self._gpu_id}",
+            "--volume",
+            f"{os.path.abspath(os.path.dirname(json_file_path))}:/root/af_input",
+            "--volume",
+            f"{os.path.abspath(self._af3_struct_subdir)}:/root/af_output",
+            "--volume",
+            f"{self._full_model_path}:/root/models",
+            "--volume",
+            f"{self._full_db_path}:/root/public_databases",
+            "--gpus",
+            f"device={self._gpu_id}",
+            # "all",
+            "alphafold3",
+            "python",
+            "run_alphafold.py",
+            f"--json_path=/root/af_input/{os.path.basename(json_file_path)}",
+            "--model_dir=/root/models",
+            "--output_dir=/root/af_output",
+            "--run_data_pipeline=False",
+            "--run_inference=True",
+        ]
+
+        # Log file for the output
+        log_file_path = json_file_path.replace(".json", ".log")
+
+        try:
+            # Open the log file
+            with open(log_file_path, "w") as log_file:
+                # Run the Docker command using subprocess
+                result = subprocess.run(
+                    docker_command,
+                    check=True,
+                    text=True,
+                    stdout=log_file,  # Redirect stdout to log file
+                    stderr=log_file,  # Redirect stderr to log file
+                )
+            print(
+                f"Docker command executed successfully. Logs saved to {log_file_path}"
+            )
+        except subprocess.CalledProcessError as e:
+            print(
+                f"Error occurred while executing Docker command. See logs in {log_file_path}"
+            )
+            print(f"Error: {e}")
+
 
 def run_af3_struct(
     pattern: str | list = "data/meta/not_scaled/*.csv",
     gen_opt: str = "joint",
     cofactor_dets: str = "cofactor",
+    samesub: bool = False,
     gpu_id: str = "0",
     kwargs: dict = {},
 ):
@@ -396,7 +579,14 @@ def run_af3_struct(
 
     for lib in lib_list:
         print(f"Running AF3 for {lib}...")
-        AF3Struct(input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs)
+        AF3Struct(
+            input_csv=lib,
+            gen_opt=gen_opt,
+            cofactor_dets=cofactor_dets,
+            samesub=samesub,
+            gpu_id=gpu_id,
+            **kwargs,
+        )
 
 
 def extract_site_scores(json_file_path, sites):
@@ -412,12 +602,14 @@ def extract_site_scores(json_file_path, sites):
     """
     # Load the JSON file
     data = load_json(json_file_path)
-    
+
     # Extract scores (PLDDT values) from the "atom_plddts" field
     plddt_scores = data.get("atom_plddts", [])
-    
+
     # Extract scores for the specified sites
-    return np.array([plddt_scores[site - 1] for site in sites if site <= len(plddt_scores)]).mean()
+    return np.array(
+        [plddt_scores[site - 1] for site in sites if site <= len(plddt_scores)]
+    ).mean()
 
 
 # TODO make a class
@@ -468,7 +660,7 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     output_dir = checkNgen_folder(
         os.path.dirname(mut_structure_dir).replace("struct", score_dir_name)
     )
-    
+
     lib_name = os.path.basename(mut_structure_dir)
     lib_sites = list(LIB_INFO_DICT[lib_name]["positions"].values())
 
@@ -506,9 +698,7 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                 rep_json = os.path.join(
                     subfolder, f"{var_name}_summary_confidences.json"
                 )
-                rep_atom_json = os.path.join(
-                    subfolder, f"{var_name}_confidences.json"
-                )
+                rep_atom_json = os.path.join(subfolder, f"{var_name}_confidences.json")
             else:
                 # zs/af3/struct_joint/ParLQ/f89a/seed-1_sample-0/summary_confidences.json
                 rep_json = os.path.join(
@@ -525,7 +715,9 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                 # Extract the score data for this replicate
                 for key in overall_keys:
                     var_data[f"{key}_{rep_index}"] = json_dict[key]
-                    var_data[f"mean_site_score_{rep_index}"] = extract_site_scores(rep_atom_json, lib_sites)
+                    var_data[f"mean_site_score_{rep_index}"] = extract_site_scores(
+                        rep_atom_json, lib_sites
+                    )
 
                 # Process chain-level ptm and iptm scores
                 for i, chain in enumerate(chain_labels):
@@ -559,9 +751,13 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
         for key, values in score_sums.items():
             var_data[f"{key}_avg"] = np.mean(values) if values else None
             var_data[f"{key}_std"] = np.std(values) if values else None
-        
+
         # add mean site score
-        mean_site_scores = [var_data[f"mean_site_score_{rep_index}"] for rep_index in rep_index_list if var_data.get(f"mean_site_score_{rep_index}") is not None]
+        mean_site_scores = [
+            var_data[f"mean_site_score_{rep_index}"]
+            for rep_index in rep_index_list
+            if var_data.get(f"mean_site_score_{rep_index}") is not None
+        ]
         var_data["mean_site_score_avg"] = np.mean(mean_site_scores)
         var_data["mean_site_score_std"] = np.std(mean_site_scores)
 

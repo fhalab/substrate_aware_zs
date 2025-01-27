@@ -99,7 +99,8 @@ ENZYME_INFO_DICT = deepcopy(
             "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
             "family": "TrpB",
             "project": "multi-substrate",
-            "PDBID": "5DW0"
+            "PDBID": "5DW0",
+            "volume": 792.872, # CASTp with 5dw3 PocID2
         },
         "Rma":{
             "ligand-info": [
@@ -154,7 +155,8 @@ ENZYME_INFO_DICT = deepcopy(
             ],
             "family": "Rma",
             "project": "MODIFY",
-            "PDBID": "3CP5"
+            "PDBID": "3CP5",
+            "volume": 138.961, # CASTp 
         },
         "ParLQ":{
             "ligand-info": [
@@ -204,7 +206,7 @@ ENZYME_INFO_DICT = deepcopy(
             ],
             "family": "ParLQ",
             "project": "ALDE",
-
+            "volume": 275.468, # CASTp with 3zji
         }
     }
 )
