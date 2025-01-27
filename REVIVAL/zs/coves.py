@@ -10,7 +10,7 @@ import os
 import shutil
 from copy import deepcopy
 from glob import glob
-import tqdm
+from tqdm import tqdm
 
 import timeit
 import random
@@ -38,7 +38,9 @@ from REVIVAL.util import (
     read_parent_fasta,
     get_chain_ids,
     modify_PDB_chain,
-    convert_cif_to_pdb
+    get_chain_structure,
+    cif2pdbwobabel,
+    remove_hetatm
 )
 
 ################ Modified from https://github.com/ddingding/CoVES/tree/publish #############
@@ -1063,7 +1065,7 @@ def get_gvp_res_prefs(
     df_result = pd.DataFrame()
     with torch.no_grad():
         c = 0
-        for d in tqdm.tqdm(dl_all):
+        for d in dl_all:
             num, aa, b = d
             if c < max_pos_to_do:
                 pos = num.numpy()[0]
@@ -1104,11 +1106,10 @@ def run_coves(
     data_dir: str = "data",
     structure_dir: str = "structure",
     withsub: bool = True,
+    cleanup: bool = True,
     chain_number: str = "A",
     coves_dir="zs/coves",
-    lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/output",
     n_ave: int = 100,
 ):
     """
@@ -1121,9 +1122,7 @@ def run_coves(
     - withsub, bool: if use the holo or generated structure
     - chain_number, str: chain number
     - coves_dir, str: directory of coves
-    - lmdb_dir, str: directory of lmdb
     - model_weight_path, str: path to the model weight
-    - dout, str: output directory
     - n_ave, int: number of average
     """
 
@@ -1134,15 +1133,24 @@ def run_coves(
 
     if withsub:
         pdb_file = os.path.join(data_dir, structure_dir, "docked", lib + ".cif")
+        coves_dir = os.path.join(coves_dir, "sub")
+        
+        cleanup = True
     else:
         pdb_file = os.path.join(data_dir, structure_dir, LIB_INFO_DICT[lib]["enzyme"] + ".pdb")
+        coves_dir = os.path.join(coves_dir, "apo")
+
+    if cleanup:
+        coves_dir += "_clean"
+
+    coves_dir = checkNgen_folder(coves_dir)
 
     # create pdb directory for the wildtype
     coves_pdb_dir = checkNgen_folder(os.path.join(coves_dir, "input", lib))
     coves_pdb_path = os.path.join(coves_pdb_dir, lib + ".pdb")
 
     # check the chain ID in the pdb file
-    if os.path.exists(pdb_file):
+    if os.path.exists(pdb_file) and pdb_file.endswith(".pdb"):
         chain_number_list = sorted(get_chain_ids(pdb_file))
 
         if chain_number not in chain_number_list:
@@ -1155,12 +1163,34 @@ def run_coves(
         else:
             shutil.copy(pdb_file, coves_pdb_path)
     # convert cif to pdb
-    elif os.path.exists(pdb_file.replace("pdb", "cif")):
-        cif_file = pdb_file.replace("pdb", "cif")
-        convert_cif_to_pdb(cif_file, coves_pdb_path)
+    elif os.path.exists(pdb_file) and pdb_file.endswith(".cif"):
+        cif2pdbwobabel(pdb_file.replace("pdb", "cif"), coves_pdb_path)
+        # convert_cif_to_pdb
+        # use obabel to convert cif to pdb
+        
+    if cleanup:
+    
+        chain_path = coves_pdb_path.replace(".pdb", "chain.pdb")
+
+        # get chain structure
+        get_chain_structure(
+            input_file_path=coves_pdb_path,
+            output_file_path=chain_path,
+            chain_id=chain_number,
+        )
+        
+        # rename the chain file to coves_pdb_path
+        os.rename(chain_path, coves_pdb_path)
+        
+        temp_pdb = coves_pdb_path.replace(".pdb", "_temp.pdb")
+
+        remove_hetatm(input_pdb=coves_pdb_path, output_pdb=temp_pdb)
+    
+        # rename temp to overwrite the self.coves_pdb_path
+        os.rename(temp_pdb, coves_pdb_path)
 
     # delete and regen if exists
-    lmdb_dout = os.path.join(coves_dir, lmdb_dir, lib)
+    lmdb_dout = os.path.join(coves_dir, "lmdb", lib)
     if os.path.exists(lmdb_dout):
         shutil.rmtree(lmdb_dout)
 
@@ -1177,7 +1207,7 @@ def run_coves(
         pdb_din=coves_pdb_dir,
         lmdb_dout=lmdb_dout,
         model_weight_path=model_weight_path,
-        dout=checkNgen_folder(dout),
+        dout=checkNgen_folder(os.path.join(coves_dir, "output")),
         n_ave=n_ave,
     )
 
@@ -1194,11 +1224,10 @@ def run_all_coves(
     data_dir: str = "data",
     structure_dir: str = "structure",
     withsub: bool = True,
+    cleanup: bool = True,
     chain_number: str = "A",
     coves_dir="zs/coves",
-    lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/output",
     n_ave: int = 100,
 ):
     """
@@ -1207,18 +1236,16 @@ def run_all_coves(
     withsub: bool = True,
     chain_number: str = "A",
     coves_dir="zs/coves",
-    lmdb_dir: str = "lmdb",
     model_weight_path: str = "/disk2/fli/ddingding-CoVES/data/coves/res_weights/RES_1646945484.3030427_8.pt",
-    dout: str = "zs/coves/output",
     n_ave: int = 100,
     """
 
     if isinstance(pattern, str):
-        path_list = glob(pattern)
+        path_list = sorted(glob(pattern))
     else:
         path_list = deepcopy(pattern)
 
-    for p in path_list:
+    for p in tqdm(path_list):
         lib = get_file_name(p)
         print(f"Running CoVES for {lib}...")
         run_coves(
@@ -1228,9 +1255,7 @@ def run_all_coves(
             withsub=withsub,
             chain_number=chain_number,
             coves_dir=coves_dir,
-            lmdb_dir=lmdb_dir,
             model_weight_path=model_weight_path,
-            dout=checkNgen_folder(dout),
             n_ave=n_ave,
         )
 
@@ -1365,6 +1390,7 @@ def format_coves_mutations(muts: str, positions: list) -> str:
 def append_coves_scores(
     lib: str,
     var_col_name: str = "var",
+    fit_col_name: str = "fitness",
     input_dir: str = "data/meta/not_scaled",
     coves_dir: str = "zs/coves/output/100",
     chain_number: str = "A",
@@ -1417,8 +1443,12 @@ def append_coves_scores(
     # make directory if it doesn't exist
     checkNgen_folder(processed_folder)
 
+    df_cols = [var_col_name, fit_col_name]
+    if "selectivity" in df.columns:
+        df_cols.append("selectivity")
+
     # save the dataframe
-    df[[var_col_name, "coves_score"]].to_csv(f"{processed_folder}/{lib}.csv", index=False)
+    df[df_cols + ["coves_score"]].to_csv(f"{processed_folder}/{lib}.csv", index=False)
 
     return df
 
@@ -1448,6 +1478,6 @@ def append_all_coves_scores(
     else:
         lib_list = deepcopy(libs)
 
-    for lib in tqdm.tqdm(lib_list):
+    for lib in tqdm(lib_list):
         print(f"Processing CoVES scores for {lib}...")
         append_coves_scores(lib=get_file_name(lib), input_dir=input_dir, coves_dir=coves_dir, t=t)

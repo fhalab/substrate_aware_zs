@@ -8,7 +8,7 @@ from datetime import datetime
 from REVIVAL.zs.coves import run_all_coves, append_all_coves_scores
 from REVIVAL.util import checkNgen_folder
 
-os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 if __name__ == "__main__":
 
@@ -18,9 +18,10 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_coves(pattern="data/lib/*", withsub=False)
-    run_all_coves(pattern="data/lib/*", withsub=True)
-    # append_all_coves_scores(libs="data/meta/not_scaled/amiE*",coves_dir="zs/coves/output/100")
+    # run_all_coves(pattern="data/lib/*", withsub=False)
+    # run_all_coves(pattern="data/lib/*", withsub=True)
+    append_all_coves_scores(libs="data/meta/not_scaled/*",coves_dir="zs/coves/apo_clean/output/100")
+    append_all_coves_scores(libs="data/meta/not_scaled/*",coves_dir="zs/coves/sub_clean/output/100")
 
     f.close()
 

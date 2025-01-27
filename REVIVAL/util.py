@@ -301,6 +301,12 @@ def modify_PDB_chain(
     )
 
 
+def cif2pdbwobabel(cif_file: str, pdb_file: str):
+
+    cmd = f"obabel {cif_file} -O {pdb_file} --remove HOH"
+    subprocess.run(cmd, shell=True)
+    
+
 def convert_cif_to_pdb(cif_file: str, pdb_file: str = "", ifsave: bool = True):
     """
     Converts a CIF file to PDB format while preserving as much structural data as possible.

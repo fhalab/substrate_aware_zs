@@ -53,6 +53,7 @@ dependencies:
   - psutil
   - prody
   - pyg>=2.0.3
+  - pymol-open-source
   - pytables
   - pytorch=2.1.1           # for h100
   - pytorch-cuda=12.1       # change this as needed

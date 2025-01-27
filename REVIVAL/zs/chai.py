@@ -38,6 +38,7 @@ class ChaiStruct(ZSData):
         gen_opt: str = "joint",
         cofactor_dets: str = "cofactor",
         ifrerun: bool = False,
+        samesub: bool = True,
         torch_device: str = "cuda",
     ):
 
@@ -76,6 +77,10 @@ class ChaiStruct(ZSData):
 
         self._gen_opt = gen_opt
 
+        self._samesub = samesub
+        if "substratescope" in input_csv:
+            self._samesub = False
+
         self._chai_dir = checkNgen_folder(os.path.join(self._zs_dir, chai_dir))
         self._chai_struct_dir = checkNgen_folder(
             os.path.join(self._chai_dir, f"{chai_struct_dir}_{self._gen_opt}")
@@ -92,18 +97,20 @@ class ChaiStruct(ZSData):
         self._ifrerun = ifrerun
         self._torch_device = torch_device
 
-        self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
-        self._sub_dets = self.lib_info["substrate"]
+        if samesub:
+            self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
+            self._sub_dets = self.lib_info["substrate"]
 
-        self._cofactor_smiles = canonicalize_smiles(
-            ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
-        )
-        self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
+            self._cofactor_smiles = canonicalize_smiles(
+                ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
+            )
+            self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
 
-        self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
-        self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
-
-        self._gen_chai_structure()
+            self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
+            self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
+            self._gen_chai_structure()
+        else:
+            self._gen_chai_structure_diff_sub()
 
     def _gen_chai_structure(self):
         """
@@ -126,7 +133,7 @@ class ChaiStruct(ZSData):
 
                 # do nothing
                 pass
-            
+
             elif self._gen_opt == "substrate-no-cofactor":
 
                 # add substrate
@@ -229,11 +236,133 @@ class ChaiStruct(ZSData):
 
         return renamed_output_files, renamed_scores_files
 
+    def _gen_chai_structure_diff_sub(self):
+        """
+        A method to generate the chai structure for each variant.
+
+        Assume additional columns: substrate, substrate-smiles, cofactor, cofactor-smiles, rxn_id
+        """
+
+        for (var, seq, sub, sub_smile, cof, cof_smile, rxn_id) in tqdm(
+            self.df[
+                [
+                    self._var_col_name,
+                    self._seq_col_name,
+                    "substrate",
+                    "substrate-smiles",
+                    "cofactor",
+                    "cofactor-smiles",
+                    "rxn_id",
+                ]
+            ].values
+        ):
+
+            output_subdir = os.path.join(self._chai_struct_subdir, f"{var}_{str(rxn_id)}")
+
+            # Need to clean up the sequence
+            seq = seq.strip().replace("*", "").replace(" ", "").upper()
+
+            input_fasta = f">protein|{self.lib_name}_{var}_{rxn_id}\n{seq}\n"
+
+            if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
+
+                # do nothing
+                pass
+
+            elif self._gen_opt == "substrate-no-cofactor":
+
+                # add substrate
+                input_fasta += f">ligand|{sub}\n{sub_smile}\n"
+
+            elif self._gen_opt == "joint-cofactor-no-substrate":
+
+                # add cofactor
+                input_fasta += f">ligand|{cof}\n{cof_smile}\n"
+
+            elif self._gen_opt == "seperate":
+
+                # add substrate first
+                input_fasta += f">ligand|{sub}\n{sub_smile}\n"
+
+                # add cofactor smiles
+                input_fasta += f">ligand|{cof}\n{cof_smile}\n"
+
+            else:
+                joint_dets = sub + "_" + cof
+                joint_smiles = sub_smile + "." + cof_smile
+
+                # add substrate
+                input_fasta += f">ligand|{joint_dets}\n{joint_smiles}\n"
+
+            # only rerun if the flag is set and the output folder doies not exists
+            if self._ifrerun or not os.path.exists(output_subdir):
+
+                output_subdir = Path(checkNgen_folder(output_subdir))
+
+                fasta_path = Path(f"{output_subdir}/{var}.fasta")
+                fasta_path.write_text(input_fasta)
+
+                print(f"Running chai for {var}...")
+
+                run_inference(
+                    fasta_file=fasta_path,
+                    output_dir=output_subdir,
+                    # 'default' setup
+                    num_trunk_recycles=3,
+                    num_diffn_timesteps=200,
+                    seed=42,
+                    device=torch.device(self._torch_device),
+                    use_esm_embeddings=True,
+                )
+
+                renamed_output_files = []
+
+                # get name of the output cif or pdb files
+                output_strcut_files = sorted(
+                    glob(f"{output_subdir}/*.cif") + glob(f"{output_subdir}/*.pdb")
+                )
+
+                # rename the output files cif or pdb files
+                for output_strcut_file in output_strcut_files:
+                    renamed_output_file = output_strcut_file.replace(
+                        "pred.model_idx", var
+                    )
+                    os.rename(
+                        output_strcut_file,
+                        renamed_output_file,
+                    )
+                    renamed_output_files.append(renamed_output_file)
+
+                renamed_scores_files = []
+
+                # for npz files do the same
+                output_scores_files = sorted(glob(f"{output_subdir}/*.npz"))
+
+                for output_scores_file in output_scores_files:
+                    renamed_output_file = output_scores_file.replace(
+                        "scores.model_idx", var
+                    )
+                    os.rename(
+                        output_scores_file,
+                        renamed_output_file,
+                    )
+                    renamed_scores_files.append(renamed_output_file)
+
+            else:
+                print(f"{var} exists and ifrerun {self._ifrerun}...")
+                renamed_output_files = glob(f"{output_subdir}/*.cif") + glob(
+                    f"{output_subdir}/*.pdb"
+                )
+                renamed_scores_files = glob(f"{output_subdir}/*.npz")
+
+        return renamed_output_files, renamed_scores_files
+
 
 def run_gen_chai_structure(
     pattern: str | list = "data/meta/not_scaled/*.csv",
     gen_opt: str = "joint",
     cofactor_dets: str = "cofactor",
+    samesub: bool = True,
     kwargs: dict = {},
 ):
     """
@@ -254,7 +383,11 @@ def run_gen_chai_structure(
     for lib in lib_list:
         print(f"Running chai gen mut file for {lib}...")
         ChaiStruct(
-            input_csv=lib, gen_opt=gen_opt, cofactor_dets=cofactor_dets, **kwargs
+            input_csv=lib,
+            gen_opt=gen_opt,
+            cofactor_dets=cofactor_dets,
+            samesub=samesub,
+            **kwargs,
         )
 
 

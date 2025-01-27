@@ -10,6 +10,7 @@ from copy import deepcopy
 
 from biotite.sequence.io.fasta import FastaFile, get_sequences
 import numpy as np
+import pandas as pd
 from pathlib import Path
 import torch
 from tqdm import tqdm
@@ -18,62 +19,96 @@ import esm
 import esm.inverse_folding
 
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, pdb2seq, find_missing_str, alignmutseq2pdbseq
+from REVIVAL.util import checkNgen_folder, pdb2seq, find_missing_str, alignmutseq2pdbseq, get_chain_structure, remove_hetatm
 
 
 class ESMIFData(ZSData):
     def __init__(
         self,
         input_csv: str,
-        combo_col_name: str = "AAs",
+        in_structure_dir: str = "data/structure", # data/structure for frompdb or data/structure/docked for docked
         var_col_name: str = "var",
-        mut_col_name: str = "mut",
-        pos_col_name: str = "pos",
         seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
         seq_dir: str = "data/seq",
-        structure_dir: str = "data/structure",
         withsub: bool = True,
-        zs_dir: str = "zs",
-        esmif_dir: str = "esmif",
-        esmif_mut_dir: str = "mut_file",
-        esmif_instruct_dir: str = "input_structure",
-        esmif_score_dir: str = "output",
+        esmif_dir: str = "zs/esmif",
         chain_id: str = "A",
     ):
 
         super().__init__(
             input_csv=input_csv,
-            combo_col_name=combo_col_name,
             var_col_name=var_col_name,
-            mut_col_name=mut_col_name,
-            pos_col_name=pos_col_name,
             seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
             withsub=withsub,
             seq_dir=seq_dir,
-            structure_dir=structure_dir,
-            zs_dir=zs_dir,
         )
 
-        self._esmif_dir = checkNgen_folder(os.path.join(self._zs_dir, esmif_dir))
+        if self._withsub:
+            dets = "docked"
+            if in_structure_dir=="data/structure":
+                in_structure_dir = "data/structure/docked"
+        else:
+            dets = "apo"
+
+        self._in_structure_dir = in_structure_dir
+
+        self._esmif_dir = checkNgen_folder(os.path.join(esmif_dir, dets))
         self._esmif_mut_dir = checkNgen_folder(
-            os.path.join(self._esmif_dir, esmif_mut_dir)
+            os.path.join(self._esmif_dir, "mut_file")
         )
 
         self._esmif_instruct_dir = checkNgen_folder(
-            os.path.join(self._esmif_dir, esmif_instruct_dir)
+            os.path.join(self._esmif_dir, "instruct_file")
         )
         self._esmif_score_dir = checkNgen_folder(
-            os.path.join(self._esmif_dir, esmif_score_dir)
+            os.path.join(self._esmif_dir, "score")
         )
 
         self._chain_id = chain_id
 
+        print(f"Get clean structure {self.esmif_instruct_file}...")
+        self._clean_struct()
+
         print(f"Generating mut fasta file for {self.lib_name}...")
         self._mut_csv2fasta()
+
         print(f"Scoring mut file for {self.lib_name}...")
         self._score_mut_file()
+
+        score_df = pd.read_csv(self.esmif_output_file)
+
+        sele_cols = [self._var_col_name, self._fit_col_name]
+
+        if "selectivity" in self.input_df.columns:
+            sele_cols.append("selectivity")
+
+        # merge with the original dataframe
+        self._esmif_df = pd.merge(
+            self.input_df[sele_cols], score_df, on=self._var_col_name, how="left"
+        )
+
+        self._esmif_df.to_csv(self.esmif_output_file, index=False)
+
+
+    def _clean_struct(self) -> None:
+        if self._withsub:
+            input_struct = os.path.join(self._in_structure_dir, f"{self.lib_name}.cif")
+        else:
+            input_struct = os.path.join(self._in_structure_dir, f"{self.zs_struct_name}.pdb")
+
+        temp_path = self.esmif_instruct_file.replace(".pdb", "_temp.pdb")
+
+        # get chain structure
+        get_chain_structure(
+            input_file_path=input_struct,
+            output_file_path=temp_path,
+            chain_id=self._chain_id,
+        )
+
+        remove_hetatm(input_pdb=temp_path, output_pdb=self.esmif_instruct_file)
+    
 
     def _mut_csv2fasta(self) -> None:
         """
@@ -166,7 +201,6 @@ class ESMIFData(ZSData):
         print(f"Results saved to {self.esmif_output_file}")
 
     
-    # TODO add if need processing
     @property
     def esmif_instruct_file(self) -> str:
         """
@@ -174,8 +208,8 @@ class ESMIFData(ZSData):
         """
 
         return os.path.join(
-            self._structure_dir, #TODO update if need processing
-            f"{self.zs_struct_name}{os.path.splitext(self.structure_file)[-1]}",
+            self._esmif_instruct_dir,
+            f"{self.zs_struct_name}.pdb",
         )
 
     @property
@@ -192,8 +226,17 @@ class ESMIFData(ZSData):
         """
         return os.path.join(self._esmif_score_dir, f"{self.lib_name}.csv")
 
+    @property
+    def esmif_df(self) -> pd.DataFrame:
+        return self._esmif_df
 
-def run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {}):
+
+def run_esmif(
+    pattern: str | list = "data/meta/scale2parent/*.csv", 
+    in_structure_dir: str = "data/structure",
+    withsub: bool = False,
+    kwargs: dict = {}
+    ):
     """
     Run the esmif scoring for all libraries
 
@@ -202,10 +245,15 @@ def run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict
     """
 
     if isinstance(pattern, str):
-        lib_list = glob(pattern)
+        lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
 
     for lib in lib_list:
         print(f"Running ESMIF for {lib}...")
-        ESMIFData(input_csv=lib, **kwargs)
+        ESMIFData(
+            input_csv=lib, 
+            in_structure_dir=in_structure_dir,
+            withsub=withsub,
+            **kwargs
+            )

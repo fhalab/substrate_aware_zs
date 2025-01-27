@@ -61,18 +61,41 @@ if __name__ == "__main__":
     # )
 
     run_gen_chai_structure([
-        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv"
+        # "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
+        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
     ],
     gen_opt="joint",
     cofactor_dets="cofactor",
+    samesub=False,
     kwargs={"chai_dir": "chai_substratescope"}
     )
     run_gen_chai_structure([
-        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv"
+        # "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv"
+        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
     ],
     gen_opt="seperate",
     cofactor_dets="cofactor",
+    samesub=False,
     kwargs={"chai_dir": "chai_substratescope"}
+    )
+
+    run_gen_chai_structure([
+        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
+        # "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
+    ],
+    gen_opt="joint",
+    cofactor_dets="cofactor",
+    samesub=False,
+    kwargs={"chai_dir": "chai_substratescope", "ifrerun": True}
+    )
+    run_gen_chai_structure([
+        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv"
+        # "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
+    ],
+    gen_opt="seperate",
+    cofactor_dets="cofactor",
+    samesub=False,
+    kwargs={"chai_dir": "chai_substratescope", "ifrerun": True}
     )
     # run_gen_chai_structure([
     #     # "data/meta/not_scaled/PfTrpB-4bromo.csv",
