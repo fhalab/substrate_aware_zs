@@ -3,7 +3,6 @@ A script for preprocessing the data for the triad and extract energies
 """
 
 import os
-import subprocess
 
 from copy import deepcopy
 from glob import glob
@@ -14,7 +13,7 @@ import numpy as np
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.util import checkNgen_folder, run_sh_command, get_file_name, get_chain_structure, remove_hetatm
+from REVIVAL.util import checkNgen_folder, run_sh_command, get_chain_structure, remove_hetatm
 
 
 TRIAD_DIR = "/home/bwittmann/triad/triad-2.1.3"
@@ -95,7 +94,7 @@ class TriadData(ZSData):
 
         # merge to get fit
         self._triad_df = pd.merge(
-            self.input_df[[self._combo_col_name, self._fit_col_name]],
+            self.df[[self._combo_col_name, self._fit_col_name]],
             triad_df, 
             on =self._combo_col_name,
             how="left"

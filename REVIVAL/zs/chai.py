@@ -13,12 +13,50 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 
+from Bio.PDB import MMCIFParser
+
 import torch
 
 from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
+from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.util import checkNgen_folder, canonicalize_smiles
+
+
+def get_residue_uncertainty(cif_file, chain_id, resid_list):
+    """
+    Extract and compute the average B-factors (uncertainties) for atoms in a given list of residues.
+
+    Args:
+        cif_file (str): Path to the .cif file.
+        chain_id (str): Chain ID of the residues.
+        resid_list (list): List of residue IDs.
+
+    Returns:
+        dict: Residue IDs with their average B-factors (uncertainties).
+        float: Overall average B-factor across all residues.
+    """
+    parser = MMCIFParser(QUIET=True)
+    structure = parser.get_structure("protein", cif_file)
+
+    residue_bfactors = {}  # To store average B-factors for each residue
+    all_bfactors = []  # To calculate the overall average
+
+    for model in structure:
+        for chain in model:
+            if chain.id == chain_id:
+                for residue in chain:
+                    if residue.id[1] in resid_list:
+                        bfactors = [atom.bfactor for atom in residue]
+                        avg_bfactor = sum(bfactors) / len(bfactors)
+                        residue_bfactors[residue.id[1]] = avg_bfactor
+                        all_bfactors.extend(bfactors)
+
+    if not residue_bfactors:
+        raise ValueError(f"No residues in {resid_list} found in chain {chain_id} of {cif_file}.")
+
+    return sum(all_bfactors) / len(all_bfactors)
 
 
 class ChaiStruct(ZSData):
@@ -456,6 +494,12 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
                 for key in overall_keys:
                     var_data[f"{key}_{rep_index}"] = npz[key][0]
 
+                # add mean_site_score
+                var_data[f"mean_site_score_{rep_index}"] = get_residue_uncertainty(
+                    cif_file=rep_npz.replace(".npz", ".cif"), 
+                    chain_id="A",
+                    resid_list=list(LIB_INFO_DICT[os.path.basename(mut_structure_dir)]["positions"].values()))
+
                 # Process chain-level ptm and iptm scores
                 for i, chain in enumerate(chain_labels):
                     var_data[f"chain_ptm_{chain}_{rep_index}"] = npz["per_chain_ptm"][
@@ -481,6 +525,15 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
         for key, values in score_sums.items():
             var_data[f"{key}_avg"] = np.mean(values) if values else None
             var_data[f"{key}_std"] = np.std(values) if values else None
+
+        # add mean site score
+        mean_site_scores = [
+            var_data[f"mean_site_score_{rep_index}"]
+            for rep_index in range(5)
+            if var_data.get(f"mean_site_score_{rep_index}") is not None
+        ]
+        var_data["mean_site_score_avg"] = np.mean(mean_site_scores)
+        var_data["mean_site_score_std"] = np.std(mean_site_scores)
 
         # Collect results
         results.append(var_data)

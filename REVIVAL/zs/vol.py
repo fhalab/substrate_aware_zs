@@ -178,16 +178,19 @@ class VolData(ZSData):
 
         vol_df = []
 
+        substrate_vol = calculate_smiles_vol(self.substrate_smiles)
+        cofactor_vol = calculate_smiles_vol(self.cofactor_smiles)
+        joint_vol = calculate_smiles_vol(self.joint_smiles)
+
         for var in tqdm(self.df[self._var_col_name]):
             vol_df.append(
                 {
                     self._var_col_name: var,
                     "var_vol": self._calc_var_vol(var),
-                    "substrate_vol": self.substrate_vol,
-                    "cofactor_vol": self.cofactor_vol,
-                    "joint_vol": self.joint_vol,
+                    "substrate_vol": substrate_vol,
+                    "cofactor_vol": cofactor_vol,
+                    "joint_vol": joint_vol,
                 },
-                ignore_index=True,
             )
 
         return pd.DataFrame(vol_df)
@@ -197,9 +200,9 @@ class VolData(ZSData):
 
         vol_df = []
 
-        for var, substate_smiles, cofactor_smiles in self.df[
+        for var, substate_smiles, cofactor_smiles in tqdm(self.df[
             [self._var_col_name, self._subsmiles_col_name, self._cofsmiles_col_name]
-        ].values:
+        ]):
             joint_smiles = substate_smiles + "." + cofactor_smiles
             vol_df.append(
                 {
@@ -208,11 +211,11 @@ class VolData(ZSData):
                     "substrate_vol": calculate_smiles_vol(substate_smiles),
                     "cofactor_vol": calculate_smiles_vol(cofactor_smiles),
                     "joint_vol": calculate_smiles_vol(joint_smiles),
-                },
-                ignore_index=True,
+                }
             )
 
         return pd.DataFrame(vol_df)
+
 
     @property
     def parent_vol(self) -> list:
@@ -237,7 +240,7 @@ class VolData(ZSData):
     @property
     def substrate_vol(self) -> list:
         """Get the substrate volume"""
-        return calculate_smiles_vol(self.substrate_smiles)
+        return 
 
     @property
     def cofactor_vol(self) -> list:

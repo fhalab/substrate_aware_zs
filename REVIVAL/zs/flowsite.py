@@ -148,7 +148,7 @@ class FlowsiteData(ZSData):
 
         # merge the score_df with the input_df
         self._score_df = pd.merge(
-            self.input_df[[self._combo_col_name, self._fit_col_name]],
+            self.df[[self._combo_col_name, self._fit_col_name]],
             score_df,
             on=self._combo_col_name,
             how="left",
@@ -296,7 +296,7 @@ class FlowsiteData(ZSData):
 
         score_df = []
 
-        for combo in self.input_df[self._combo_col_name]:
+        for combo in self.df[self._combo_col_name]:
             combo_scores = []
             for rep in range(self._flowsite_params["num_inference"]):
                 raw_score = self.designed_logits[rep]

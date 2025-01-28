@@ -109,7 +109,7 @@ class LigandmpnnData(ZSData):
 
         # merge the score with the input csv fitness
         self._score_df = pd.merge(
-            self.input_df[[self._combo_col_name, self._fit_col_name]],
+            self.df[[self._combo_col_name, self._fit_col_name]],
             score_df,
             on=self._combo_col_name,
             how="left",
@@ -186,7 +186,7 @@ class LigandmpnnData(ZSData):
         # load .pt file
         raw_pt = torch.load(self.raw_pt_path)
 
-        for combo in self.input_df[self._combo_col_name].to_list():
+        for combo in self.df[self._combo_col_name].to_list():
 
             log_likelyhoods = 0
 

@@ -2055,7 +2055,7 @@ class VinaResults(ZSData):
         Extract the Vina data from the Vina log files.
         """
 
-        df = self.input_df.copy()
+        df = self.df.copy()
 
         # # init the vina score columns with nan
         # for r in range(self._num_rep):

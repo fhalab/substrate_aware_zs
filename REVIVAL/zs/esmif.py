@@ -81,12 +81,12 @@ class ESMIFData(ZSData):
 
         sele_cols = [self._var_col_name, self._fit_col_name]
 
-        if "selectivity" in self.input_df.columns:
+        if "selectivity" in self.df.columns:
             sele_cols.append("selectivity")
 
         # merge with the original dataframe
         self._esmif_df = pd.merge(
-            self.input_df[sele_cols], score_df, on=self._var_col_name, how="left"
+            self.df[sele_cols], score_df, on=self._var_col_name, how="left"
         )
 
         self._esmif_df.to_csv(self.esmif_output_file, index=False)
