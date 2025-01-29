@@ -14,6 +14,8 @@ import warnings
 
 import os
 import re
+
+import shutil
 from glob import glob
 from tqdm import tqdm
 from copy import deepcopy
@@ -31,9 +33,11 @@ from Bio.PDB.Atom import Atom
 from rdkit import Chem
 from rdkit.Chem import AllChem
 
-from REVIVAL.global_param import LIB_INFO_DICT
+from MDAnalysis import Universe
+
+from REVIVAL.global_param import LIB_INFO_DICT, ENZYME_INFO_DICT, AA_DICT
 from REVIVAL.preprocess import ZSData
-from REVIVAL.chem_helper import protonate_smiles
+from REVIVAL.chem_helper import protonate_smiles, apply_mutation
 from REVIVAL.util import (
     checkNgen_folder,
     get_file_name,
@@ -41,8 +45,11 @@ from REVIVAL.util import (
     get_chain_ids,
     get_chain_structure,
     calculate_chain_centroid,
+    calculate_ligand_centroid,
     replace_residue_names_auto,
+    save_hetatm_only
 )
+
 
 warnings.filterwarnings("ignore")
 
@@ -1899,6 +1906,288 @@ def calculate_centroid(coords: list) -> tuple:
     )
 
     return centroid
+
+
+####### Vina for apo ######## 
+
+
+def mutate_and_save_pdb(parent_pdb, mutations, output_pdb):
+    """
+    Apply mutations to a PDB structure and save the mutated structure.
+
+    Args:
+        parent_pdb (str): Path to the parent PDB file.
+        mutations (dict): Dictionary of mutations in the format {residue_id: new_aa}.
+        output_pdb (str): Path to save the mutated PDB file.
+
+    Returns:
+        str: Path to the saved mutated PDB file.
+    """
+
+    # Load the parent structure
+    universe = Universe(parent_pdb)
+
+    # Apply all mutations
+    for loc, aa in mutations.items():
+        universe = apply_mutation(universe, (loc, aa))  # Ensure apply_mutation is defined
+
+    # Save the mutated structure
+    universe.atoms.write(output_pdb)
+    print(f"Mutated structure saved to: {output_pdb}")
+
+    return output_pdb
+
+
+
+class VinaApoDock(ZSData):
+    
+    def __init__(
+        self,
+        input_csv: str,
+        dock_opt: str,  #  ie "substrate", "joint", "all"
+        cofactor_dets: str = "cofactor", # or inactivated_cofactor
+        in_structure_dir: str = "data/structure",
+        combo_col_name: str = "AAs",
+        var_col_name: str = "var",
+        fit_col_name: str = "fitness",
+        output_dir: str = "zs/vina/apo",
+        pH: float = 7.4,
+        size_x: float = 20.0,
+        size_y: float = 20.0,
+        size_z: float = 20.0,
+        num_modes: int = 9,
+        exhaustiveness: int = 32,
+        max_workers: int = 24,
+        regen: bool = False,
+        redock: bool = False
+    ):
+
+        super().__init__(
+            input_csv=input_csv,
+            combo_col_name=combo_col_name,
+            fit_col_name=fit_col_name,
+        )
+
+        self._dock_opt = dock_opt
+        self._cofactor_dets = cofactor_dets
+        self._in_structure_dir = in_structure_dir
+        self._output_dir = checkNgen_folder(os.path.join(output_dir, self.lib_name))
+        self._common_pdbqt_dir = checkNgen_folder(os.path.join(self._output_dir, "common_pdbqt"))
+
+        self._pH = pH
+        self._size_x = size_x
+        self._size_y = size_y
+        self._size_z = size_z
+        self._num_modes = num_modes
+        self._exhaustiveness = exhaustiveness
+        self._max_workers = max_workers
+
+        self._regen = regen
+        self._redock = redock
+
+        self._coords = self._get_coords()
+
+        self._ligand_pdbqt = os.path.join(self._common_pdbqt_dir, f"{self.substrate_dets}.pdbqt")
+        self._cofactor2dock, self._cofactor2freeze = self._prep_common_pdbqt()
+
+        self._dock_lib_parallel()
+
+
+    def _get_coords(self):
+        """
+        Calculates the centroid of the ligand in the given structure.
+        """
+
+        coords = calculate_ligand_centroid(
+            pdb_file=self.clean_struct, # the main pdb file dir
+            ligand_info=ENZYME_INFO_DICT[self.protein_name]["ligand-info"]
+        )
+
+        return coords
+
+
+    def _prep_common_pdbqt(self):
+        """
+        Prepares the PDBQT files for docking by converting smiles to PDBQT format.
+        """
+
+        # generate all pdbqt files from substrate and individual cofactor
+        ligand_smiles2pdbqt(
+            smiles=self.substrate_smiles,
+            ligand_sdf_file=self._ligand_pdbqt.replace(".pdbqt", ".sdf"),
+            ligand_pdbqt_file=self._ligand_pdbqt,
+            pH=self._pH
+        )
+
+        cofactor2dock = []
+        cofactor2freeze = []
+
+        for (cofactor_name, cofactor_smiles) in zip(
+            self.lib_info[self._cofactor_dets],
+            self.lib_info[f"{self._cofactor_dets}-smiles"],
+        ):  
+            print(f"Processing cofactor {cofactor_name} {cofactor_smiles}")
+            cofactor_pdbqt = os.path.join(self._common_pdbqt_dir, f"{cofactor_name}.pdbqt")
+
+            if self._dock_opt == "all":
+                cofactor2dock.append(cofactor_pdbqt)
+                ligand_smiles2pdbqt(
+                    smiles=cofactor_smiles,
+                    ligand_sdf_file=cofactor_pdbqt.replace(".pdbqt", ".sdf"),
+                    ligand_pdbqt_file=cofactor_pdbqt,
+                    pH=self._pH
+                )
+        
+            # substrate only for trpb but sub + carbene for heme
+            # extract heat atom to a pdb
+            else:
+                hetatm_pdb = os.path.join(self._common_pdbqt_dir, "hetatm.pdb")
+                hetatm_pdbqt = os.path.join(self._common_pdbqt_dir, "hetatm.pdbqt")
+                save_hetatm_only(
+                    input_pdb=self.clean_struct,
+                    output_pdb=hetatm_pdb
+                )
+                # obabel hetatm.pdb -O hetatm.pdbqt
+                cmd = f"obabel {hetatm_pdb} -O {hetatm_pdbqt}"
+                subprocess.run(cmd, shell=True)
+                cofactor2freeze.append(hetatm_pdbqt)
+            
+        return cofactor2dock, cofactor2freeze
+            
+    def _mutate_apo(self, var):
+        """
+        Mutates the apo structure with the given mutation.
+        """
+
+        # make var_dir
+        var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
+        var_pdb = os.path.join(var_dir, f"{var}.pdb")
+
+        mutation_dict = {}
+
+        if var != "WT":
+            for v in var.split(":"):
+                mutation_dict[int(v[1:-1])] = AA_DICT[v[-1]]
+
+            # Mutate the apo structure
+            mutate_and_save_pdb(
+                parent_pdb=self.apo_struct,
+                mutations=mutation_dict,
+                output_pdb=var_pdb
+            )
+
+        else:
+            # copy the apo structure to the output directory
+            shutil.copy(self.apo_struct, var_pdb)
+        
+        return var_pdb
+
+    def _make_config(self, var):
+        """
+        Makes the config file for docking.
+        """
+
+        var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
+        conf_path = os.path.join(var_dir, "conf.txt")
+
+        # make the receptor pdbqt file
+        if self._dock_opt != "all" and self._cofactor2freeze != []:
+            # merge the pdbqt files
+            receptor_pdbqt = os.path.join(var_dir, "receptor.pdbqt")
+            merge_pdbqt(
+                input_files=[self._mutate_apo(var)] + self._cofactor2freeze,
+                output_file_path=receptor_pdbqt
+            )
+
+        else:
+            receptor_pdbqt = self._mutate_apo(var)
+
+        with open(conf_path, "w") as fout:
+            fout.write(f"receptor = {receptor_pdbqt}\n")
+            fout.write(f"ligand = {self._ligand_pdbqt}\n")
+
+            # Include cofactors
+            if self._cofactor2dock is not None:
+                for cofactor_file in self._cofactor2dock:
+                    fout.write(f"ligand = {cofactor_file}\n")
+
+            fout.write(f"center_x = {self._coords[0]}\n")
+            fout.write(f"center_y = {self._coords[1]}\n")
+            fout.write(f"center_z = {self._coords[2]}\n")
+            fout.write(f"size_x = {self._size_x}\n")
+            fout.write(f"size_y = {self._size_y}\n")
+            fout.write(f"size_z = {self._size_z}\n")
+            fout.write(f"num_modes = {self._num_modes}\n")
+            fout.write(f"exhaustiveness = {self._exhaustiveness}\n")
+
+        return conf_path
+
+    def _dock(self, var):
+        """
+        Dock the given variant.
+        """
+
+        # make the config file
+        conf_path = self._make_config(var)
+        docked_ligand_pdb = os.path.join(self._output_dir, var, "docked_ligand.pdb")
+        vina_logfile = os.path.join(self._output_dir, var, "log.txt")
+
+        # dock the variant
+
+        cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb, "--seed", str(42)]
+
+        try:
+            # Run the Vina command
+            cmd_return = subprocess.run(
+                cmd_list,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                check=True,  # Ensures subprocess raises an exception on error
+            )
+
+            # Write the Vina output to the log file
+            with open(vina_logfile, "w") as fout:
+                fout.write(cmd_return.stdout.decode("utf-8"))
+
+        except subprocess.CalledProcessError as e:
+            print(f"Error during Vina run: {e}")
+            with open(vina_logfile, "w") as fout:
+                fout.write(e.stdout.decode("utf-8"))
+            raise
+            
+    def _dock_lib_parallel(self):
+        """
+        Dock the library in parallel.
+        """
+
+        # dock the library in parallel
+        with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
+            futures = []
+            for var in self.df[self._var_col_name]:
+                if self._regen or self._redock:
+                    futures.append(executor.submit(self._dock, var))
+                else:
+                    if not os.path.exists(os.path.join(self._output_dir, var, "log.txt")):
+                        futures.append(executor.submit(self._dock, var))
+
+            for future in as_completed(futures):
+                future.result()
+
+
+    @property
+    def clean_struct(self):
+        """The clean (no water or SO4) pdb file of the protein."""
+        return os.path.join(self._in_structure_dir, "clean", f"{self.protein_name}.pdb")
+
+    @property
+    def apo_struct(self):
+        """The apo pdb file of the protein."""
+        return os.path.join(self._in_structure_dir, "apo", f"{self.protein_name}.pdb")
+    
+    @property
+    def coords(self):
+        return self._coords
+            
 
 
 ###### extract docking scores ######

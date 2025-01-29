@@ -443,18 +443,38 @@ def replace_residue_names_auto(
             outfile.write(line)
 
 
-class ResidueRemover(Select):
-    def __init__(self, residues_to_remove):
-        """
-        residues_to_remove: list of residue names to remove (e.g., ['PLS', 'NA'])
-        """
-        self.residues_to_remove = residues_to_remove
+def save_hetatm_only(input_pdb: str, output_pdb: str):
+    """
+    Reads a PDB file, extracts only HETATM, TER, and END lines.
+    If no HETATM is found, extracts ATOM lines from chain B instead.
 
-    def accept_residue(self, residue):
-        """Return False if the residue should be removed."""
-        if residue.get_resname() in self.residues_to_remove:
-            return False
-        return True
+    Args:
+        input_pdb (str): Path to the input PDB file.
+        output_pdb (str): Path to save the output PDB file.
+    """
+    hetatm_lines = []
+    chain_b_lines = []
+
+    with open(input_pdb, "r") as infile:
+        for line in infile:
+            if line.startswith(("HETATM", "TER", "END")):
+                hetatm_lines.append(line)
+            elif line.startswith("ATOM") and line[21] == "B":  # Chain B
+                chain_b_lines.append(line)
+
+    # Decide what to save: HETATM or Chain B
+    if hetatm_lines:
+        output_lines = hetatm_lines  # Save HETATM if available
+        print(f"HETATM found. Saving {len(hetatm_lines)} HETATM records.")
+    else:
+        output_lines = chain_b_lines  # Otherwise, save Chain B
+        print(f"No HETATM found. Saving {len(chain_b_lines)} Chain B ATOM records instead.")
+
+    # Save to file
+    with open(output_pdb, "w") as outfile:
+        outfile.writelines(output_lines)
+
+    print(f"Output saved to: {output_pdb}")
 
 
 def remove_hetatm(input_pdb: str, output_pdb: str):
@@ -488,7 +508,7 @@ def remove_residues_from_pdb(
     """
     with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
         for line in infile:
-            if line.startswith(("ATOM", "HETATM")):
+            if line.startswith(("ATOM", "HETATM", "ANISOU")):
                 residue_name = line[17:20].strip()
                 if residue_name in residues_to_remove:
                     continue
