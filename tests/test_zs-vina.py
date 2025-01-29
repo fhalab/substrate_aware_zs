@@ -9,7 +9,7 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.vina import dock_lib_parallel, VinaApoDock
+from REVIVAL.zs.vina import dock_lib_parallel, VinaLibDock
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -150,12 +150,12 @@ if __name__ == "__main__":
     for dock_opt in ["all"]: # ["substrate", "all"]:
         for lib in sorted(glob(("data/meta/not_scaled/*.csv"))):
             if "TrpB" in lib:
-                VinaApoDock(
+                VinaLibDock(
                     input_csv = lib,
                     dock_opt=dock_opt,
                 )
             else:
-                VinaApoDock(
+                VinaLibDock(
                     input_csv = lib,
                     dock_opt=dock_opt,
                     cofactor_dets="activated_carbene-cofactor",
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     f.close()
     
     """
-    VinaApoDock(ZSData):
+    VinaLibDock(ZSData):
     
     def __init__(
         self,

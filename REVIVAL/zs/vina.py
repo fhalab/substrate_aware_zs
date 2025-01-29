@@ -47,7 +47,7 @@ from REVIVAL.util import (
     calculate_chain_centroid,
     calculate_ligand_centroid,
     replace_residue_names_auto,
-    save_hetatm_only
+    save_hetatm_only,
 )
 
 
@@ -55,6 +55,8 @@ warnings.filterwarnings("ignore")
 
 
 LIGAND_IONS = ["NA", "FE"]
+
+REP_SEEDS = [42, 0, 12345, 1, 123]
 
 
 def format_pdb(file_path: str, protein_dir: str, pH: float, regen=False):
@@ -252,12 +254,18 @@ def prepare_ion(
 
 
 def ligand_smiles2pdbqt(
-    smiles: str, ligand_sdf_file: str, ligand_pdbqt_file: str, pH: float, regen: bool = False
+    smiles: str,
+    ligand_sdf_file: str,
+    ligand_pdbqt_file: str,
+    pH: float,
+    regen: bool = False,
 ) -> str:
     """Generate 3D coordinates, protonate, and save ligand."""
     if not regen and os.path.isfile(ligand_pdbqt_file):
-        print(f"Skipping ligand {ligand_pdbqt_file} as it already exists and regen false.")
-        return
+        print(
+            f"Skipping ligand {ligand_pdbqt_file} as it already exists and regen false."
+        )
+        return ligand_pdbqt_file
 
     smiles = Chem.CanonSmiles(smiles, useChiral=True)
     protonated_smiles = protonate_smiles(smiles, pH=pH)
@@ -1541,7 +1549,7 @@ def dock_lib_parallel(
     rerun=False,
     seed=42,
     num_cpus=None,  # for each dock function
-    max_workers=24,  # Number of parallelized variants to be docked
+    max_workers=8,  # Number of parallelized variants to be docked
 ):
     """
     A function to dock all generated chai structures and get scores in parallel.
@@ -1914,7 +1922,7 @@ def calculate_centroid(coords: list) -> tuple:
     return centroid
 
 
-####### Vina for apo ######## 
+####### Vina for apo ########
 
 
 def mutate_and_save_pdb(parent_pdb, mutations, output_pdb):
@@ -1935,7 +1943,9 @@ def mutate_and_save_pdb(parent_pdb, mutations, output_pdb):
 
     # Apply all mutations
     for loc, aa in mutations.items():
-        universe = apply_mutation(universe, (loc, aa))  # Ensure apply_mutation is defined
+        universe = apply_mutation(
+            universe, (loc, aa)
+        )  # Ensure apply_mutation is defined
 
     # Save the mutated structure
     universe.atoms.write(output_pdb)
@@ -1944,14 +1954,12 @@ def mutate_and_save_pdb(parent_pdb, mutations, output_pdb):
     return output_pdb
 
 
-
-class VinaApoDock(ZSData):
-    
+class VinaLibDock(ZSData):
     def __init__(
         self,
         input_csv: str,
         dock_opt: str,  #  ie "substrate", "joint", "all"
-        cofactor_dets: str = "cofactor", # or inactivated_cofactor
+        cofactor_dets: str = "cofactor",  # or inactivated_cofactor
         in_structure_dir: str = "data/structure",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
@@ -1963,9 +1971,10 @@ class VinaApoDock(ZSData):
         size_z: float = 20.0,
         num_modes: int = 9,
         exhaustiveness: int = 32,
-        max_workers: int = 24,
+        max_workers: int = 8,
+        n_rep: int = 5,
         regen: bool = False,
-        redock: bool = False
+        redock: bool = False,
     ):
 
         super().__init__(
@@ -1978,7 +1987,9 @@ class VinaApoDock(ZSData):
         self._cofactor_dets = cofactor_dets
         self._in_structure_dir = in_structure_dir
         self._output_dir = checkNgen_folder(os.path.join(output_dir, self.lib_name))
-        self._common_pdbqt_dir = checkNgen_folder(os.path.join(self._output_dir, "common_pdbqt"))
+        self._common_pdbqt_dir = checkNgen_folder(
+            os.path.join(self._output_dir, "common_pdbqt")
+        )
 
         self._pH = pH
         self._size_x = size_x
@@ -1987,17 +1998,19 @@ class VinaApoDock(ZSData):
         self._num_modes = num_modes
         self._exhaustiveness = exhaustiveness
         self._max_workers = max_workers
+        self._n_rep = n_rep
 
         self._regen = regen
         self._redock = redock
 
         self._coords = self._get_coords()
 
-        self._ligand_pdbqt = os.path.join(self._common_pdbqt_dir, f"{self.substrate_dets}.pdbqt")
+        self._ligand_pdbqt = os.path.join(
+            self._common_pdbqt_dir, f"{self.substrate_dets}.pdbqt"
+        )
         self._cofactor2dock, self._cofactor2freeze = self._prep_common_pdbqt()
 
         self._dock_lib_parallel()
-
 
     def _get_coords(self):
         """
@@ -2005,12 +2018,11 @@ class VinaApoDock(ZSData):
         """
 
         coords = calculate_ligand_centroid(
-            pdb_file=self.clean_struct, # the main pdb file dir
-            ligand_info=ENZYME_INFO_DICT[self.protein_name]["ligand-info"]
+            pdb_file=self.clean_struct,  # the main pdb file dir
+            ligand_info=ENZYME_INFO_DICT[self.protein_name]["ligand-info"],
         )
 
         return coords
-
 
     def _prep_common_pdbqt(self):
         """
@@ -2023,59 +2035,64 @@ class VinaApoDock(ZSData):
             ligand_sdf_file=self._ligand_pdbqt.replace(".pdbqt", ".sdf"),
             ligand_pdbqt_file=self._ligand_pdbqt,
             pH=self._pH,
-            regen=self._regen
+            regen=self._regen,
         )
 
         cofactor2dock = []
         cofactor2freeze = []
 
-
         for (cofactor_name, cofactor_smiles) in zip(
             self.lib_info[self._cofactor_dets],
             self.lib_info[f"{self._cofactor_dets}-smiles"],
-        ):  
+        ):
             print(f"Processing cofactor {cofactor_name} {cofactor_smiles}")
 
             if self._dock_opt == "all":
 
                 # check it is an ion
                 simple_ion = cofactor_name.upper()[:2]
-                if simple_ion in LIGAND_IONS or (cofactor_smiles and cofactor_smiles[0] == "[" and cofactor_smiles[-1] == "]"):
+                if simple_ion in LIGAND_IONS or (
+                    cofactor_smiles
+                    and cofactor_smiles[0] == "["
+                    and cofactor_smiles[-1] == "]"
+                ):
 
-                    cofactor2dock.append(prepare_ion(
-                        smiles=cofactor_smiles,
-                        element=simple_ion if simple_ion in LIGAND_IONS else None,
-                        output_dir=self._common_pdbqt_dir,
-                        input_struct_path=self.clean_struct,
-                        pH=self._pH,
-                    ))
+                    cofactor2dock.append(
+                        prepare_ion(
+                            smiles=cofactor_smiles,
+                            element=simple_ion if simple_ion in LIGAND_IONS else None,
+                            output_dir=self._common_pdbqt_dir,
+                            input_struct_path=self.clean_struct,
+                            pH=self._pH,
+                        )
+                    )
 
                 else:
-                    cofactor_pdbqt = os.path.join(self._common_pdbqt_dir, f"{cofactor_name}.pdbqt")
-                    cofactor2dock.append(ligand_smiles2pdbqt(
-                        smiles=cofactor_smiles,
-                        ligand_sdf_file=cofactor_pdbqt.replace(".pdbqt", ".sdf"),
-                        ligand_pdbqt_file=cofactor_pdbqt,
-                        pH=self._pH,
-                        regen=self._regen
-                    ))
-        
+                    cofactor_pdbqt = os.path.join(
+                        self._common_pdbqt_dir, f"{cofactor_name}.pdbqt"
+                    )
+                    cofactor2dock.append(
+                        ligand_smiles2pdbqt(
+                            smiles=cofactor_smiles,
+                            ligand_sdf_file=cofactor_pdbqt.replace(".pdbqt", ".sdf"),
+                            ligand_pdbqt_file=cofactor_pdbqt,
+                            pH=self._pH,
+                            regen=self._regen,
+                        )
+                    )
+
             # substrate only for trpb but sub + carbene for heme
             # extract heat atom to a pdb
             else:
                 hetatm_pdb = os.path.join(self._common_pdbqt_dir, "hetatm.pdb")
                 hetatm_pdbqt = os.path.join(self._common_pdbqt_dir, "hetatm.pdbqt")
-                save_hetatm_only(
-                    input_pdb=self.clean_struct,
-                    output_pdb=hetatm_pdb
-                )
+                save_hetatm_only(input_pdb=self.clean_struct, output_pdb=hetatm_pdb)
                 # obabel hetatm.pdb -O hetatm.pdbqt
                 cmd = f"obabel {hetatm_pdb} -O {hetatm_pdbqt}"
                 subprocess.run(cmd, shell=True)
                 cofactor2freeze.append(hetatm_pdbqt)
-            
+
         return cofactor2dock, cofactor2freeze
-            
 
     def _mutate_apo(self, var):
         """
@@ -2085,7 +2102,6 @@ class VinaApoDock(ZSData):
         # make var_dir
         var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
         var_mut_pdb = os.path.join(var_dir, f"{var}_mut.pdb")
-        var_clean_pdb = os.path.join(var_dir, f"{var}.pdb")
         var_pdbqt = os.path.join(var_dir, f"{var}.pdbqt")
 
         if not self._regen and os.path.isfile(var_pdbqt):
@@ -2101,18 +2117,17 @@ class VinaApoDock(ZSData):
             mutate_and_save_pdb(
                 parent_pdb=self.apo_struct,
                 mutations=mutation_dict,
-                output_pdb=var_mut_pdb
+                output_pdb=var_mut_pdb,
             )
 
         else:
             # copy the apo structure to the output directory
             shutil.copy(self.apo_struct, var_mut_pdb)
-        
+
         # clean pdb and convert to pdbqt
         pdb_to_pdbqt_protein(var_mut_pdb, var_pdbqt)
-        
-        return var_pdbqt
 
+        return var_pdbqt
 
     def _make_config(self, var):
         """
@@ -2121,6 +2136,7 @@ class VinaApoDock(ZSData):
 
         var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
         conf_path = os.path.join(var_dir, f"{self._dock_opt}_conf.txt")
+        print(f"Making config for {var} with {conf_path}")
 
         # make the receptor pdbqt file
         if self._dock_opt != "all" and self._cofactor2freeze != []:
@@ -2128,7 +2144,7 @@ class VinaApoDock(ZSData):
             receptor_pdbqt = os.path.join(var_dir, "receptor.pdbqt")
             merge_pdbqt(
                 input_files=[self._mutate_apo(var)] + self._cofactor2freeze,
-                output_file_path=receptor_pdbqt
+                output_file_path=receptor_pdbqt,
             )
 
         else:
@@ -2161,49 +2177,71 @@ class VinaApoDock(ZSData):
 
         # make the config file
         conf_path = self._make_config(var)
-        docked_ligand_pdb = os.path.join(self._output_dir, var, f"{self._dock_opt}_docked.pdb")
-        vina_logfile = os.path.join(self._output_dir, var, f"{self._dock_opt}_log.txt")
+        print(f"Docking {var} with {conf_path}")
 
-        # dock the variant
-        cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb, "--seed", str(42)]
-
-        try:
-            # Run the Vina command
-            cmd_return = subprocess.run(
-                cmd_list,
-                stdout=subprocess.PIPE,
-                stderr=subprocess.STDOUT,
-                check=True,  # Ensures subprocess raises an exception on error
+        for i in range(self._n_rep):
+            print(f"rep {i}")
+            docked_ligand_pdb = os.path.join(
+                self._output_dir, var, f"{self._dock_opt}_docked_{i}.pdb"
+            )
+            vina_logfile = os.path.join(
+                self._output_dir, var, f"{self._dock_opt}_log_{i}.txt"
             )
 
-            # Write the Vina output to the log file
-            with open(vina_logfile, "w") as fout:
-                fout.write(cmd_return.stdout.decode("utf-8"))
+            if not self._redock and os.path.isfile(vina_logfile):
+                print(f"Docking {var} with {conf_path} already done")
+                continue
 
-        except subprocess.CalledProcessError as e:
-            print(f"Error during Vina run: {e}")
-            with open(vina_logfile, "w") as fout:
-                fout.write(e.stdout.decode("utf-8"))
-            raise
-            
+            # dock the variant
+            cmd_list = [
+                "vina",
+                "--config",
+                conf_path,
+                "--out",
+                docked_ligand_pdb,
+                "--seed",
+                str(REP_SEEDS[i]),
+            ]
+
+            try:
+                # Run the Vina command
+                cmd_return = subprocess.run(
+                    cmd_list,
+                    stdout=subprocess.PIPE,
+                    stderr=subprocess.STDOUT,
+                    check=True,  # Ensures subprocess raises an exception on error
+                )
+
+                # Write the Vina output to the log file
+                with open(vina_logfile, "w") as fout:
+                    fout.write(cmd_return.stdout.decode("utf-8"))
+
+            except subprocess.CalledProcessError as e:
+                print(f"Error during Vina run: {e}")
+                with open(vina_logfile, "w") as fout:
+                    fout.write(e.stdout.decode("utf-8"))
+                raise
+
     def _dock_lib_parallel(self):
         """
         Dock the library in parallel.
         """
 
+        var_list = deepcopy(self.df[self._var_col_name].tolist())
+
+        # for var in tqdm(var_list):
+        #     self._dock(var)
+
         # dock the library in parallel
         with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-            futures = []
-            for var in self.df[self._var_col_name]:
-                if self._regen or self._redock:
-                    futures.append(executor.submit(self._dock, var))
-                else:
-                    if not os.path.exists(os.path.join(self._output_dir, var, "log.txt")):
-                        futures.append(executor.submit(self._dock, var))
 
-            for future in as_completed(futures):
-                future.result()
+            futures = [executor.submit(self._dock, var) for var in var_list]
 
+            for future in tqdm(as_completed(futures), total=len(var_list)):
+                try:
+                    future.result()  # Raises an exception if the task failed
+                except Exception as e:
+                    print(e)
 
     @property
     def clean_struct(self):
@@ -2214,11 +2252,10 @@ class VinaApoDock(ZSData):
     def apo_struct(self):
         """The apo pdb file of the protein."""
         return os.path.join(self._in_structure_dir, "apo", f"{self.protein_name}.pdb")
-    
+
     @property
     def coords(self):
         return self._coords
-            
 
 
 ###### extract docking scores ######
@@ -2346,7 +2383,6 @@ class VinaResults(ZSData):
         print(f"Save vina score to {self.vina_df_path}")
         self._vina_df.to_csv(self.vina_df_path, index=False)
 
-
     def _extract_vina_score(self):
 
         """
@@ -2436,7 +2472,6 @@ def run_parse_vina_results(
         lib_list = sorted(glob(pattern))
     else:
         lib_list = deepcopy(pattern)
-
 
     for lib in tqdm(lib_list):
         print(f"Running parse vina results for {lib}...")
