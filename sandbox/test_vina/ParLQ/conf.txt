@@ -1,0 +1,12 @@
+receptor = /disk2/fli/REVIVAL2/sandbox/test_vina/ParLQ/apo_ParLQ_fe.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/ParLQ/4-vinylanisole.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/ParLQ/activated-carbene.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/ParLQ/heme-no-Fe.pdbqt
+center_x = 1.9006427526474
+center_y = 5.452762603759766
+center_z = -3.645024538040161
+size_x = 20
+size_y = 20
+size_z = 20
+num_modes = 9
+exhaustiveness = 32

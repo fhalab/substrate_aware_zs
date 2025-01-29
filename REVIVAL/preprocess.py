@@ -13,7 +13,16 @@ import numpy as np
 import pandas as pd
 
 from REVIVAL.global_param import LIB_INFO_DICT, APPEND_INFO_COLS
-from REVIVAL.util import checkNgen_folder, get_file_name, read_parent_fasta, er2ee
+from REVIVAL.chem_helper import canonicalize_smiles
+from REVIVAL.util import (
+    checkNgen_folder,
+    get_file_name,
+    read_parent_fasta,
+    er2ee,
+    get_chain_structure,
+    remove_hetatm,
+    remove_residues_from_pdb,
+)
 
 
 class LibData:
@@ -99,9 +108,11 @@ class LibData:
     def parent_fitness(self) -> float:
         """Return the parent fitness"""
         if self.parent_aa:
-            parent_row = self.input_df[self.input_df[self._combo_col_name] == self.parent_aa]
+            parent_row = self.input_df[
+                self.input_df[self._combo_col_name] == self.parent_aa
+            ]
         parent_row = self.input_df[self.input_df[self._var_col_name] == "WT"]
-            
+
         return parent_row[self._fit_col_name].values[0]
 
     @property
@@ -169,6 +180,26 @@ class LibData:
             return os.path.join(self._structure_dir, f"{self.lib_name}.cif")
         else:
             return os.path.join(self._structure_dir, f"{self.lib_name}.pdb")
+
+    @property
+    def substrate_smiles(self) -> str:
+        """Return the substrate smiles"""
+        return canonicalize_smiles(self.lib_info["substrate-smiles"])
+
+    @property
+    def substrate_dets(self) -> str:
+        """Return the substrate details"""
+        return self.lib_info["substrate"]
+
+    @property
+    def cofactor_smiles(self) -> str:
+        """Return the cofactor smiles"""
+        return canonicalize_smiles(".".join(self.lib_info["cofactor-smiles"]))
+
+    @property
+    def cofactor_dets(self) -> str:
+        """Return the cofactor details"""
+        return "-".join(self.lib_info["cofactor"])
 
 
 ######### Handling SSM input meta data #########
@@ -403,19 +434,21 @@ class ProcessData(LibData):
 
         # groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
 
-        groupby_col = self._combo_col_name if self._combo_col_name in df.columns else self._var_col_name
+        groupby_col = (
+            self._combo_col_name
+            if self._combo_col_name in df.columns
+            else self._var_col_name
+        )
 
         # for trpb additioanl info
         if "lib" in df.columns:
-            df = df.groupby(groupby_col).agg(
-                {
-                    self._fit_col_name: "mean",
-                    "lib": lambda x: ",".join(x)
-                }
-            ).reset_index()
+            df = (
+                df.groupby(groupby_col)
+                .agg({self._fit_col_name: "mean", "lib": lambda x: ",".join(x)})
+                .reset_index()
+            )
         else:
             df = df.groupby(groupby_col).mean().reset_index()
-        
 
         # if self._combo_col_name in df.columns:
         #     # drop stop codon containing rows
@@ -612,7 +645,7 @@ class ZSData(LibData):
 
         if var == "WT":
             return mut_list, pos_list
-            
+
         for v in var.split(":"):
 
             mut_list.append(v[-1])
@@ -659,3 +692,49 @@ class ZSData(LibData):
             return self.lib_name
         else:
             return self.lib_info["enzyme"]
+
+
+def gen_apo_structures(
+    struct_dir: str = "data/structure",
+    chain_id: str = "A",
+    residues_to_remove: list = ["HOH", "SO4"],
+) -> None:
+
+    """
+    Generate cleaned up (no water, SO4) and apo structures for all the protein structures taken from PDB
+    and save to the apo subdirectory
+    """
+
+    clean_dir = checkNgen_folder(os.path.join(struct_dir, "clean"))
+    apo_dir = checkNgen_folder(os.path.join(struct_dir, "apo"))
+
+    # get all the pdb files in the structure directory
+    pdb_files = sorted(glob(os.path.join(struct_dir, "*.pdb")))
+
+    for input_struct in pdb_files:
+
+        protein_name = get_file_name(input_struct)
+
+        clean_struct = os.path.join(clean_dir, f"{protein_name}.pdb")
+        apo_struct = os.path.join(apo_dir, f"{protein_name}.pdb")
+        temp_path = apo_struct.replace(".pdb", "_temp.pdb")
+
+        # get the name of the structure file
+        get_chain_structure(
+            input_file_path=input_struct,
+            output_file_path=temp_path,
+            chain_id=chain_id,
+        )
+
+        remove_residues_from_pdb(
+            input_pdb=input_struct,
+            output_pdb=clean_struct,
+            residues_to_remove=residues_to_remove,
+        )
+
+        remove_hetatm(
+            input_pdb=temp_path,
+            output_pdb=apo_struct,
+        )
+
+        os.remove(temp_path)

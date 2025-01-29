@@ -27,12 +27,12 @@ import tempfile
 from REVIVAL.zs.plip import get_plip_active_site_dict
 from REVIVAL.global_param import AA_DICT, ENZYME_INFO_DICT
 from REVIVAL.preprocess import ZSData
+from REVIVAL.chem_helper import smiles2mol
 from REVIVAL.util import (
     calculate_chain_centroid,
     calculate_ligand_centroid,
     get_protein_structure,
     get_chain_ids,
-    smiles2mol,
     checkNgen_folder,
     get_file_name,
 )

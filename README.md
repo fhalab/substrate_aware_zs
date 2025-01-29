@@ -13,6 +13,8 @@ conda create --name vina_env python=3.9.7 -y
 conda activate vina_env
 conda install -c conda-forge numpy openbabel pdbfixer scipy rdkit openmm biopython -y
 pip install meeko
+conda install -c conda-forge mdanalysis
+pip install numpy==1.24.4
 ```
 * Run the zero-shot prediction using the following command
 ```

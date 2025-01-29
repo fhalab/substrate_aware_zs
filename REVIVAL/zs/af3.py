@@ -18,7 +18,8 @@ import pandas as pd
 
 from REVIVAL.preprocess import ZSData
 from REVIVAL.global_param import LIB_INFO_DICT
-from REVIVAL.util import checkNgen_folder, canonicalize_smiles, load_json
+from REVIVAL.chem_helper import canonicalize_smiles
+from REVIVAL.util import checkNgen_folder, load_json
 
 
 class AF3Struct(ZSData):
@@ -108,16 +109,13 @@ class AF3Struct(ZSData):
                     print(f"Error in parallel execution: {e}")
 
         if samesub:
-            self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
-            self._sub_dets = self.lib_info["substrate"]
 
             self._cofactor_smiles = canonicalize_smiles(
                 ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
             )
             self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
 
-            self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
-            self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
+            self._joint_smiles = self.substrate_smiles + "." + self._cofactor_smiles
 
             # now do the inferences and the _gen_var_msa step will simply check the path
             for (
@@ -133,7 +131,7 @@ class AF3Struct(ZSData):
                 )
 
         else:
-            for (var, seq, sub, sub_smiles, cofactor, cofactor_smiles, rxn_id,) in tqdm(
+            for (var, seq, sub, substrate_smiles, cofactor, cofactor_smiles, rxn_id,) in tqdm(
                 self.df[
                     [
                         self._var_col_name,
@@ -155,7 +153,7 @@ class AF3Struct(ZSData):
                     seq=seq,
                     var_msa_outpath=var_msa_outpath,
                     sub=sub,
-                    sub_smiles=sub_smiles,
+                    substrate_smiles=substrate_smiles,
                     cofactor=cofactor,
                     cofactor_smiles=cofactor_smiles,
                     rxn_id=rxn_id,
@@ -302,7 +300,7 @@ class AF3Struct(ZSData):
 
             # add substrate
             json_data["sequences"].append(
-                {"ligand": {"id": "B", "smiles": f"{self._sub_smiles}"}}
+                {"ligand": {"id": "B", "smiles": f"{self.substrate_smiles}"}}
             )
 
         elif self._gen_opt == "joint-cofactor-no-substrate":
@@ -315,7 +313,7 @@ class AF3Struct(ZSData):
 
             # add substrate
             json_data["sequences"].append(
-                {"ligand": {"id": "B", "smiles": f"{self._sub_smiles}"}}
+                {"ligand": {"id": "B", "smiles": f"{self.substrate_smiles}"}}
             )
 
             # add cofactor
@@ -327,7 +325,7 @@ class AF3Struct(ZSData):
 
             # add substrate
             json_data["sequences"].append(
-                {"ligand": {"id": "B", "smiles": f"{self._sub_smiles}"}}
+                {"ligand": {"id": "B", "smiles": f"{self.substrate_smiles}"}}
             )
 
             for j, (cofactor_dets, cofactor_smiles) in enumerate(
@@ -414,7 +412,7 @@ class AF3Struct(ZSData):
         seq,
         var_msa_outpath,
         sub,
-        sub_smiles,
+        substrate_smiles,
         cofactor,
         cofactor_smiles,
         rxn_id,
@@ -471,7 +469,7 @@ class AF3Struct(ZSData):
         elif self._gen_opt == "substrate-no-cofactor":
 
             # add substrate
-            json_data["sequences"].append({"ligand": {"id": "B", "smiles": sub_smiles}})
+            json_data["sequences"].append({"ligand": {"id": "B", "smiles": substrate_smiles}})
 
         elif self._gen_opt == "joint-cofactor-no-substrate":
 
@@ -482,7 +480,7 @@ class AF3Struct(ZSData):
         elif self._gen_opt == "seperate":
 
             # add substrate
-            json_data["sequences"].append({"ligand": {"id": "B", "smiles": sub_smiles}})
+            json_data["sequences"].append({"ligand": {"id": "B", "smiles": substrate_smiles}})
 
             # add cofactor
             json_data["sequences"].append(
@@ -491,7 +489,7 @@ class AF3Struct(ZSData):
 
         else:
 
-            joint_smiles = sub_smiles + "." + cofactor_smiles
+            joint_smiles = substrate_smiles + "." + cofactor_smiles
 
             json_data["sequences"].append(
                 {"ligand": {"id": "B", "smiles": joint_smiles}}

@@ -7,25 +7,12 @@ from __future__ import annotations
 import re
 import os
 import json
-import logging
 import subprocess
 
 import numpy as np
 
 from Bio import SeqIO, pairwise2, PDB
-from Bio.PDB import PDBParser, PDBIO, MMCIFParser
-
-try:
-    from rdkit import Chem
-except:
-    pass
-
-# import pickle
-
-# import numpy as np
-# import pandas as pd
-
-# from sklearn.metrics import ndcg_score
+from Bio.PDB import PDBParser, PDBIO, MMCIFParser, Select
 
 
 def checkNgen_folder(folder_path: str) -> str:
@@ -192,9 +179,7 @@ def get_chain_structure(input_file_path: str, output_file_path: str, chain_id: s
         return extracted_chains
 
 
-def calculate_chain_centroid(
-    input_file: str, chain_ids
-) -> np.ndarray:
+def calculate_chain_centroid(input_file: str, chain_ids) -> np.ndarray:
 
     """
     Calculate the geometric center (centroid) of all atoms in the specified chain(s).
@@ -253,7 +238,10 @@ def calculate_ligand_centroid(pdb_file: str, ligand_info: list):
                     if residue_name.lower() in residue.resname.lower():
                         # Match atom name (flexible: ignore underscores and case differences)
                         for atom in residue:
-                            if atom_name.replace("_", "").lower() == atom.name.replace("_", "").lower():
+                            if (
+                                atom_name.replace("_", "").lower()
+                                == atom.name.replace("_", "").lower()
+                            ):
                                 atom_coords.append(atom.coord)
             except KeyError:
                 print(f"Chain {chain_id} not found in the structure.")
@@ -264,7 +252,7 @@ def calculate_ligand_centroid(pdb_file: str, ligand_info: list):
 
     # Calculate centroid
     return np.mean(atom_coords, axis=0)
-    
+
 
 def modify_PDB_chain(
     input_file_path: str,
@@ -305,7 +293,7 @@ def cif2pdbwobabel(cif_file: str, pdb_file: str):
 
     cmd = f"obabel {cif_file} -O {pdb_file} --remove HOH"
     subprocess.run(cmd, shell=True)
-    
+
 
 def convert_cif_to_pdb(cif_file: str, pdb_file: str = "", ifsave: bool = True):
     """
@@ -393,10 +381,11 @@ def pdb2seq(pdb_file_path: str, chain_id: str = "A") -> str:
 
 
 def replace_residue_names_auto(
-    input_file: str, 
+    input_file: str,
     output_file: str,
     residue_prefix: str = "LIG",
-    new_residue: str = "LIG"):
+    new_residue: str = "LIG",
+):
     """
     Automatically detect and replace residue names in a PDB file that match a specific prefix.
 
@@ -411,7 +400,7 @@ def replace_residue_names_auto(
     if input_file.lower().endswith(".cif"):
         pdb_file = os.path.splitext(input_file)[0] + ".pdb"
         print(f"Converting CIF to PDB: {input_file} -> {pdb_file}")
-        
+
         # Parse CIF and write as PDB
         parser = MMCIFParser(QUIET=True)
         structure = parser.get_structure("structure", input_file)
@@ -421,7 +410,9 @@ def replace_residue_names_auto(
         input_file = pdb_file  # Use the converted PDB file as input
 
     detected_residues = set()  # To store dynamically detected residue names
-    pattern = re.compile(f"^{residue_prefix}_\\w$")  # Regex to detect residues like LIG_B, LIG_C
+    pattern = re.compile(
+        f"^{residue_prefix}_\\w$"
+    )  # Regex to detect residues like LIG_B, LIG_C
 
     with open(input_file, "r") as infile:
         lines = infile.readlines()
@@ -452,8 +443,6 @@ def replace_residue_names_auto(
             outfile.write(line)
 
 
-from Bio.PDB import PDBParser, PDBIO, Select
-
 class ResidueRemover(Select):
     def __init__(self, residues_to_remove):
         """
@@ -468,29 +457,6 @@ class ResidueRemover(Select):
         return True
 
 
-def remove_residues_from_pdb(
-    input_pdb: str, 
-    output_pdb: str, 
-    residues_to_remove: list
-):
-    """
-    Remove specified residues from a PDB file.
-
-    Args:
-        input_pdb (str): Path to the input PDB file.
-        output_pdb (str): Path to save the modified PDB file.
-        residues_to_remove (list): List of residue names to remove (e.g., ['PLS', 'NA']).
-    """
-    # Parse the input PDB file
-    parser = PDBParser(QUIET=True)
-    structure = parser.get_structure("protein", input_pdb)
-
-    # Save the modified structure to a new PDB file
-    io = PDBIO()
-    io.set_structure(structure)
-    io.save(output_pdb, select=ResidueRemover(residues_to_remove))
-
-
 def remove_hetatm(input_pdb: str, output_pdb: str):
     """
     Remove all HETATM entries from a PDB file.
@@ -502,8 +468,36 @@ def remove_hetatm(input_pdb: str, output_pdb: str):
     with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
         for line in infile:
             # Write the line to the output file if it doesn't start with "HETATM"
-            if not line.startswith("HETATM"):
+            if not line.startswith("HETATM") and not line.startswith("TER"):
                 outfile.write(line)
+            elif line.startswith("TER"):
+                line = "TER\n"
+                outfile.write(line)
+
+
+def remove_residues_from_pdb(
+    input_pdb: str, output_pdb: str, residues_to_remove=("HOH", "SO4")
+):
+    """
+    Removes specified residues from a PDB file and saves the cleaned structure.
+
+    Parameters:
+    input_pdb (str): Path to the input PDB file.
+    output_pdb (str): Path to save the output PDB file.
+    residues_to_remove (tuple): Residue names to remove (default: ('HOH', 'SO4')).
+    """
+    with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
+        for line in infile:
+            if line.startswith(("ATOM", "HETATM")):
+                residue_name = line[17:20].strip()
+                if residue_name in residues_to_remove:
+                    continue
+            elif line.startswith("TER"):
+                if any(res in line for res in residues_to_remove):
+                    line = "TER\n"
+            outfile.write(line)
+
+    print(f"Cleaned PDB saved as {output_pdb}")
 
 
 def find_missing_str(longer: str, shorter: str) -> [str, str]:
@@ -580,116 +574,6 @@ def er2ee(er: str) -> float:
         float, er.replace(">", "").split(":")
     )  # Split the ratio into major and minor components
     return (pdt1 - pdt2) / (pdt1 + pdt2) * 100  # Apply the EE formula
-
-
-def canonicalize_smiles(smiles_string: str) -> str:
-
-    """
-    A function to canonicalize a SMILES string.
-
-    Args:
-    - smiles_string (str): The input SMILES string.
-
-    Returns:
-    - str: The canonicalized SMILES string.
-    """
-
-    molecule = Chem.MolFromSmiles(smiles_string)
-    if molecule:
-        canonical_smiles = Chem.MolToSmiles(molecule, canonical=True)
-        return canonical_smiles
-
-
-def smiles2mol(smiles_string: str):
-    """
-    A function to convert a SMILES string to an RDKit molecule object.
-
-    Args:
-    - smiles_string (str): The input SMILES string.
-
-    Returns:
-    - RDKit molecule object.
-    """
-
-    mol = Chem.MolFromSmiles(smiles_string)
-    if mol:
-        mol = Chem.AddHs(mol)
-        return mol
-    else:
-        raise ValueError("Invalid SMILES string.")
-
-
-def protonate_smiles(smiles: str, pH: float) -> str:
-    """
-    Protonate SMILES string with OpenBabel at given pH
-
-    :param smiles: SMILES string of molecule to be protonated
-    :param pH: pH at which the molecule should be protonated
-    :return: SMILES string of protonated structure
-    """
-
-    # cmd list format raises errors, therefore one string
-    cmd = f'obabel -:"{smiles}" -ismi -ocan -p{pH}'
-    cmd_return = subprocess.run(cmd, capture_output=True, shell=True)
-    output = cmd_return.stdout.decode("utf-8")
-    logging.debug(output)
-
-    if cmd_return.returncode != 0:
-        print("WARNING! COULD NOT PROTONATE")
-        return None
-
-    return output.strip()
-
-
-def protonate_oxygen(smiles: str) -> str:
-    """
-    Protonate all [O-] groups in a SMILES string.
-
-    :param smiles: Input SMILES string with [O-] groups.
-    :return: Protonated SMILES string with [OH] instead of [O-].
-    """
-    # Parse the molecule
-    mol = Chem.MolFromSmiles(smiles)
-    if not mol:
-        raise ValueError(f"Invalid SMILES string: {smiles}")
-
-    # Add hydrogens explicitly
-    mol = Chem.AddHs(mol)
-
-    # Iterate over atoms to find [O-] and adjust charges
-    for atom in mol.GetAtoms():
-        if atom.GetSymbol() == "O" and atom.GetFormalCharge() == -1:
-            # Set the charge to neutral
-            atom.SetFormalCharge(0)
-            # Adjust the number of implicit hydrogens
-            atom.SetNumExplicitHs(1)
-
-    # Update the molecule
-    Chem.SanitizeMol(mol)
-
-    # Generate the protonated SMILES
-    protonated_smiles = Chem.MolToSmiles(mol, isomericSmiles=True)
-    return protonated_smiles
-
-
-def add_hydrogens_to_smiles(smiles: str) -> str:
-    """
-    Add explicit hydrogens to a molecule represented by a SMILES string.
-
-    Args:
-        smiles (str): Input SMILES string.
-
-    Returns:
-        str: SMILES string with explicit hydrogens.
-    """
-    mol = Chem.MolFromSmiles(smiles)  # Parse SMILES to RDKit molecule
-    if not mol:
-        raise ValueError(f"Invalid SMILES string: {smiles}")
-    
-    mol_with_h = Chem.AddHs(mol)  # Add explicit hydrogens
-    smiles_with_h = Chem.MolToSmiles(mol_with_h)  # Convert back to SMILES
-    
-    return smiles_with_h
 
 
 def run_sh_command(command, working_dir=None):

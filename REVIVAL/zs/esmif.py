@@ -93,6 +93,7 @@ class ESMIFData(ZSData):
 
 
     def _clean_struct(self) -> None:
+        # TODO direclty using util function or or apo structures from the subfolder
         if self._withsub:
             input_struct = os.path.join(self._in_structure_dir, f"{self.lib_name}.cif")
         else:

@@ -33,6 +33,7 @@ from rdkit.Chem import AllChem
 
 from REVIVAL.global_param import LIB_INFO_DICT
 from REVIVAL.preprocess import ZSData
+from REVIVAL.chem_helper import protonate_smiles
 from REVIVAL.util import (
     checkNgen_folder,
     get_file_name,
@@ -41,8 +42,6 @@ from REVIVAL.util import (
     get_chain_structure,
     calculate_chain_centroid,
     replace_residue_names_auto,
-    protonate_smiles,
-    protonate_oxygen
 )
 
 warnings.filterwarnings("ignore")
@@ -252,8 +251,8 @@ def ligand_smiles2pdbqt(
     smiles = Chem.CanonSmiles(smiles, useChiral=True)
     protonated_smiles = protonate_smiles(smiles, pH=pH)
     mol = Chem.MolFromSmiles(protonated_smiles)
-    uncharger = Uncharger()
-    mol = uncharger.uncharge(mol)
+    # uncharger = Uncharger()
+    # mol = uncharger.uncharge(mol)
     mol = Chem.AddHs(mol)
 
     AllChem.EmbedMolecule(mol)
@@ -964,28 +963,6 @@ def write_pdb_with_doublebonds(structure, output_pdb, double_bond_pairs):
                 )
 
         outf.write("END\n")
-
-
-# def update_si_type(input_pdb: str, output_pdb: str):
-
-#     """
-#     Update the atom type `SI` to `Si` in a given Biopython structure.
-
-#     Args:
-#         structure: A Biopython structure object containing the atoms to be updated.
-
-#     Returns:
-#         None. The structure is updated in place.
-#     """
-
-#     with open(input_pdb, "r") as infile, open(output_pdb, "w") as outfile:
-#         for line in infile:
-#             # Process only ATOM or HETATM lines
-#             if line.startswith(("ATOM", "HETATM")):
-#                 # Replace atom type 'SI' (column 77-78) with 'Si'
-#                 if line[76:78].strip() == "SI":
-#                     line = line[:76] + "Si".ljust(2) + line[78:]
-#             outfile.write(line)
 
 
 def clean_boron_pdbqt_file(
@@ -2049,6 +2026,7 @@ class VinaResults(ZSData):
         print(f"Save vina score to {self.vina_df_path}")
         self._vina_df.to_csv(self.vina_df_path, index=False)
 
+
     def _extract_vina_score(self):
 
         """
@@ -2056,10 +2034,6 @@ class VinaResults(ZSData):
         """
 
         df = self.df.copy()
-
-        # # init the vina score columns with nan
-        # for r in range(self._num_rep):
-        #     df[f"vina_{r}"] = np.nan
 
         # Get the list of variants
         variants = df[self._var_col_name].unique()
@@ -2143,9 +2117,8 @@ def run_parse_vina_results(
     else:
         lib_list = deepcopy(pattern)
 
-    print(lib_list)
 
-    for lib in lib_list:
+    for lib in tqdm(lib_list):
         print(f"Running parse vina results for {lib}...")
         VinaResults(
             input_csv=lib,

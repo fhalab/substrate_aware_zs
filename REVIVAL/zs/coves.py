@@ -1169,6 +1169,7 @@ def run_coves(
         # use obabel to convert cif to pdb
         
     if cleanup:
+        # TODO directly using util function or apo structures from the subfolder
     
         chain_path = coves_pdb_path.replace(".pdb", "chain.pdb")
 

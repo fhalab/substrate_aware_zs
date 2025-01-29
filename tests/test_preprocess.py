@@ -5,7 +5,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.preprocess import preprocess_all
+from REVIVAL.preprocess import preprocess_all, gen_apo_structures
 from REVIVAL.util import checkNgen_folder
 
 
@@ -17,7 +17,9 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    preprocess_all(input_pattern = "data/lib/TmT*.csv", scale_fit="none")
+    # preprocess_all(input_pattern = "data/lib/*.csv", scale_fit="none")
+    gen_apo_structures()
+    
 
     f.close()
 
@@ -32,4 +34,7 @@ if __name__ == "__main__":
         seq_dir: str = "data/seq",
         output_dir: str = "data/meta",
     )
+
+    gen_apo_structures(struct_dir: str = "data/structure", chain_id="A")
+
     """

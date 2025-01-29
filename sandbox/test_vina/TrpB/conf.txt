@@ -1,0 +1,12 @@
+receptor = /disk2/fli/REVIVAL2/sandbox/test_vina/TrpB/apo_TrpB.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/TrpB/4bromo.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/TrpB/PLP-dependent_aminoacrylate.pdbqt
+ligand = /disk2/fli/REVIVAL2/sandbox/test_vina/TrpB/Na+.pdbqt
+center_x = -1.8210906982421875
+center_y = -37.156639099121094
+center_z = -14.083181381225586
+size_x = 20
+size_y = 20
+size_z = 20
+num_modes = 9
+exhaustiveness = 32

@@ -26,12 +26,12 @@ import tempfile
 from REVIVAL.zs.plip import get_plip_active_site_dict
 from REVIVAL.global_param import AA_DICT, ENZYME_INFO_DICT
 from REVIVAL.preprocess import ZSData
+from REVIVAL.chem_helper import smiles2mol, apply_mutation
 from REVIVAL.util import (
     calculate_chain_centroid,
     calculate_ligand_centroid,
     get_protein_structure,
     get_chain_ids,
-    smiles2mol,
     checkNgen_folder,
     get_file_name,
 )
@@ -335,33 +335,6 @@ def get_original_resname(universe, resid):
 
     # Return the residue name
     return residue.resnames[0]
-
-
-def apply_mutation(universe, mutation):
-    """
-    Apply a mutation to a protein structure.
-
-    Args:
-        universe (MDAnalysis.Universe): The MDAnalysis Universe object.
-        mutation (tuple): Mutation specified as (resid, new_resname).
-                          Example: (56, "ALA")
-
-    Returns:
-        MDAnalysis.Universe: Updated Universe with the mutation applied.
-    """
-    resid, new_resname = mutation
-
-    # Get the original residue name
-    # original_resname = get_original_resname(universe, resid)
-
-    # Select the residue to mutate
-    residue = universe.select_atoms(f"resid {resid}").residues
-    if len(residue) == 0:
-        raise ValueError(f"Residue with resid {resid} not found in structure.")
-
-    # Mutate the residue name
-    residue.resnames = new_resname
-    return universe
 
 
 def calculate_variant_sasa(parent_pdb: str, mutations: dict):

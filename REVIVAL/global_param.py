@@ -2,39 +2,30 @@
 This file contains variables specifically to each dataset
 """
 
-# from __future__ import annotations
-
 from copy import deepcopy
-
-# from itertools import combinations
-
-# import numpy as np
-# import pandas as pd
-
-# from REVIVAL.util import get_file_name
 
 
 AA_DICT = {
-    'A': 'ALA',  # Alanine
-    'R': 'ARG',  # Arginine
-    'N': 'ASN',  # Asparagine
-    'D': 'ASP',  # Aspartic acid
-    'C': 'CYS',  # Cysteine
-    'E': 'GLU',  # Glutamic acid
-    'Q': 'GLN',  # Glutamine
-    'G': 'GLY',  # Glycine
-    'H': 'HIS',  # Histidine
-    'I': 'ILE',  # Isoleucine
-    'L': 'LEU',  # Leucine
-    'K': 'LYS',  # Lysine
-    'M': 'MET',  # Methionine
-    'F': 'PHE',  # Phenylalanine
-    'P': 'PRO',  # Proline
-    'S': 'SER',  # Serine
-    'T': 'THR',  # Threonine
-    'W': 'TRP',  # Tryptophan
-    'Y': 'TYR',  # Tyrosine
-    'V': 'VAL',  # Valine
+    "A": "ALA",  # Alanine
+    "R": "ARG",  # Arginine
+    "N": "ASN",  # Asparagine
+    "D": "ASP",  # Aspartic acid
+    "C": "CYS",  # Cysteine
+    "E": "GLU",  # Glutamic acid
+    "Q": "GLN",  # Glutamine
+    "G": "GLY",  # Glycine
+    "H": "HIS",  # Histidine
+    "I": "ILE",  # Isoleucine
+    "L": "LEU",  # Leucine
+    "K": "LYS",  # Lysine
+    "M": "MET",  # Methionine
+    "F": "PHE",  # Phenylalanine
+    "P": "PRO",  # Proline
+    "S": "SER",  # Serine
+    "T": "THR",  # Threonine
+    "W": "TRP",  # Tryptophan
+    "Y": "TYR",  # Tyrosine
+    "V": "VAL",  # Valine
 }
 
 TrpB_CHEM = {
@@ -58,8 +49,7 @@ TrpB_CHEM = {
 ENZYME_INFO_DICT = deepcopy(
     {
         "PfTrpB": {
-            "ligand-info":
-            [
+            "ligand-info": [
                 ("A", "PLS", "N"),
                 ("A", "PLS", "CA"),
                 ("A", "PLS", "CB"),
@@ -81,7 +71,7 @@ ENZYME_INFO_DICT = deepcopy(
                 ("A", "PLS", "P"),
                 ("A", "PLS", "O1P"),
                 ("A", "PLS", "O2P"),
-                ("A", "PLS", "O3P")
+                ("A", "PLS", "O3P"),
             ],
             "inactivated-cofactor": ["PLP", "Na+"],
             "inactivated-cofactor-smiles": [
@@ -100,9 +90,9 @@ ENZYME_INFO_DICT = deepcopy(
             "family": "TrpB",
             "project": "multi-substrate",
             "PDBID": "5DW0",
-            "volume": 792.872, # CASTp with 5dw3 PocID2
+            "volume": 792.872,  # CASTp with 5dw3 PocID2
         },
-        "Rma":{
+        "Rma": {
             "ligand-info": [
                 ("A", "SO4", "S"),
                 ("A", "SO4", "O1"),
@@ -156,9 +146,9 @@ ENZYME_INFO_DICT = deepcopy(
             "family": "Rma",
             "project": "MODIFY",
             "PDBID": "3CP5",
-            "volume": 138.961, # CASTp 
+            "volume": 138.961,  # CASTp
         },
-        "ParLQ":{
+        "ParLQ": {
             "ligand-info": [
                 ("B", "HEM", "CAA"),
                 ("B", "HEM", "CAB"),
@@ -202,12 +192,12 @@ ENZYME_INFO_DICT = deepcopy(
                 ("B", "HEM", "C4C"),
                 ("B", "HEM", "C4D"),
                 ("B", "HEM", "NAC"),
-                ("B", "HEM", "FE")
+                ("B", "HEM", "FE"),
             ],
             "family": "ParLQ",
             "project": "ALDE",
-            "volume": 275.468, # CASTp with 3zji
-        }
+            "volume": 275.468,  # CASTp with 3zji
+        },
     }
 )
 

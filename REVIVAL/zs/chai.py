@@ -21,7 +21,8 @@ from chai_lab.chai1 import run_inference
 
 from REVIVAL.preprocess import ZSData
 from REVIVAL.global_param import LIB_INFO_DICT
-from REVIVAL.util import checkNgen_folder, canonicalize_smiles
+from REVIVAL.chem_helper import canonicalize_smiles
+from REVIVAL.util import checkNgen_folder
 
 
 def get_residue_uncertainty(cif_file, chain_id, resid_list):
@@ -54,7 +55,9 @@ def get_residue_uncertainty(cif_file, chain_id, resid_list):
                         all_bfactors.extend(bfactors)
 
     if not residue_bfactors:
-        raise ValueError(f"No residues in {resid_list} found in chain {chain_id} of {cif_file}.")
+        raise ValueError(
+            f"No residues in {resid_list} found in chain {chain_id} of {cif_file}."
+        )
 
     return sum(all_bfactors) / len(all_bfactors)
 
@@ -137,16 +140,14 @@ class ChaiStruct(ZSData):
 
         # TODO can make the following more concise
         if samesub:
-            self._sub_smiles = canonicalize_smiles(self.lib_info["substrate-smiles"])
-            self._sub_dets = self.lib_info["substrate"]
 
             self._cofactor_smiles = canonicalize_smiles(
                 ".".join(self.lib_info[f"{cofactor_dets}-smiles"])
             )
             self._cofactor_dets = "-".join(self.lib_info[cofactor_dets])
 
-            self._joint_smiles = self._sub_smiles + "." + self._cofactor_smiles
-            self._joint_dets = self._sub_dets + "_" + self._cofactor_dets
+            self._joint_smiles = self.substrate_smiles + "." + self._cofactor_smiles
+            self._joint_dets = self.substrate_dets + "_" + self._cofactor_dets
             self._gen_chai_structure()
         else:
             self._gen_chai_structure_diff_sub()
@@ -176,7 +177,7 @@ class ChaiStruct(ZSData):
             elif self._gen_opt == "substrate-no-cofactor":
 
                 # add substrate
-                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
+                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
 
             elif self._gen_opt == "joint-cofactor-no-substrate":
 
@@ -188,7 +189,7 @@ class ChaiStruct(ZSData):
             elif self._gen_opt == "joint-cofactor-seperate-substrate":
 
                 # add substrate first
-                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
+                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
 
                 # add cofactor smiles
                 input_fasta += (
@@ -198,7 +199,7 @@ class ChaiStruct(ZSData):
             elif self._gen_opt == "seperate":
 
                 # add joint
-                input_fasta += f">ligand|{self._sub_dets}\n{self._sub_smiles}\n"
+                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
 
                 # loop through the cofactors and add them individually
                 for cofactor_dets, cofactor_smiles in zip(
@@ -296,7 +297,9 @@ class ChaiStruct(ZSData):
             ].values
         ):
 
-            output_subdir = os.path.join(self._chai_struct_subdir, f"{var}_{str(rxn_id)}")
+            output_subdir = os.path.join(
+                self._chai_struct_subdir, f"{var}_{str(rxn_id)}"
+            )
 
             # Need to clean up the sequence
             seq = seq.strip().replace("*", "").replace(" ", "").upper()
@@ -496,9 +499,14 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
 
                 # add mean_site_score
                 var_data[f"mean_site_score_{rep_index}"] = get_residue_uncertainty(
-                    cif_file=rep_npz.replace(".npz", ".cif"), 
+                    cif_file=rep_npz.replace(".npz", ".cif"),
                     chain_id="A",
-                    resid_list=list(LIB_INFO_DICT[os.path.basename(mut_structure_dir)]["positions"].values()))
+                    resid_list=list(
+                        LIB_INFO_DICT[os.path.basename(mut_structure_dir)][
+                            "positions"
+                        ].values()
+                    ),
+                )
 
                 # Process chain-level ptm and iptm scores
                 for i, chain in enumerate(chain_labels):
