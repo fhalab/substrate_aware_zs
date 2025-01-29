@@ -252,9 +252,13 @@ def prepare_ion(
 
 
 def ligand_smiles2pdbqt(
-    smiles: str, ligand_sdf_file: str, ligand_pdbqt_file: str, pH: float
-) -> None:
+    smiles: str, ligand_sdf_file: str, ligand_pdbqt_file: str, pH: float, regen: bool = False
+) -> str:
     """Generate 3D coordinates, protonate, and save ligand."""
+    if not regen and os.path.isfile(ligand_pdbqt_file):
+        print(f"Skipping ligand {ligand_pdbqt_file} as it already exists and regen false.")
+        return
+
     smiles = Chem.CanonSmiles(smiles, useChiral=True)
     protonated_smiles = protonate_smiles(smiles, pH=pH)
     mol = Chem.MolFromSmiles(protonated_smiles)
@@ -268,6 +272,8 @@ def ligand_smiles2pdbqt(
     writer.close()
 
     subprocess.run(["obabel", ligand_sdf_file, "-O", ligand_pdbqt_file], check=True)
+
+    return ligand_pdbqt_file
 
 
 def format_ligand(
@@ -2016,27 +2022,43 @@ class VinaApoDock(ZSData):
             smiles=self.substrate_smiles,
             ligand_sdf_file=self._ligand_pdbqt.replace(".pdbqt", ".sdf"),
             ligand_pdbqt_file=self._ligand_pdbqt,
-            pH=self._pH
+            pH=self._pH,
+            regen=self._regen
         )
 
         cofactor2dock = []
         cofactor2freeze = []
+
 
         for (cofactor_name, cofactor_smiles) in zip(
             self.lib_info[self._cofactor_dets],
             self.lib_info[f"{self._cofactor_dets}-smiles"],
         ):  
             print(f"Processing cofactor {cofactor_name} {cofactor_smiles}")
-            cofactor_pdbqt = os.path.join(self._common_pdbqt_dir, f"{cofactor_name}.pdbqt")
 
             if self._dock_opt == "all":
-                cofactor2dock.append(cofactor_pdbqt)
-                ligand_smiles2pdbqt(
-                    smiles=cofactor_smiles,
-                    ligand_sdf_file=cofactor_pdbqt.replace(".pdbqt", ".sdf"),
-                    ligand_pdbqt_file=cofactor_pdbqt,
-                    pH=self._pH
-                )
+
+                # check it is an ion
+                simple_ion = cofactor_name.upper()[:2]
+                if simple_ion in LIGAND_IONS or (cofactor_smiles and cofactor_smiles[0] == "[" and cofactor_smiles[-1] == "]"):
+
+                    cofactor2dock.append(prepare_ion(
+                        smiles=cofactor_smiles,
+                        element=simple_ion if simple_ion in LIGAND_IONS else None,
+                        output_dir=self._common_pdbqt_dir,
+                        input_struct_path=self.clean_struct,
+                        pH=self._pH,
+                    ))
+
+                else:
+                    cofactor_pdbqt = os.path.join(self._common_pdbqt_dir, f"{cofactor_name}.pdbqt")
+                    cofactor2dock.append(ligand_smiles2pdbqt(
+                        smiles=cofactor_smiles,
+                        ligand_sdf_file=cofactor_pdbqt.replace(".pdbqt", ".sdf"),
+                        ligand_pdbqt_file=cofactor_pdbqt,
+                        pH=self._pH,
+                        regen=self._regen
+                    ))
         
             # substrate only for trpb but sub + carbene for heme
             # extract heat atom to a pdb
@@ -2054,6 +2076,7 @@ class VinaApoDock(ZSData):
             
         return cofactor2dock, cofactor2freeze
             
+
     def _mutate_apo(self, var):
         """
         Mutates the apo structure with the given mutation.
@@ -2061,7 +2084,12 @@ class VinaApoDock(ZSData):
 
         # make var_dir
         var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
-        var_pdb = os.path.join(var_dir, f"{var}.pdb")
+        var_mut_pdb = os.path.join(var_dir, f"{var}_mut.pdb")
+        var_clean_pdb = os.path.join(var_dir, f"{var}.pdb")
+        var_pdbqt = os.path.join(var_dir, f"{var}.pdbqt")
+
+        if not self._regen and os.path.isfile(var_pdbqt):
+            return var_pdbqt
 
         mutation_dict = {}
 
@@ -2073,14 +2101,18 @@ class VinaApoDock(ZSData):
             mutate_and_save_pdb(
                 parent_pdb=self.apo_struct,
                 mutations=mutation_dict,
-                output_pdb=var_pdb
+                output_pdb=var_mut_pdb
             )
 
         else:
             # copy the apo structure to the output directory
-            shutil.copy(self.apo_struct, var_pdb)
+            shutil.copy(self.apo_struct, var_mut_pdb)
         
-        return var_pdb
+        # clean pdb and convert to pdbqt
+        pdb_to_pdbqt_protein(var_mut_pdb, var_pdbqt)
+        
+        return var_pdbqt
+
 
     def _make_config(self, var):
         """
@@ -2088,7 +2120,7 @@ class VinaApoDock(ZSData):
         """
 
         var_dir = checkNgen_folder(os.path.join(self._output_dir, var))
-        conf_path = os.path.join(var_dir, "conf.txt")
+        conf_path = os.path.join(var_dir, f"{self._dock_opt}_conf.txt")
 
         # make the receptor pdbqt file
         if self._dock_opt != "all" and self._cofactor2freeze != []:
@@ -2129,11 +2161,10 @@ class VinaApoDock(ZSData):
 
         # make the config file
         conf_path = self._make_config(var)
-        docked_ligand_pdb = os.path.join(self._output_dir, var, "docked_ligand.pdb")
-        vina_logfile = os.path.join(self._output_dir, var, "log.txt")
+        docked_ligand_pdb = os.path.join(self._output_dir, var, f"{self._dock_opt}_docked.pdb")
+        vina_logfile = os.path.join(self._output_dir, var, f"{self._dock_opt}_log.txt")
 
         # dock the variant
-
         cmd_list = ["vina", "--config", conf_path, "--out", docked_ligand_pdb, "--seed", str(42)]
 
         try:

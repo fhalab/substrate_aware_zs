@@ -153,15 +153,13 @@ if __name__ == "__main__":
                 VinaApoDock(
                     input_csv = lib,
                     dock_opt=dock_opt,
-                    output_dir = checkNgen_folder(f"zs/vina/apo/{dock_opt}"),
                 )
-            # else:
-            #     VinaApoDock(
-            #         input_csv = lib,
-            #         dock_opt=dock_opt,
-            #         cofactor_dets="inactivated-cofactor",
-            #         output_dir = checkNgen_folder(f"zs/vina/apo/{dock_opt}"),
-            #     )
+            else:
+                VinaApoDock(
+                    input_csv = lib,
+                    dock_opt=dock_opt,
+                    cofactor_dets="activated_carbene-cofactor",
+                )
 
     f.close()
     

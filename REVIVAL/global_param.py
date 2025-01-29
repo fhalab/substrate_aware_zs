@@ -1034,6 +1034,12 @@ LIB_INFO_DICT = deepcopy(
             "inactivated-cofactor-smiles": [
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
+            "activated_carbene-cofactor": ["heme c", "Fe2+", "carbene"],
+            "activated_carbene-cofactor-smiles": [
+                r"C=CC1=C(/C=C2C(C)=C(C=C)C3=N/2)NC(/C=C4N=C(/C=C(C(CCC([O-])=O)=C/5C)\NC5=C/3)C(CCC([O-])=O)=C\4C)=C1C",
+                "[Fe2+]",
+                "CCOC([C]C)=O",
+            ],
             "product": "organoborane",
             "product-smiles": "CN1C=C[N+](C)=C1[BH2-][C@H](C)C(OCC)=O",
             "NHC-borane-info": [
@@ -1105,6 +1111,12 @@ LIB_INFO_DICT = deepcopy(
             "inactivated-cofactor-smiles": [
                 "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
             ],
+            "activated_carbene-cofactor": ["heme c", "Fe2+", "carbene"],
+            "activated_carbene-cofactor-smiles": [
+                r"C=CC1=C(/C=C2C(C)=C(C=C)C3=N/2)NC(/C=C4N=C(/C=C(C(CCC([O-])=O)=C/5C)\NC5=C/3)C(CCC([O-])=O)=C\4C)=C1C",
+                "[Fe2+]",
+                "CCOC([C]C)=O"
+            ],
             "product": "organosilicon",
             "product-smiles": "C[Si]([C@]([H])(C)C(OCC)=O)(C)C1=CC=CC=C1",
             "phenyldimethylsilane-info": [
@@ -1167,6 +1179,12 @@ LIB_INFO_DICT = deepcopy(
             "inactivated-cofactor-smiles": [
                 "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
             ],  # heme b taken from pdb
+            "activated_carbene-cofactor": ["heme c", "Fe2+"," carbene"],
+            "activated_carbene-cofactor-smiles": [
+                r"C=CC1=C(/C=C2C(C)=C(C=C)C3=N/2)NC(/C=C4N=C(/C=C(C(CCC([O-])=O)=C/5C)\NC5=C/3)C(CCC([O-])=O)=C\4C)=C1C",
+                "[Fe2+]",
+                "CCOC([C])=O"
+            ],
             "product": "1,2-disubstituted cyclopropanes cis",
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
             "product2": "1,2-disubstituted cyclopropanes trans",
