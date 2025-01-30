@@ -1986,7 +1986,7 @@ class VinaLibDock(ZSData):
         self._dock_opt = dock_opt
         self._cofactor_dets = cofactor_dets
         self._in_structure_dir = in_structure_dir
-        self._output_dir = checkNgen_folder(os.path.join(output_dir, self.lib_name))
+        self._output_dir = checkNgen_folder(os.path.join(output_dir, "struct", self.lib_name))
         self._common_pdbqt_dir = checkNgen_folder(
             os.path.join(self._output_dir, "common_pdbqt")
         )
@@ -2306,15 +2306,10 @@ class VinaResults(ZSData):
         input_csv: str,
         dock_opt: str,  #  ie "substrate",
         score_only: bool,  # = True,
-        vina_struct_dir: str,  # = "vina/chai/struct_joint",
+        vina_struct_dir: str,  # = "zs/vina/chai/struct_joint",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
-        mut_col_name: str = "mut",
-        pos_col_name: str = "pos",
-        seq_col_name: str = "seq",
         fit_col_name: str = "fitness",
-        seq_dir: str = "data/seq",
-        zs_dir: str = "zs",
         vina_score_dirname: str = "score",
         num_rep: int = 5,
         cofactor_type: str = "",
@@ -2329,12 +2324,7 @@ class VinaResults(ZSData):
             ie. /disk2/fli/REVIVAL2/data/meta/not_scaled/PfTrpB-4bromo.csv
         - combo_col_name (str): The column name for the combo.
         - var_col_name (str): The column name for the variant.
-        - mut_col_name (str): The column name for the mutation.
-        - pos_col_name (str): The column name for the position.
-        - seq_col_name (str): The column name for the sequence.
         - fit_col_name (str): The column name for the fitness.
-        - seq_dir (str): The directory for the sequences.
-        - zs_dir (str): The directory for the ZS data.
         - vina_dir (str): The directory for the Vina data.
         - vina_raw_dir (str): The directory for the raw Vina data.
         - vina_score_dir (str): The directory for the Vina score data.
@@ -2348,22 +2338,15 @@ class VinaResults(ZSData):
             input_csv=input_csv,
             combo_col_name=combo_col_name,
             var_col_name=var_col_name,
-            mut_col_name=mut_col_name,
-            pos_col_name=pos_col_name,
-            seq_col_name=seq_col_name,
             fit_col_name=fit_col_name,
             withsub=withsub,
-            seq_dir=seq_dir,
-            zs_dir=zs_dir,
         )
 
-        self._cofactor_append = f"_{cofactor_type}" if cofactor_type else ""
-        self._vina_lib_name = f"{self.lib_name}{self._cofactor_append}"
+        self._cofactor_type = f"_{cofactor_type}" if cofactor_type else ""
+        self._vina_lib_name = f"{self.lib_name}{self._cofactor_type}"
 
-        self._vina_dir = os.path.join(self._zs_dir, vina_struct_dir)
-        self._vina_score_dir = checkNgen_folder(
-            os.path.join(self._zs_dir, vina_struct_dir, vina_score_dirname)
-        )
+        self._vina_dir = vina_struct_dir
+        self._vina_score_dir = self._vina_dir.replace("struct", vina_score_dirname)
         self._vina_lib_dir = os.path.join(self._vina_dir, self._vina_lib_name)
 
         self._num_rep = num_rep
@@ -2382,6 +2365,7 @@ class VinaResults(ZSData):
         # save the vina data
         print(f"Save vina score to {self.vina_df_path}")
         self._vina_df.to_csv(self.vina_df_path, index=False)
+    
 
     def _extract_vina_score(self):
 
@@ -2389,7 +2373,7 @@ class VinaResults(ZSData):
         Extract the Vina data from the Vina log files.
         """
 
-        df = self.df.copy()
+        df = self.df[self.common_cols].copy()
 
         # Get the list of variants
         variants = df[self._var_col_name].unique()
@@ -2398,11 +2382,18 @@ class VinaResults(ZSData):
         scores = []
         for variant in tqdm(variants):
             for r in range(self._num_rep):
-                vina_log_file = os.path.join(
+                if "apo" in self._vina_dir:
+                    vina_log_file = os.path.join(
                     self._vina_lib_dir,
-                    f"{variant}_{r}",
-                    f"{variant}_{r}-{self.substrate_name}-{self._dock_opt}-{self._output_opt}_log.txt",
+                    f"{variant}",
+                    f"{self._dock_opt}_log_{r}.txt",
                 )
+                else:
+                    vina_log_file = os.path.join(
+                        self._vina_lib_dir,
+                        f"{variant}_{r}",
+                        f"{variant}_{r}-{self.substrate_name}-{self._dock_opt}-{self._output_opt}_log.txt",
+                    )
 
                 # print(f"Extracting vina score for {variant}_{r} from {vina_log_file}")
 
@@ -2434,8 +2425,9 @@ class VinaResults(ZSData):
         # take average of the replicates for each variant ignore nan when taking average
         df["vina"] = df[[f"vina_{r}" for r in range(self._num_rep)]].mean(axis=1)
 
-        # add rank where the most negative score means rank 1
-        df["vina_rank"] = df["vina"].rank(ascending=True)
+        df["vina_min"] = df[[f"vina_{r}" for r in range(self._num_rep)]].min(axis=1)
+
+        df["vina_max"] = df[[f"vina_{r}" for r in range(self._num_rep)]].max(axis=1)
 
         return df
 
@@ -2445,14 +2437,28 @@ class VinaResults(ZSData):
 
     @property
     def vina_df_path(self):
-        return os.path.join(
+        cofactor_type = self._cofactor_type if self._cofactor_type else "_cofactor"
+
+        df_dir = checkNgen_folder(os.path.join(
             self._vina_score_dir,
-            f"{self._vina_lib_name}-{self._dock_opt}-{self._output_opt}.csv",
-        )
+            f"{self._dock_opt}{cofactor_type}-{self._output_opt}",
+        ))
+
+        return os.path.join(df_dir, f"{self.lib_name}.csv")
 
     @property
     def substrate_name(self):
         return LIB_INFO_DICT[self.lib_name]["substrate"]
+
+    @property
+    def common_cols(self):
+
+        common_cols = [self._var_col_name, self._fit_col_name]
+
+        if "selectivity" in self.df.columns:
+            common_cols.append("selectivity")
+
+        return common_cols
 
 
 def run_parse_vina_results(

@@ -67,99 +67,19 @@ if __name__ == "__main__":
     #     )
     
 
-    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=True,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    
-    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=True,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-
-    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=False,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    
-    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=False,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    
-    
-    # for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=True,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    
-    # for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=True,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-
-    # for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=False,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    
-    # for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="all",
-    #         score_only=False,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
-    for dock_opt in ["all"]: # ["substrate", "all"]:
-        for lib in sorted(glob(("data/meta/not_scaled/*.csv"))):
-            if "TrpB" in lib:
-                VinaLibDock(
-                    input_csv = lib,
-                    dock_opt=dock_opt,
-                )
-            else:
-                VinaLibDock(
-                    input_csv = lib,
-                    dock_opt=dock_opt,
-                    cofactor_dets="activated_carbene-cofactor",
-                )
+    # for dock_opt in ["substrate", "all"]:
+    #     for lib in sorted(glob(("data/meta/not_scaled/*.csv"))):
+    #         if "TrpB" in lib:
+    #             VinaLibDock(
+    #                 input_csv = lib,
+    #                 dock_opt=dock_opt,
+    #             )
+    #         else:
+    #             VinaLibDock(
+    #                 input_csv = lib,
+    #                 dock_opt=dock_opt,
+    #                 cofactor_dets="activated_carbene-cofactor",
+    #             )
 
     f.close()
     

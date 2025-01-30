@@ -469,14 +469,22 @@ class BondData(ZSData):
     def _append_af_dist(self) -> pd.DataFrame:
         """Append distances for AF structures."""
         # df = self._init_dist_df()
-        df = self.df.copy()
+        df = self.df[self.common_cols].copy()
         return self._calculate_distances(df, struct_type="af")
 
     def _append_chai_dist(self) -> pd.DataFrame:
         """Append distances for CHAI structures."""
         # df = self._init_dist_df()
-        df = self.df.copy()
+        df = self.df[self.common_cols].copy()
         return self._calculate_distances(df, struct_type="chai")
+
+    @property
+    def common_cols(self):
+        """Common column nmaes to be merged"""
+        common_cols = [self._var_col_name, self._fit_col_name]
+        if "selectivity" in self.df.columns:
+            common_cols.append("selectivity")
+        return common_cols
 
 
 def run_bonddist(

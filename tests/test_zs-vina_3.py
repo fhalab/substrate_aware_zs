@@ -26,78 +26,107 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    for struct_dir in [
-        "zs/chai/struct_joint/ParLQ",
-        "zs/chai/struct_joint/Rma-CB",
-        "zs/chai/struct_joint/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
+    # for struct_dir in [
+    #     "zs/chai/struct_joint/ParLQ",
+    #     "zs/chai/struct_joint/Rma-CB",
+    #     "zs/chai/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
     
-    for struct_dir in [
-        "zs/chai/struct_seperate/ParLQ",
-        "zs/chai/struct_seperate/Rma-CB",
-        "zs/chai/struct_seperate/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
-    
-
-    for struct_dir in [
-        "zs/chai/struct_joint/ParLQ",
-        "zs/chai/struct_joint/Rma-CB",
-        "zs/chai/struct_joint/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=False,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
-    
-    for struct_dir in [
-        "zs/chai/struct_seperate/ParLQ",
-        "zs/chai/struct_seperate/Rma-CB",
-        "zs/chai/struct_seperate/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=False,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
+    # for struct_dir in [
+    #     "zs/chai/struct_seperate/ParLQ",
+    #     "zs/chai/struct_seperate/Rma-CB",
+    #     "zs/chai/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
     
 
+    # for struct_dir in [
+    #     "zs/chai/struct_joint/ParLQ",
+    #     "zs/chai/struct_joint/Rma-CB",
+    #     "zs/chai/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/chai/struct_seperate/ParLQ",
+    #     "zs/chai/struct_seperate/Rma-CB",
+    #     "zs/chai/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
 
-    for struct_dir in [
-        "zs/af3/struct_joint/ParLQ",
-        "zs/af3/struct_joint/Rma-CB",
-        "zs/af3/struct_joint/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
+
+    # for struct_dir in [
+    #     "zs/af3/struct_joint/ParLQ",
+    #     "zs/af3/struct_joint/Rma-CB",
+    #     "zs/af3/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/af3/struct_seperate/ParLQ",
+    #     "zs/af3/struct_seperate/Rma-CB",
+    #     "zs/af3/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+
+    # for struct_dir in [
+    #     "zs/af3/struct_joint/ParLQ",
+    #     "zs/af3/struct_joint/Rma-CB",
+    #     "zs/af3/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
     
     for struct_dir in [
         "zs/af3/struct_seperate/ParLQ",
@@ -107,39 +136,10 @@ if __name__ == "__main__":
         dock_lib_parallel(
             struct_dir = struct_dir,
             dock_opt="substrate+carbene",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
-    
-
-    for struct_dir in [
-        "zs/af3/struct_joint/ParLQ",
-        "zs/af3/struct_joint/Rma-CB",
-        "zs/af3/struct_joint/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
             score_only=False,
             rerun=False,
             cofactor_dets="cofactor",
-            max_workers=16
-        )
-    
-    for struct_dir in [
-        "zs/af3/struct_seperate/ParLQ",
-        "zs/af3/struct_seperate/Rma-CB",
-        "zs/af3/struct_seperate/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=False,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
+            max_workers=8
         )
     
     f.close()

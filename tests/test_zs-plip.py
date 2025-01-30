@@ -38,8 +38,8 @@ if __name__ == "__main__":
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
     for plip_dir in[
-        # "zs/plip/af3/struct_joint",
-        "zs/plip/chai/struct_joint",
+        "zs/plip/af3/struct_joint",
+        # "zs/plip/chai/struct_joint",
     ]:
     
         run_all_plip_zs(
@@ -49,9 +49,8 @@ if __name__ == "__main__":
 
     
     for plip_dir in[
-        # "zs/plip/af3/struct_joint",
         "zs/plip/af3/struct_seperate",
-        "zs/plip/chai/struct_seperate",
+        # "zs/plip/chai/struct_seperate",
     ]:
     
         run_all_plip_zs(

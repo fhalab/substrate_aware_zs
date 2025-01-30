@@ -418,11 +418,11 @@ class HydroData(ZSData):
         print(f"Calculating hydrophobicity for {self.lib_name}...")
 
         # naive based on combo column
-        if "holo" in self._plip_dir or self._plip_dir is None:
+        if "frompdb" in self._plip_dir or self._plip_dir is None:
             hydro_df = self._get_naive_hydro_df()
             # merge with the self.df to get fitness info
             self._hydro_df = pd.merge(
-                self.df[[self._combo_col_name, self._fit_col_name]],
+                self.df[[self._combo_col_name, self._var_col_name, self._fit_col_name]],
                 hydro_df,
                 on=self._combo_col_name,
                 how="outer",
@@ -615,7 +615,7 @@ class HydroData(ZSData):
 
         hydro_dict = deepcopy(self.subcof_hydro_dict)
 
-        # /disk2/fli/REVIVAL2/zs/plip/holo/ParLQ/ParLQ.pdb
+        # /disk2/fli/REVIVAL2/zs/plip/frompdb/ParLQ/ParLQ.pdb
         parent_struct_path = os.path.join(
             self._plip_dir, self.protein_name, self.protein_name + ".pdb"
         )
@@ -795,8 +795,8 @@ class HydroData(ZSData):
     def hydro_df_path(self) -> str:
         """Get the path to the hydrophobicity DataFrame"""
 
-        if "holo" in self._plip_dir or self._plip_dir is None:
-            hydro_df_dir = checkNgen_folder(os.path.join(self._hydro_dir, "holo"))
+        if "frompdb" in self._plip_dir or self._plip_dir is None:
+            hydro_df_dir = checkNgen_folder(os.path.join(self._hydro_dir, "frompdb"))
             return os.path.join(hydro_df_dir, f"{self.lib_name}.csv")
         else:
             hydro_df_dir = checkNgen_folder(

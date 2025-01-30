@@ -370,10 +370,12 @@ class PLIP_ZS(ZSData):
 
         self._plip_dir = plip_dir
 
-        self._rep_list = [str(i) for i in range(5)]
-
-        if "af3" in plip_dir:
-            self._rep_list.append("agg")
+        self._common_rep_list = [str(i) for i in range(5)]
+        self._rep_list = (
+            self._common_rep_list + ["agg"]
+            if "af3" in plip_dir
+            else self._common_rep_list
+        )
 
         self._plip_rep_df = self._get_plip_rep_df()
 
@@ -473,7 +475,7 @@ class PLIP_ZS(ZSData):
             )
 
         # Filter rows for rep in [0, 1, 2, 3, 4]
-        filtered_df = df[df["rep"].isin(self._rep_list)]
+        filtered_df = df[df["rep"].isin(self._common_rep_list)]
 
         # Initialize a new DataFrame for results
         result = pd.DataFrame()
