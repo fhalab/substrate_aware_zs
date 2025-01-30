@@ -165,27 +165,27 @@ if __name__ == "__main__":
         vina_struct_dir="zs/vina/af3/struct_joint",
     )
 
-    # run_parse_vina_results(
-    #     pattern=[
-    #         "data/meta/not_scaled/ParLQ.csv",
-    #         "data/meta/not_scaled/Rma-CB.csv",
-    #         "data/meta/not_scaled/Rma-CSi.csv",
-    #     ],
-    #     dock_opt="substrate+carbene",
-    #     score_only=True,
-    #     vina_struct_dir="zs/vina/af3/struct_seperate",
-    # )
+    run_parse_vina_results(
+        pattern=[
+            "data/meta/not_scaled/ParLQ.csv",
+            "data/meta/not_scaled/Rma-CB.csv",
+            "data/meta/not_scaled/Rma-CSi.csv",
+        ],
+        dock_opt="substrate+carbene",
+        score_only=True,
+        vina_struct_dir="zs/vina/af3/struct_seperate",
+    )
 
-    # run_parse_vina_results(
-    #     pattern=[
-    #         "data/meta/not_scaled/ParLQ.csv",
-    #         "data/meta/not_scaled/Rma-CB.csv",
-    #         "data/meta/not_scaled/Rma-CSi.csv",
-    #     ],
-    #     dock_opt="substrate+carbene",
-    #     score_only=False,
-    #     vina_struct_dir="zs/vina/af3/struct_seperate",
-    # )
+    run_parse_vina_results(
+        pattern=[
+            "data/meta/not_scaled/ParLQ.csv",
+            "data/meta/not_scaled/Rma-CB.csv",
+            "data/meta/not_scaled/Rma-CSi.csv",
+        ],
+        dock_opt="substrate+carbene",
+        score_only=False,
+        vina_struct_dir="zs/vina/af3/struct_seperate",
+    )
 
     # run_parse_vina_results(
     # dock_opt: str,  #  ie "substrate",

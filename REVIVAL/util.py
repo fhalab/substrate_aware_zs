@@ -615,6 +615,14 @@ def er2ee(er: str) -> float:
     return (pdt1 - pdt2) / (pdt1 + pdt2) * 100  # Apply the EE formula
 
 
+def ndcg_scale(y_true: np.ndarray, y_pred: np.ndarray):
+    """Calculate the ndcg_score with neg correction"""
+
+    if min(y_true) < 0:
+        y_true = y_true - min(y_true)
+    return ndcg_score(y_true[None, :], y_pred[None, :])
+
+
 # https://github.com/OATML-Markslab/ProteinGym/blob/e1d603d28ed8c6a27959c993de30312a83203a16/proteingym/baselines/unirep/utils/metric_utils.py#L18
 def ndcg(y_pred: np.array, y_true: np.array) -> float:
     """

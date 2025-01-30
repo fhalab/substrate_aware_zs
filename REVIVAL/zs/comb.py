@@ -88,12 +88,21 @@ class ZSComb(ZSData):
 
         # Use glob to find matching CSV files
         csv_files = glob(pattern, recursive=True)
+        
 
         # Extract the unique portions of each path
         for csv_path in csv_files:
 
+            split_csv_path = csv_path.split("/")
+
             # Replace `/` with `-` to create a unique identifier
-            unique_name = "-".join(csv_path.split("/")[2:-1])
+            unique_name = "-".join(split_csv_path[2:-1])
+
+            # to prevent duplicate names from af3 and chai outputs
+            if split_csv_path[1] in ["af3", "chai"]:
+                unique_name += f"_{split_csv_path[1]}"
+
+            print(f"Combining {csv_path} with {unique_name}...")
 
             # Load CSV file
             df = pd.read_csv(csv_path)
