@@ -8,7 +8,7 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.plip import run_lib_plip
+from REVIVAL.zs.plip import run_lib_plip, run_all_plip_zs
 from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
@@ -23,19 +23,45 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_lib_plip(in_dir="data/structure", out_dir="zs/plip")
+    # run_lib_plip(in_dir="data/structure", out_dir="zs/plip")
 
-    for lib_dir in sorted(glob("zs/af3/struct_joint/*")):
-        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    # for lib_dir in sorted(glob("zs/af3/struct_joint/*")):
+    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    for lib_dir in sorted(glob("zs/af3/struct_seperate/*")):
-        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    # for lib_dir in sorted(glob("zs/af3/struct_seperate/*")):
+    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    for lib_dir in sorted(glob("zs/chai/struct_joint/*")):
-        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    # for lib_dir in sorted(glob("zs/chai/struct_joint/*")):
+    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    for lib_dir in sorted(glob("zs/chai/struct_seperate/*")):
-        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    # for lib_dir in sorted(glob("zs/chai/struct_seperate/*")):
+    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+
+    for plip_dir in[
+        # "zs/plip/af3/struct_joint",
+        "zs/plip/chai/struct_joint",
+    ]:
+    
+        run_all_plip_zs(
+            "data/meta/not_scaled/*.csv",
+            plip_dir
+            )
+
+    
+    for plip_dir in[
+        # "zs/plip/af3/struct_joint",
+        "zs/plip/af3/struct_seperate",
+        "zs/plip/chai/struct_seperate",
+    ]:
+    
+        run_all_plip_zs(
+            [
+                "data/meta/not_scaled/ParLQ.csv",
+                "data/meta/not_scaled/Rma-CB.csv",
+                "data/meta/not_scaled/Rma-CSi.csv",
+            ],
+            plip_dir
+            )
 
     f.close()
 
@@ -77,4 +103,6 @@ if __name__ == "__main__":
         perserve the structure details, i.e.
             zs/plip/chai/struct_joint/ParLQ/W56A:Y57C:L59S:Q60E:F89G_0/
             zs/plip/chai/struct_joint/ParLQ/W56A:Y57C:L59S:Q60E:F89G_1/
+
+    run_all_plip_zs(pattern: str | list, plip_dir: str, kwargs: dict = {})
     """

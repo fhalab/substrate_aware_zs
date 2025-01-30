@@ -33,12 +33,20 @@ class ZSComb(ZSData):
         zs_dir: str = "zs",
         comb_dir: str = "comb",
         zs_subdir_list: list = [
-            "ev",
-            "esm/output",
-            "esmif/output",
-            "coves/output/100_processed",
-            "triad/processed_output",
-            "chai/output",
+            "ev/*.csv",
+            "esm/output/*.csv",
+            "esmif/*/score/*.csv",
+            "coves/*/output/100_processed/*.csv",
+            "triad/score/*/*.csv",
+            "flowsite/scores/pocket_def_residues_model2-substrate-cofactor/*.csv",
+            "ligandmpnn/scores/autoregressive_20/*.csv",
+            "chai/score_*", # need to look at apo
+            "af3/score_*", # need to look at apo
+            "bonddist/*/*",
+            "hydro/**/*.csv",
+            "vol/*.csv", # 
+            "plip/*/*/*.csv",
+            "vina/*/*/*.csv",
         ],
     ):
 
@@ -70,7 +78,8 @@ class ZSComb(ZSData):
         # add hamming distance first
         df["hd"] = -1 * df["n_mut"]
 
-        for zs_path in self.zs_paths:
+        # need to add option for different options
+        for zs_path in self._zs_subdir_list:
 
             zs_df = pd.read_csv(zs_path)
 
@@ -110,18 +119,6 @@ class ZSComb(ZSData):
         Return the list of zs subdirectories
         """
         return deepcopy([f.split("/")[0] for f in self._zs_subdir_list])
-
-    @property
-    def zs_paths(self) -> list:
-        """
-        Return the list of zs paths
-        """
-        return deepcopy(
-            [
-                os.path.join(self._zs_dir, f, self.lib_name + ".csv")
-                for f in self._zs_subdir_list
-            ]
-        )
 
     @property
     def zs_comb_path(self) -> str:

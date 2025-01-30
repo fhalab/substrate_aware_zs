@@ -46,6 +46,9 @@ class TriadData(ZSData):
         
         Within each, there will be subfolder with info about `withsub` or `cleanup`
             ie `frompdb-cleanup`
+
+        Note that for the docked structure cleanup True or False results in the same structure
+        because all HEATM are in chain B LIG and no solvent is present
         """
 
         super().__init__(
