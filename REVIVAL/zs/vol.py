@@ -183,13 +183,17 @@ class VolData(ZSData):
         joint_vol = calculate_smiles_vol(self.joint_smiles)
 
         for var in tqdm(self.df[self._var_col_name]):
+            var_vol = self._calc_var_vol(var)
             vol_df.append(
                 {
                     self._var_col_name: var,
-                    "var_vol": self._calc_var_vol(var),
+                    "var_vol": var_vol,
                     "substrate_vol": substrate_vol,
                     "cofactor_vol": cofactor_vol,
                     "joint_vol": joint_vol,
+                    "var-substrate_vol": var_vol - substrate_vol,
+                    "var-cofactor_vol": var_vol - cofactor_vol,
+                    "var-joint_vol": var_vol - joint_vol,
                 },
             )
 
@@ -203,14 +207,23 @@ class VolData(ZSData):
         for var, substate_smiles, cofactor_smiles in tqdm(self.df[
             [self._var_col_name, self._subsmiles_col_name, self._cofsmiles_col_name]
         ]):
+
             joint_smiles = substate_smiles + "." + cofactor_smiles
+            var_vol = self._calc_var_vol(var)
+            substrate_vol = calculate_smiles_vol(substate_smiles)
+            cofactor_vol = calculate_smiles_vol(cofactor_smiles)
+            joint_vol = calculate_smiles_vol(joint_smiles)
+
             vol_df.append(
                 {
                     self._var_col_name: var,
-                    "var_vol": self._calc_var_vol(var),
-                    "substrate_vol": calculate_smiles_vol(substate_smiles),
-                    "cofactor_vol": calculate_smiles_vol(cofactor_smiles),
-                    "joint_vol": calculate_smiles_vol(joint_smiles),
+                    "var_vol": var_vol,
+                    "substrate_vol": substrate_vol,
+                    "cofactor_vol": cofactor_vol,
+                    "joint_vol": joint_vol,
+                    "var-substrate_vol": var_vol - substrate_vol,
+                    "var-cofactor_vol": var_vol - cofactor_vol,
+                    "var-joint_vol": var_vol - joint_vol,
                 }
             )
 

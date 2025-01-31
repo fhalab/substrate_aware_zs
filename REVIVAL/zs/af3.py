@@ -670,9 +670,9 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
         score_keys.append(f"chain_ptm_{chain}")
         score_keys.append(f"chain_iptm_{chain}")
         for other_chain in chain_labels:
-            score_keys.append(f"chain_pae_min_{chain}{other_chain}")
             if chain != other_chain:
                 score_keys.append(f"chain_iptm_{chain}{other_chain}")
+                score_keys.append(f"chain_pae_min_{chain}{other_chain}")
 
     # Initialize results storage
     results = []

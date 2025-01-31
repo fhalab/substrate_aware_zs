@@ -66,17 +66,6 @@ class ZSComb(ZSData):
         self._comb_zs = self._comb_zs()
         self._comb_zs.to_csv(self.zs_comb_path, index=False)
 
-    def _set_pattern_property(self):
-        """
-        For each item in self.zs_opts, set the pattern property
-        using the pattern in self._zs_subdir_list
-
-        ie self._ev_pattern = "ev/*.csv"
-        """
-        for opt in self.zs_opts:
-            setattr(
-                self, f"_{opt}_pattern", self._zs_subdir_list[self.zs_opts.index(opt)]
-            )
 
     def _append_complex_zs_csv(self, pattern):
         """
@@ -88,7 +77,7 @@ class ZSComb(ZSData):
 
         # Use glob to find matching CSV files
         csv_files = glob(pattern, recursive=True)
-        
+
 
         # Extract the unique portions of each path
         for csv_path in csv_files:
@@ -118,11 +107,16 @@ class ZSComb(ZSData):
                 }
             )
 
+            print(df.columns)
+            print(combined_df.columns)
+
             combine_col = [
                 c
                 for c in self.common_cols
                 if c in df.columns and c in combined_df.columns
             ]
+
+            print(f"on {combine_col}...")
 
             # Store processed DataFrame
             combined_df = (

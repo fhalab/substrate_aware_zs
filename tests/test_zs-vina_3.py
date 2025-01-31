@@ -128,18 +128,18 @@ if __name__ == "__main__":
     #         max_workers=8
     #     )
     
-    for struct_dir in [
-        "zs/af3/struct_seperate/ParLQ",
-        "zs/af3/struct_seperate/Rma-CB",
-        "zs/af3/struct_seperate/Rma-CSi",
-    ]:
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate+carbene",
-            score_only=False,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=8
-        )
+    # for struct_dir in [
+    #     "zs/af3/struct_seperate/ParLQ",
+    #     "zs/af3/struct_seperate/Rma-CB",
+    #     "zs/af3/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
     
     f.close()

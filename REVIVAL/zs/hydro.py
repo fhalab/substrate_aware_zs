@@ -7,6 +7,7 @@ from __future__ import annotations
 from concurrent.futures import ProcessPoolExecutor
 
 import warnings
+import itertools
 
 import os
 from glob import glob
@@ -21,9 +22,11 @@ from rdkit.Chem import Descriptors, MolSurf
 import freesasa
 from MDAnalysis import Universe
 import MDAnalysis as mda
+from openbabel import pybel
 import tempfile
 
 from REVIVAL.zs.plip import get_plip_active_site_dict
+from REVIVAL.zs.vina import ligand_smiles2pdbqt, convert_pdbqt_to_pdb
 from REVIVAL.global_param import AA_DICT, ENZYME_INFO_DICT
 from REVIVAL.preprocess import ZSData
 from REVIVAL.chem_helper import smiles2mol, apply_mutation
@@ -390,6 +393,79 @@ def calculate_native_sasa(aa_list: list, ref_type: str) -> float:
         )
 
 
+def calculate_sasa_from_smilesormol(
+    smiles, name, mol_dir, mol=None, pH: float = 7.4, regen: bool = False
+):
+    """
+    Calculate SASA for a small molecule from its SMILES string.
+
+    Args:
+        smiles (str): SMILES string of the molecule.
+
+    Returns:
+        float: SASA value for the molecule.
+    """
+    # Convert SMILES to PDBQT file
+
+    pdbqt_file = os.path.join(mol_dir, f"{name}.pdbqt")
+    pdb_file = os.path.join(mol_dir, f"{name}.pdb")
+    mol_file = os.path.join(mol_dir, f"{name}.mol")
+
+    if not os.path.exists(pdb_file) or regen:
+
+        try:
+            # Convert RDKit Mol to a temporary .mol file
+            mol_block = Chem.MolToMolBlock(mol)
+
+            with open(mol_file, "w") as f:
+                f.write(mol_block)
+
+            # Use Open Babel to convert the temporary .mol file to .pdb
+            mol = pybel.readfile("mol", mol_file).__next__()
+            mol.write("pdb", pdb_file)
+
+        except Exception as e:
+            print(f"Error writing PDB file: {e}")
+
+            try:
+                ligand_smiles2pdbqt(
+                    smiles=smiles,
+                    ligand_sdf_file=pdbqt_file.replace(".pdbqt", ".sdf"),
+                    ligand_pdbqt_file=pdbqt_file,
+                    pH=pH,
+                    regen=regen,
+                )
+
+                # Convert PDBQT to PDB file
+                convert_pdbqt_to_pdb(pdbqt_file, pdb_file)
+
+            except Exception as e:
+                print(f"Error converting SMILES to PDBQT: {e}")
+
+    # Load PDB file
+    u = Universe(pdb_file)
+
+    # Select all atoms in the molecule (since it's a small molecule, we select everything)
+    selected_atoms = u.select_atoms("all")
+
+    # Write selected atoms to a temporary PDB file
+    temp_file = pdb_file.replace(".pdb", "_temp_selection.pdb")
+    with mda.Writer(temp_file, multiframe=False) as writer:
+        writer.write(selected_atoms)
+
+    # Calculate SASA
+    structure = freesasa.Structure(temp_file)
+    sasa = freesasa.calc(structure).totalArea()
+
+    # Clean up
+    if os.path.exists(temp_file):
+        os.remove(temp_file)
+    if os.path.exists(pdbqt_file):
+        os.remove(pdbqt_file)
+
+    return sasa
+
+
 class HydroData(ZSData):
     def __init__(
         self,
@@ -417,8 +493,13 @@ class HydroData(ZSData):
 
         print(f"Calculating hydrophobicity for {self.lib_name}...")
 
+        print("Hydrophobicity calculations for substrate and cofactors...")
+
+        self._subcof_hydro_dict = self._get_subcof_hydro_dict()
+
         # naive based on combo column
         if "frompdb" in self._plip_dir or self._plip_dir is None:
+            # get the hydrophobicity of the substrate and joint substrate-cofactor
             hydro_df = self._get_naive_hydro_df()
             # merge with the self.df to get fitness info
             self._hydro_df = pd.merge(
@@ -563,6 +644,42 @@ class HydroData(ZSData):
 
         return active_site_info
 
+    def _get_subcof_hydro_dict(self) -> dict:
+        """Get the hydrophobicity of the substrate and joint substrate-cofactor"""
+        mol_dir = checkNgen_folder(os.path.join(self._hydro_dir, "mol"))
+        hydro_dict = {}
+        for mol, mol_opt in zip(
+            [self.substrate_mol, self.subcof_jointmol],
+            ["substrate", "substrate+cofactor"],
+        ):
+            hydro_dict[f"{mol_opt}-logp"] = Descriptors.MolLogP(
+                mol
+            )  # Descriptors.MolLogP
+            hydro_dict[f"{mol_opt}-tpsa"] = Descriptors.TPSA(mol)
+            hydro_dict[f"{mol_opt}-asa"] = MolSurf.LabuteASA(mol)
+            # TODO fix the following
+            # if mol_opt == "substrate":
+
+            #     hydro_dict[f"{mol_opt}-sasa"] = calculate_sasa_from_smilesormol(
+            #         self.substrate_smiles,
+            #         self.substrate_dets,
+            #         mol=self.substrate_mol,
+            #         mol_dir=mol_dir,
+            #         pH=7.4,
+            #         regen=False,
+            #     )
+            # else:
+            #     hydro_dict[f"{mol_opt}-sasa"] = calculate_sasa_from_smilesormol(
+            #         self.subcof_jointsmiles,
+            #         self.substrate_dets + "_" + "_".join(self.lib_info["cofactor"]),
+            #         mol=self.subcof_jointmol,
+            #         mol_dir=mol_dir,
+            #         pH=7.4,
+            #         regen=False,
+            #     )
+
+        return hydro_dict
+
     def _get_naive_hydro_df(self) -> pd.DataFrame:
 
         """
@@ -613,7 +730,7 @@ class HydroData(ZSData):
         ie. AAA
         """
 
-        hydro_dict = deepcopy(self.subcof_hydro_dict)
+        hydro_dict = deepcopy(self._subcof_hydro_dict)
 
         # /disk2/fli/REVIVAL2/zs/plip/frompdb/ParLQ/ParLQ.pdb
         parent_struct_path = os.path.join(
@@ -663,6 +780,12 @@ class HydroData(ZSData):
         # also add in var and rep info
         hydro_dict[self._combo_col_name] = combo
 
+        substrate_terms = [t for t in hydro_dict.keys() if t.startswith("substrate")]
+        pocket_terms = [t for t in hydro_dict.keys() if t.startswith("pocket")]
+
+        for p, s in itertools.product(pocket_terms, substrate_terms):
+            hydro_dict[f"{p} - {s}"] = hydro_dict[p] - hydro_dict[s]
+
         return hydro_dict
 
     def _get_var_hydro(self, var: str, rep: str) -> dict:
@@ -682,7 +805,7 @@ class HydroData(ZSData):
             self._plip_dir, self.lib_name, var_rep_name, "report.xml"
         )
 
-        hydro_dict = deepcopy(self.subcof_hydro_dict)
+        hydro_dict = deepcopy(self._subcof_hydro_dict)
 
         if self._struct_dock_dets == "joint":
             ligand_chain_ids = ["B"]
@@ -741,6 +864,12 @@ class HydroData(ZSData):
         hydro_dict[self._var_col_name] = var
         hydro_dict["rep"] = rep
 
+        substrate_terms = [t for t in hydro_dict.keys() if t.startswith("substrate")]
+        pocket_terms = [t for t in hydro_dict.keys() if t.startswith("pocket")]
+
+        for p, s in itertools.product(pocket_terms, substrate_terms):
+            hydro_dict[f"{p} - {s}"] = hydro_dict[p] - hydro_dict[s]
+
         return hydro_dict
 
     @property
@@ -766,21 +895,6 @@ class HydroData(ZSData):
     def subcof_jointmol(self) -> Chem.Mol:
         """Get the joint substrate-cofactor molecule from the library info"""
         return smiles2mol(self.subcof_jointsmiles)
-
-    @property
-    def subcof_hydro_dict(self) -> dict:
-        """Get the hydrophobicity of the substrate and joint substrate-cofactor"""
-        hydro_dict = {}
-        for mol, mol_opt in zip(
-            [self.substrate_mol, self.subcof_jointmol],
-            ["substrate", "substrate+cofactor"],
-        ):
-            hydro_dict[f"{mol_opt}-logp"] = Descriptors.MolLogP(
-                mol
-            )  # Descriptors.MolLogP
-            hydro_dict[f"{mol_opt}-tpsa"] = Descriptors.TPSA(mol)
-            hydro_dict[f"{mol_opt}-asa"] = MolSurf.LabuteASA(mol)
-        return hydro_dict
 
     @property
     def cols_w_reps(self) -> list:

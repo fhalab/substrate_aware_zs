@@ -1065,6 +1065,23 @@ def clean_boron_pdbqt_file(
         print(f"Error processing file: {e}")
 
 
+def replace_boron_with_carbon_in_pdbqt(input_pdbqt, output_pdbqt):
+    """
+    Replaces all instances of Boron ('B') with Carbon ('C') in a PDBQT file.
+    
+    Parameters:
+        input_pdbqt (str): Path to the input PDBQT file.
+        output_pdbqt (str): Path to save the modified PDBQT file.
+    """
+    with open(input_pdbqt, "r") as infile, open(output_pdbqt, "w") as outfile:
+        for line in infile:
+            if line.startswith("ATOM") or line.startswith("HETATM"):  # Only process atom lines
+                atom_type = line[77:79].strip()  # Extract atom type
+                if atom_type == "B":  # Replace Boron with Carbon
+                    line = f"{line[:77]}C {line[79:]}"
+            outfile.write(line)  # Write the modified (or unmodified) line
+
+
 def clean_pdbqt_file(input_pdbqt, output_pdbqt):
     """
     Cleans up a PDBQT file:
@@ -2037,6 +2054,16 @@ class VinaLibDock(ZSData):
             pH=self._pH,
             regen=self._regen,
         )
+
+        # check if boron is in the substrate
+        if "borane" in self.substrate_dets:
+            clean_pdbqt = self._ligand_pdbqt.replace(".pdbqt", "_clean.pdbqt")
+            replace_boron_with_carbon_in_pdbqt(
+                input_pdbqt=self._ligand_pdbqt,
+                output_pdbqt=clean_pdbqt,
+            )
+            # renmae to overwrite
+            os.rename(clean_pdbqt, self._ligand_pdbqt)
 
         cofactor2dock = []
         cofactor2freeze = []
