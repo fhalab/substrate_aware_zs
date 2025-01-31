@@ -571,12 +571,29 @@ class HydroData(ZSData):
             merge_df = result
 
         # merge with the self.df to get fitness info
-        return pd.merge(
+        merged_df = pd.merge(
             self.df[[self._var_col_name, self._fit_col_name]],
             merge_df,
             on=self._var_col_name,
             how="outer",
         )
+
+        return self._add_diff_to_df(merged_df)
+
+    def _add_diff_to_df(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Add the difference between substrate and pocket hydrophobicity to the dataframe.
+        """
+        # get the differences of sub and pocket diff
+        cols = df.columns
+
+        substrate_terms = [t for t in cols if t.startswith("substrate")]
+        pocket_terms = [t for t in cols if t.startswith("pocket")]
+
+        for p, s in itertools.product(pocket_terms, substrate_terms):
+            df[f"{p} - {s}"] = df[p] - df[s]
+
+        return df
 
     # go through each variant from self.df and replicate and calculate the hydrophobicity
     # make it parallelizable and then save the results to a dataframe
@@ -721,7 +738,9 @@ class HydroData(ZSData):
                 )
 
         # Convert successful hydrophobicity data to a DataFrame
-        return pd.DataFrame(successes)
+        df = pd.DataFrame(successes)
+
+        return self._add_diff_to_df(df)
 
     def _get_naive_var_hydro(self, combo: str) -> pd.dict:
 
@@ -779,12 +798,6 @@ class HydroData(ZSData):
 
         # also add in var and rep info
         hydro_dict[self._combo_col_name] = combo
-
-        substrate_terms = [t for t in hydro_dict.keys() if t.startswith("substrate")]
-        pocket_terms = [t for t in hydro_dict.keys() if t.startswith("pocket")]
-
-        for p, s in itertools.product(pocket_terms, substrate_terms):
-            hydro_dict[f"{p} - {s}"] = hydro_dict[p] - hydro_dict[s]
 
         return hydro_dict
 
@@ -863,12 +876,6 @@ class HydroData(ZSData):
         # also add in var and rep info
         hydro_dict[self._var_col_name] = var
         hydro_dict["rep"] = rep
-
-        substrate_terms = [t for t in hydro_dict.keys() if t.startswith("substrate")]
-        pocket_terms = [t for t in hydro_dict.keys() if t.startswith("pocket")]
-
-        for p, s in itertools.product(pocket_terms, substrate_terms):
-            hydro_dict[f"{p} - {s}"] = hydro_dict[p] - hydro_dict[s]
 
         return hydro_dict
 
