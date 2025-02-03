@@ -22,12 +22,12 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # run_traid("data/meta/not_scaled/*.csv", kwargs={"withsub": False, "cleanup": False})
-    run_traid(
-        "data/meta/not_scaled/*.csv",
-        in_structure_dir="data/structure/docked",
-        kwargs={"withsub": True, "cleanup": False}
-    )
+    run_traid("data/meta/*_scope.csv", kwargs={"withsub": False, "cleanup": True})
+    # run_traid(
+    #     "data/meta/not_scaled/*.csv",
+    #     in_structure_dir="data/structure/docked",
+    #     kwargs={"withsub": True, "cleanup": False}
+    # )
 
 
     f.close()

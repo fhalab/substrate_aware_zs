@@ -130,10 +130,9 @@ class TriadData(ZSData):
 
         # check before saving
         # if parent is in the dataframe
-        if "WT" in self.df[self._var_col_name].tolist():
-            assert len(mut_list) == len(self.df) - 1
-        else:
-            assert len(mut_list) == len(self.df)
+        wt_count = self.df[self._var_col_name].eq("WT").sum()
+
+        assert len(mut_list) == len(self.df) - wt_count
 
         print(f"Generated {self.mut_path}...")
 
