@@ -93,19 +93,19 @@ class TriadData(ZSData):
         print(f"Parsing {self.triad_sum_txt} and save to {self.triad_csv}...")
 
         # extract triad score into dataframe
-        triad_df = self._get_triad_score()
+        # triad_df = self._get_triad_score()
 
-        # merge to get fit
-        self._triad_df = pd.merge(
-            self.df[[self._combo_col_name, self._fit_col_name]],
-            triad_df, 
-            on =self._combo_col_name,
-            how="left"
-        )
+        # # merge to get fit
+        # self._triad_df = pd.merge(
+        #     self.df[[self._combo_col_name, self._fit_col_name]],
+        #     triad_df, 
+        #     on =self._combo_col_name,
+        #     how="left"
+        # )
 
-        self._triad_df.to_csv(
-            self.triad_csv, index=False
-        )
+        # self._triad_df.to_csv(
+        #     self.triad_csv, index=False
+        # )
 
 
     def _generate_mut_file(self) -> None:

@@ -1022,6 +1022,8 @@ LIB_INFO_DICT = deepcopy(
         },
         "PfTrpB_scope":{
             "enzyme": "PfTrpB",
+            "positions":{1: 104, 2: 139, 3: 161, 4: 165, 5: 166, 6: 183, 7: 186, 8: 212, 9: 301},
+            "AAs":{1: "E", 2: "L", 3: "L", 4: "I", 5: "D", 6: "I", 7: "V", 8: "P", 9: "Y"},
             "family": "TrpB",
             "project": "substrate-scope",
         },
@@ -1109,6 +1111,8 @@ LIB_INFO_DICT = deepcopy(
         },
         "Rma-CB_scope":{
             "enzyme": "Rma",
+            "positions": {1: 75, 2: 100, 3: 103},
+            "AAs": {1: "V", 2: "M", 3: "M"},
             "family": "cyt c",
             "project": "substrate-scope",
         },
@@ -1182,6 +1186,8 @@ LIB_INFO_DICT = deepcopy(
         },
         "Rma-CSi_scope":{
             "enzyme": "Rma",
+            "positions": {1: 71, 2: 75, 3: 89, 4: 98, 5: 99, 6: 100, 7: 101, 8: 103},
+            "AAs": {1: "V", 2: "V", 3: "M", 4: "T", 5: "M", 6: "M", 7: "T", 8: "M"},
             "family": "cyt c",
             "project": "substrate-scope",
         },
