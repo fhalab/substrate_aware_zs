@@ -1392,7 +1392,7 @@ def append_coves_scores(
     lib: str,
     var_col_name: str = "var",
     fit_col_name: str = "fitness",
-    input_dir: str = "data/meta/not_scaled",
+    input_dir: str = "data/meta",
     coves_dir: str = "zs/coves/output/100",
     chain_number: str = "A",
     t: float = 0.1,
@@ -1455,8 +1455,8 @@ def append_coves_scores(
 
 
 def append_all_coves_scores(
-    libs: list | str = "data/meta/not_scaled/*",
-    input_dir: str = "data/meta/not_scaled",
+    libs: list | str = "data/meta/*",
+    input_dir: str = "data/meta",
     coves_dir: str = "zs/coves/output/100",
     t: float = 0.1,
 ) -> pd.DataFrame:

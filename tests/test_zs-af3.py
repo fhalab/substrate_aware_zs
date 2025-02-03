@@ -13,7 +13,7 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    # os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     # log outputs
     f = open(
@@ -79,19 +79,21 @@ if __name__ == "__main__":
     # )
 
     run_af3_struct([
-        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
-        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
     ],
     gen_opt="joint",
     cofactor_dets="cofactor",
     gpu_id="0",
     samesub=False,
-    kwargs={"af3_dir": "af3_substratescope"}
+    # kwargs={"af3_dir": "af3_substratescope"}
     )
 
     run_af3_struct([
-        "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
-        "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
     ],
     gen_opt="seperate",
     cofactor_dets="cofactor",

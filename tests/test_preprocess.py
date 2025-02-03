@@ -5,7 +5,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.preprocess import preprocess_all, gen_apo_structures
+from REVIVAL.preprocess import preprocess_all, gen_apo_structures, process_substratescope_df
 from REVIVAL.util import checkNgen_folder
 
 
@@ -18,7 +18,8 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # preprocess_all(input_pattern = "data/lib/*.csv", scale_fit="none")
-    gen_apo_structures()
+    # gen_apo_structures()
+    process_substratescope_df()
     
 
     f.close()

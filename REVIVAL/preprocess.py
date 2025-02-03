@@ -33,7 +33,7 @@ class LibData:
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str,
+        scale_fit: str = "",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         seq_col_name: str = "seq",
@@ -53,6 +53,7 @@ class LibData:
         - scale_fit, str: ways to scale the fitness
             'parent' means the parent fitness = 1
             'max' means max fitness = 1
+            '' or 'not_scaled' means no scaling, default
         - combo_col_name, str: the column name for the mutated amino acids
             ie 'VDGV'
         - var_col_name, str: the column name for the variants
@@ -213,7 +214,7 @@ class ProcessData(LibData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
+        scale_fit: str = "",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         seq_col_name: str = "seq",
@@ -230,6 +231,7 @@ class ProcessData(LibData):
         - scale_fit, str: ways to scale the fitness
             'parent' means the parent fitness = 1
             'max' means max fitness = 1
+            '' or 'not_scaled' means no scaling, default
         - combo_col_name, str: the column name for the mutated amino acids
         - var_col_name, str: the column name for the variants
         - seq_col_name, str: the column name for the full sequence
@@ -252,9 +254,15 @@ class ProcessData(LibData):
             seq_dir=seq_dir,
         )
 
-        self._output_subdir = checkNgen_folder(
-            os.path.join(output_dir, self.scale_type)
-        )
+        
+        if self.scale_type == "not_scaled" or scale_fit == "":
+            self._output_subdir = checkNgen_folder(
+                os.path.join(output_dir)
+            )
+        else:
+            self._output_subdir = checkNgen_folder(
+                os.path.join(output_dir, self.scale_type)
+            )
 
         print(f"Processing {self._input_csv} with {self._scale_fit}...")
 
@@ -513,7 +521,7 @@ class ProcessData(LibData):
 
 def preprocess_all(
     input_pattern: str = "data/lib/*.csv",
-    scale_fit: str = "parent",
+    scale_fit: str = "",
     combo_col_name: str = "AAs",
     var_col_name: str = "var",
     seq_col_name: str = "seq",
@@ -531,6 +539,7 @@ def preprocess_all(
     - scale_fit, str: ways to scale the fitness
         'parent' means the parent fitness = 1
         'max' means max fitness = 1
+        '' or 'not_scaled' means no scaling, default
     - combo_col_name, str: the column name for the mutated amino acids
     - var_col_name, str: the column name for the variants
     - seq_col_name, str: the column name for the full sequence
@@ -567,7 +576,7 @@ class ZSData(LibData):
     def __init__(
         self,
         input_csv: str,
-        scale_fit: str = "parent",
+        scale_fit: str = "",
         combo_col_name: str = "AAs",
         var_col_name: str = "var",
         mut_col_name: str = "mut",
@@ -738,3 +747,28 @@ def gen_apo_structures(
         )
 
         os.remove(temp_path)
+
+
+def process_substratescope_df(
+    pattern: str = "data/substrate_scope/*",
+    output_dir: str = "data/meta",
+    var_col_name: str = "var",
+    ):
+    """
+    Process the substrate scope data
+    """
+
+    output_dir = checkNgen_folder(output_dir)
+
+    for input_csv in tqdm(sorted(glob(pattern))):
+
+        df = pd.read_csv(input_csv)
+
+        df["n_mut"] = df[var_col_name].str.split(":").str.len()
+
+        # change WT n_mut to 0
+        df.loc[df[var_col_name] == "WT", "n_mut"] = 0
+
+        # save the dataframe to a csv file
+        output_csv = os.path.join(output_dir, f"{get_file_name(input_csv)}.csv")
+        df.to_csv(output_csv, index=False)

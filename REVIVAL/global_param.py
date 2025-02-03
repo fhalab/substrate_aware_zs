@@ -1020,6 +1020,16 @@ LIB_INFO_DICT = deepcopy(
             "family": "TrpB",
             "project": "multi-substrate",
         },
+        "PfTrpB_scope":{
+            "enzyme": "PfTrpB",
+            "family": "TrpB",
+            "project": "substrate-scope",
+        },
+        "TmTrpB_scope":{
+            "enzyme": "TmTrpB",
+            "family": "TrpB",
+            "project": "substrate-scope",
+        },
         "Rma-CB": {
             "enzyme": "Rma",
             "substrate": "NHC-borane",
@@ -1097,6 +1107,11 @@ LIB_INFO_DICT = deepcopy(
             "family": "cyt c",
             "project": "MODIFY",
         },
+        "Rma-CB_scope":{
+            "enzyme": "Rma",
+            "family": "cyt c",
+            "project": "substrate-scope",
+        },
         "Rma-CSi": {
             "enzyme": "Rma",
             "substrate": "phenyldimethylsilane",
@@ -1164,6 +1179,11 @@ LIB_INFO_DICT = deepcopy(
             "AAs": {1: "V", 2: "M", 3: "M", 4: "T", 5: "D", 6: "M"},
             "family": "cyt c",
             "project": "MODIFY",
+        },
+        "Rma-CSi_scope":{
+            "enzyme": "Rma",
+            "family": "cyt c",
+            "project": "substrate-scope",
         },
         "ParLQ": {
             "enzyme": "ParLQ",

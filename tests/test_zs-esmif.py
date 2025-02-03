@@ -27,8 +27,10 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure", withsub= False)
-    run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure/docked", withsub= True)
+    # run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure", withsub= False)
+    # run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure/docked", withsub= True)
+
+    run_esmif("data/meta/*_scope.csv", in_structure_dir= "data/structure", withsub= False)
 
     """
     run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {})

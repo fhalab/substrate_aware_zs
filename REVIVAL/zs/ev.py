@@ -230,7 +230,7 @@ class EVData(ZSData):
         return os.path.join(self._ev_dir, f"{self.lib_name}.csv")
 
 
-def run_all_ev(pattern: str | list = "data/meta/not_scaled/*.csv", kwargs: dict = {}):
+def run_all_ev(pattern: str | list = "data/meta/*.csv", kwargs: dict = {}):
 
     """
     Run the ev mutation scores for all the libraries

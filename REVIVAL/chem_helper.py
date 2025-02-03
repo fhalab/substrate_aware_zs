@@ -4,20 +4,10 @@ Util functions for chem and MDanalysis
 
 from __future__ import annotations
 
-import re
-import os
-import json
 import logging
 import subprocess
 
-import numpy as np
-
-from Bio import SeqIO, pairwise2, PDB
-from Bio.PDB import PDBParser, PDBIO, MMCIFParser, Select
-
 from rdkit import Chem
-
-from MDAnalysis import Universe
 
 
 def canonicalize_smiles(smiles_string: str) -> str:

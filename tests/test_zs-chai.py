@@ -60,24 +60,27 @@ if __name__ == "__main__":
     # gen_opt="apo"
     # )
 
-    # run_gen_chai_structure([
-    #     # "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
-    #     "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
-    # ],
-    # gen_opt="joint",
-    # cofactor_dets="cofactor",
-    # samesub=False,
+    run_gen_chai_structure([
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+    ],
+    gen_opt="joint",
+    cofactor_dets="cofactor",
+    samesub=False,
     # kwargs={"chai_dir": "chai_substratescope"}
-    # )
-    # run_gen_chai_structure([
-    #     # "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv"
-    #     "/disk2/fli/REVIVAL2/data/substrate_scope/TrpB-platform.csv"
-    # ],
-    # gen_opt="seperate",
-    # cofactor_dets="cofactor",
-    # samesub=False,
+    )
+
+    run_gen_chai_structure([
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+    ],
+    gen_opt="seperate",
+    cofactor_dets="cofactor",
+    samesub=False,
     # kwargs={"chai_dir": "chai_substratescope"}
-    # )
+    )
 
     # run_gen_chai_structure([
     #     "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
@@ -107,7 +110,7 @@ if __name__ == "__main__":
     # cofactor_dets="inactivated-cofactor"
     # )
     
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_joint")
-    parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_seperate")
+    # parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_joint")
+    # parse_all_chai_scores(chai_struct_dir= "zs/chai/struct_seperate")
 
     f.close()

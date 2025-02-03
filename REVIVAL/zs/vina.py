@@ -23,7 +23,6 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from rdkit.Chem.MolStandardize.rdMolStandardize import Uncharger
 from pdbfixer import PDBFixer
 from openmm.app import PDBFile, PDBxFile
 from Bio import PDB

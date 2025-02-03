@@ -19,4 +19,5 @@ dependencies:
   - pytorch
   - pip
   - pip:
+      - rdkit
       - git+https://github.com/facebookresearch/esm.git
