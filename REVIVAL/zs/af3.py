@@ -131,7 +131,15 @@ class AF3Struct(ZSData):
                 )
 
         else:
-            for (var, seq, sub, substrate_smiles, cofactor, cofactor_smiles, rxn_id,) in tqdm(
+            for (
+                var,
+                seq,
+                sub,
+                substrate_smiles,
+                cofactor,
+                cofactor_smiles,
+                rxn_id,
+            ) in tqdm(
                 self.df[
                     [
                         self._var_col_name,
@@ -291,6 +299,7 @@ class AF3Struct(ZSData):
             "dialect": "alphafold3",
             "version": 2,
         }
+
         if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
 
             # do nothing
@@ -319,6 +328,41 @@ class AF3Struct(ZSData):
             # add cofactor
             json_data["sequences"].append(
                 {"ligand": {"id": "C", "smiles": f"{self._cofactor_smiles}"}}
+            )
+
+        elif self._gen_opt == "joint-carbene_precursor-heme":
+            joint_smiles = canonicalize_smiles(
+                self.lib_info["carbene_precursor-smiles"]
+                + "."
+                + ".".join(self.lib_info["inactivated-cofactor-smiles"])
+            )
+            # joint inactivate carbene and heme
+            json_data["sequences"].append(
+                {"ligand": {"id": "B", "smiles": joint_smiles}}
+            )
+
+        elif self._gen_opt == "seperate-carbene_precursor-heme":
+            # add inactivate carbene
+            json_data["sequences"].append(
+                {
+                    "ligand": {
+                        "id": "B",
+                        "smiles": canonicalize_smiles(
+                            self.lib_info["carbene_precursor-smiles"]
+                        ),
+                    }
+                }
+            )
+            # add cofactor
+            json_data["sequences"].append(
+                {
+                    "ligand": {
+                        "id": "C",
+                        "smiles": canonicalize_smiles(
+                            self.lib_info["inactivated-cofactor-smiles"]
+                        ),
+                    }
+                }
             )
 
         elif self._gen_opt == "seperate":
@@ -469,7 +513,9 @@ class AF3Struct(ZSData):
         elif self._gen_opt == "substrate-no-cofactor":
 
             # add substrate
-            json_data["sequences"].append({"ligand": {"id": "B", "smiles": substrate_smiles}})
+            json_data["sequences"].append(
+                {"ligand": {"id": "B", "smiles": substrate_smiles}}
+            )
 
         elif self._gen_opt == "joint-cofactor-no-substrate":
 
@@ -480,7 +526,9 @@ class AF3Struct(ZSData):
         elif self._gen_opt == "seperate":
 
             # add substrate
-            json_data["sequences"].append({"ligand": {"id": "B", "smiles": substrate_smiles}})
+            json_data["sequences"].append(
+                {"ligand": {"id": "B", "smiles": substrate_smiles}}
+            )
 
             # add cofactor
             json_data["sequences"].append(

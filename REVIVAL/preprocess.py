@@ -391,6 +391,65 @@ class ProcessData(LibData):
 
             return "".join(seq_list)
 
+    def _muts2combo(self, muts: str) -> str:
+        """
+        Convert the mutation with the form of parentaa1loc1mutaa1:parentaa2loc2mutaa2
+        to the form of `VDGV` length equal to `n_site`
+        with the missing position in self.mut_pos_list and
+        corresponding wild type AA in self.parent_aa
+
+        Args:
+        - muts, str: the mutations that are 1 indexed
+            ie. C1A:A3D
+        
+        Returns:
+        - str: the mutated sequence length of mutated sites
+        """
+
+        if muts == "WT":
+            return self.parent_aa
+
+        combo_list = list(self.parent_aa)
+        
+        for mut in muts.split(":"):
+            # first character is the parent amino acid and last is the mutated amino acid
+            wt_aa, mut_aa = mut[0], mut[-1]
+
+            # Extract position (1-indexed)
+            mut_pos = int(mut[1:-1])
+
+            # Get the index of the mutation in the parent_aa
+            mut_pos_idx = self.mut_pos_list.index(mut_pos)
+
+            # Assert that the parent sequence has the expected amino acid at the position
+            assert (
+                combo_list[mut_pos_idx] == wt_aa
+            ), f"Mismatch at position {mut_pos}: expected {wt_aa}, found {combo_list[mut_pos_idx]}"
+
+            # Replace the parent amino acid with the mutated amino acid at the specified position
+            combo_list[mut_pos_idx] = mut_aa
+
+        return "".join(combo_list)
+
+    def _append_combo(self, df: pd.DataFrame) -> pd.DataFrame:
+        """
+        Apply the convert_muts function to the dataframe
+
+        Args:
+        - df, pd.DataFrame: the input dataframe
+
+        Returns:
+        - pd.DataFrame: the appended dataframe
+        """
+
+        df_appended = df.copy()
+        df_appended.loc[:, self._combo_col_name] = df_appended.apply(
+            lambda x: self._muts2combo(x[self._var_col_name]),
+            axis=1,
+        )
+
+        return df_appended.copy()
+
     def _append_active_cutoff(self, df) -> pd.DataFrame:
 
         """
@@ -427,36 +486,6 @@ class ProcessData(LibData):
 
         df = self.input_df.copy()
 
-        # scale the fitness
-        df[self._fit_col_name] = df[self._fit_col_name] / self.norm_fit_factor
-
-        # convert er to ee
-        if ("er" in self._selectivity_col_name.lower()) and (
-            self._selectivity_col_name in df.columns
-        ):
-            df["selectivity"] = df[self._selectivity_col_name].apply(er2ee)
-            # drop the er column
-            df.drop(self._selectivity_col_name, axis=1, inplace=True)
-
-        # if there are multiple entries for the same combo name, take the mean
-
-        # groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
-
-        groupby_col = (
-            self._combo_col_name
-            if self._combo_col_name in df.columns
-            else self._var_col_name
-        )
-
-        # for trpb additioanl info
-        if "lib" in df.columns:
-            df = (
-                df.groupby(groupby_col)
-                .agg({self._fit_col_name: "mean", "lib": lambda x: ",".join(x)})
-                .reset_index()
-            )
-        else:
-            df = df.groupby(groupby_col).mean().reset_index()
 
         # if self._combo_col_name in df.columns:
         #     # drop stop codon containing rows
@@ -469,15 +498,15 @@ class ProcessData(LibData):
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
 
+        # append combo column if only var data
+        if self._var_col_name in df.columns and self._combo_col_name not in df.columns:
+            df = self._append_combo(df).copy()
+
         # add mut number
         df["n_mut"] = df[self._var_col_name].str.split(":").str.len()
 
         # change WT n_mut to 0
         df.loc[df[self._var_col_name] == "WT", "n_mut"] = 0
-
-        # split the amino acids for SSM data
-        if "AA1" not in df.columns and self._combo_col_name in df.columns:
-            df = self._split_aa(df).copy()
 
         # add full seq from fasta file by modifying self.parent_seq with the mutations
         if self._seq_col_name not in df.columns and self._var_col_name in df.columns:
@@ -485,21 +514,59 @@ class ProcessData(LibData):
                 lambda x: self._mut2seq(x)
             )
 
-        # add active column
-        df = self._append_active_cutoff(df).copy()
+        # do more processing if not substrate scope data
+        if "scope" not in self.lib_name:
+            # scale the fitness
+            df[self._fit_col_name] = df[self._fit_col_name] / self.norm_fit_factor
 
-        # drop stop codon containing rows
-        df = df[~df[self._var_col_name].str.contains("\*")].copy()
 
-        # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
-        for col in APPEND_INFO_COLS:
-            if col in self.lib_info:
-                append_info = self.lib_info[col]
-                # if the content is a list, convert it to a string
-                if isinstance(append_info, list):
-                    df[col] = ".".join(append_info)
-                else:
-                    df[col] = self.lib_info[col]
+            # convert er to ee
+            if ("er" in self._selectivity_col_name.lower()) and (
+                self._selectivity_col_name in df.columns
+            ):
+                df["selectivity"] = df[self._selectivity_col_name].apply(er2ee)
+                # drop the er column
+                df.drop(self._selectivity_col_name, axis=1, inplace=True)
+
+
+            # if there are multiple entries for the same combo name, take the mean
+            # groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
+            
+            groupby_col = (
+                self._combo_col_name
+                if self._combo_col_name in df.columns
+                else self._var_col_name
+            )
+
+            # for trpb additioanl info
+            if "lib" in df.columns:
+                df = (
+                    df.groupby(groupby_col)
+                    .agg({self._fit_col_name: "mean", "lib": lambda x: ",".join(x)})
+                    .reset_index()
+                )
+            else:
+                df = df.groupby(groupby_col).mean().reset_index()
+
+            # split the amino acids for SSM data
+            if "AA1" not in df.columns and self._combo_col_name in df.columns:
+                df = self._split_aa(df).copy()
+
+            # add active column
+            df = self._append_active_cutoff(df).copy()
+
+            # drop stop codon containing rows
+            df = df[~df[self._var_col_name].str.contains("\*")].copy()
+
+            # add col for enzyme name, substrate, cofactor, and their smile strings if relevant
+            for col in APPEND_INFO_COLS:
+                if col in self.lib_info:
+                    append_info = self.lib_info[col]
+                    # if the content is a list, convert it to a string
+                    if isinstance(append_info, list):
+                        df[col] = ".".join(append_info)
+                    else:
+                        df[col] = self.lib_info[col]
 
         # save the output csv
         return df

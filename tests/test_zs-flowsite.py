@@ -27,7 +27,7 @@ if __name__ == "__main__":
 
     for opt in [1,2]:
         run_flowsite(
-            pattern="data/meta/not_scaled/*.csv",
+            pattern="data/meta/*.csv",
             flowsite_inference_opt = "pocket_def_residues",
             flowsite_model_opt=opt
         )

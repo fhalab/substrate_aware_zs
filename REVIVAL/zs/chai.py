@@ -177,7 +177,9 @@ class ChaiStruct(ZSData):
             elif self._gen_opt == "substrate-no-cofactor":
 
                 # add substrate
-                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
 
             elif self._gen_opt == "joint-cofactor-no-substrate":
 
@@ -189,17 +191,44 @@ class ChaiStruct(ZSData):
             elif self._gen_opt == "joint-cofactor-seperate-substrate":
 
                 # add substrate first
-                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
 
                 # add cofactor smiles
                 input_fasta += (
                     f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
                 )
 
+            elif self._gen_opt == "joint-carbene_precursor-heme":
+                joint_dets = "_".join(
+                    [
+                        self.lib_info["carbene_precursor"],
+                        "_".join(self.lib_info["inactivated-cofactor"]),
+                    ]
+                )
+
+                joint_smiles = canonicalize_smiles(
+                    self.lib_info["carbene_precursor-smiles"]
+                    + "."
+                    + ".".join(self.lib_info["inactivated-cofactor-smiles"])
+                )
+
+                input_fasta += f">ligand|{joint_dets}\n{joint_smiles}\n"
+
+            elif self._gen_opt == "seperate-carbene_precursor-heme":
+                # add inactivate carbene
+                input_fasta += f">ligand|{self.lib_info['carbene_precursor']}\n{canonicalize_smiles(self.lib_info['carbene_precursor-smiles'])}\n"
+
+                # add cofactor
+                input_fasta += f">ligand|{self.lib_info['inactivated-cofactor']}\n{canonicalize_smiles(self.lib_info['inactivated-cofactor-smiles'])}\n"
+
             elif self._gen_opt == "seperate":
 
                 # add joint
-                input_fasta += f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
 
                 # loop through the cofactors and add them individually
                 for cofactor_dets, cofactor_smiles in zip(

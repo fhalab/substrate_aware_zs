@@ -25,25 +25,25 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    # # run_gen_chai_structure("data/meta/not_scaled/*.csv")
+    # # run_gen_chai_structure("data/meta/*.csv")
     # run_gen_chai_structure([ 
-    #     # "data/meta/not_scaled/PfTrpB-4bromo.csv",
-    #     # "data/meta/not_scaled/PfTrpB-4bromo.csv", 
-    #     # "data/meta/not_scaled/PfTrpB-4cyano.csv",
-    #     # "data/meta/not_scaled/PfTrpB-5bromo.csv",
-    #     # "data/meta/not_scaled/PfTrpB-5chloro.csv",
-    #     # "data/meta/not_scaled/PfTrpB-5cyano.csv",
-    #     # "data/meta/not_scaled/PfTrpB-5iodo.csv",
-    #     # "data/meta/not_scaled/PfTrpB-6chloro.csv",
-    #     # "data/meta/not_scaled/PfTrpB-7bromo.csv",
-    #     # "data/meta/not_scaled/PfTrpB-7iodo.csv",
-    #     # "data/meta/not_scaled/PfTrpB-7methyl.csv",
-    #     # "data/meta/not_scaled/PfTrpB-56chloro.csv",
+    #     # "data/meta/PfTrpB-4bromo.csv",
+    #     # "data/meta/PfTrpB-4bromo.csv", 
+    #     # "data/meta/PfTrpB-4cyano.csv",
+    #     # "data/meta/PfTrpB-5bromo.csv",
+    #     # "data/meta/PfTrpB-5chloro.csv",
+    #     # "data/meta/PfTrpB-5cyano.csv",
+    #     # "data/meta/PfTrpB-5iodo.csv",
+    #     # "data/meta/PfTrpB-6chloro.csv",
+    #     # "data/meta/PfTrpB-7bromo.csv",
+    #     # "data/meta/PfTrpB-7iodo.csv",
+    #     # "data/meta/PfTrpB-7methyl.csv",
+    #     # "data/meta/PfTrpB-56chloro.csv",
         
 
-    #     "data/meta/not_scaled/Rma-CB.csv",
-    #     "data/meta/not_scaled/Rma-CSi.csv",
-    #     "data/meta/not_scaled/ParLQ.csv",
+    #     "data/meta/Rma-CB.csv",
+    #     "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
     # ], 
     # # gen_opt="joint-cofactor-no-substrate",
     # # cofactor_dets="transiminated-cofactor",
@@ -52,35 +52,52 @@ if __name__ == "__main__":
     # )
 
     # run_gen_chai_structure([
-    #     "data/meta/not_scaled/PfTrpB-4bromo.csv",
-    #     "data/meta/not_scaled/Rma-CB.csv",
-    #     "data/meta/not_scaled/Rma-CSi.csv",
-    #     "data/meta/not_scaled/ParLQ.csv",
+    #     "data/meta/PfTrpB-4bromo.csv",
+    #     "data/meta/Rma-CB.csv",
+    #     "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
     # ],
     # gen_opt="apo"
     # )
 
     run_gen_chai_structure([
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
-        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
-    ],
-    gen_opt="joint",
-    cofactor_dets="cofactor",
-    samesub=False,
-    # kwargs={"chai_dir": "chai_substratescope"}
+        "data/meta/Rma-CB.csv",
+        "data/meta/Rma-CSi.csv",
+        "data/meta/ParLQ.csv",
+    ], 
+    gen_opt="joint-carbene_precursor-heme",
+    cofactor_dets="inactivated-cofactor",
+    samesub=True,
     )
 
     run_gen_chai_structure([
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
-        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
-    ],
-    gen_opt="seperate",
-    cofactor_dets="cofactor",
-    samesub=False,
-    # kwargs={"chai_dir": "chai_substratescope"}
+        "data/meta/Rma-CB.csv",
+        "data/meta/Rma-CSi.csv",
+        "data/meta/ParLQ.csv",
+    ], 
+    gen_opt="seperate-carbene_precursor-heme",
+    cofactor_dets="inactivated-cofactor",
+    samesub=True,
     )
+    # run_gen_chai_structure([
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+    # ],
+    # gen_opt="joint",
+    # cofactor_dets="cofactor",
+    # samesub=False,
+    # )
+
+    # run_gen_chai_structure([
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+    # ],
+    # gen_opt="seperate",
+    # cofactor_dets="cofactor",
+    # samesub=False,
+    # )
 
     # run_gen_chai_structure([
     #     "/disk2/fli/REVIVAL2/data/substrate_scope/Rma-CSi.csv",
@@ -101,10 +118,10 @@ if __name__ == "__main__":
     # kwargs={"chai_dir": "chai_substratescope", "ifrerun": True}
     # )
     # run_gen_chai_structure([
-    #     # "data/meta/not_scaled/PfTrpB-4bromo.csv",
-    #     # "data/meta/not_scaled/Rma-CB.csv",
-    #     # "data/meta/not_scaled/Rma-CSi.csv",
-    #     "data/meta/not_scaled/ParLQ.csv",
+    #     # "data/meta/PfTrpB-4bromo.csv",
+    #     # "data/meta/Rma-CB.csv",
+    #     # "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
     # ],
     # gen_opt="joint-cofactor-no-substrate",
     # cofactor_dets="inactivated-cofactor"

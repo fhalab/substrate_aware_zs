@@ -19,8 +19,8 @@ if __name__ == "__main__":
 
     # preprocess_all(input_pattern = "data/lib/*.csv", scale_fit="none")
     # gen_apo_structures()
-    process_substratescope_df()
-    
+    # process_substratescope_df()
+    preprocess_all(input_pattern = "data/substrate_scope/*.csv", scale_fit="none")
 
     f.close()
 

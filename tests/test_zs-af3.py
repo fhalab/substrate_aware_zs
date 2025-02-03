@@ -79,28 +79,47 @@ if __name__ == "__main__":
     # )
 
     run_af3_struct([
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
-        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+        "data/meta/Rma-CB.csv",
+        "data/meta/Rma-CSi.csv",
+        "data/meta/ParLQ.csv",
     ],
-    gen_opt="joint",
-    cofactor_dets="cofactor",
-    gpu_id="0",
-    samesub=False,
-    # kwargs={"af3_dir": "af3_substratescope"}
+    gen_opt="joint-carbene_precursor-heme",
+    cofactor_dets="inactivated-cofactor",
+    samesub=True,
+    gpu_id="0"
     )
 
     run_af3_struct([
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
-        # "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
-        "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+        "data/meta/Rma-CB.csv",
+        "data/meta/Rma-CSi.csv",
+        "data/meta/ParLQ.csv",
     ],
-    gen_opt="seperate",
-    cofactor_dets="cofactor",
-    gpu_id="0",
-    samesub=False,
-    kwargs={"af3_dir": "af3_substratescope"}
+    gen_opt="seperate-carbene_precursor-heme",
+    cofactor_dets="inactivated-cofactor",
+    samesub=True,
+    gpu_id="0"
     )
+
+    # run_af3_struct([
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/PfTrpB_scope.csv"
+    # ],
+    # gen_opt="joint",
+    # cofactor_dets="cofactor",
+    # gpu_id="0",
+    # samesub=False,
+    # )
+
+    # run_af3_struct([
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
+    #     "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",
+    # ],
+    # gen_opt="seperate",
+    # cofactor_dets="cofactor",
+    # gpu_id="0",
+    # samesub=False,
+    # )
 
     # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_joint")
     # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_seperate")
