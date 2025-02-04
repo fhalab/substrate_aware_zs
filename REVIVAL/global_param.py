@@ -1039,7 +1039,7 @@ LIB_INFO_DICT = deepcopy(
             "carbene_precursor-smiles": "CC(C(OCC)=O)=[N+]=[N-]",
             "inactivated-cofactor": ["heme c"],
             "inactivated-cofactor-smiles": [
-                "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
+                "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C"
             ],
             "activated_carbene-cofactor": ["heme c", "Fe2+", "carbene"],
             "activated_carbene-cofactor-smiles": [
@@ -1123,7 +1123,7 @@ LIB_INFO_DICT = deepcopy(
             "carbene_precursor-smiles": "CC(C(OCC)=O)=[N+]=[N-]",
             "inactivated-cofactor": ["heme c"],
             "inactivated-cofactor-smiles": [
-                "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C",
+                "CC=C1C(=C2C=C3C(=CC)C(=C4N3[Fe]56N2C1=Cc7n5c(c(c7C)CCC(=O)O)C=C8N6C(=C4)C(=C8CCC(=O)O)C)C)C"
             ],
             "activated_carbene-cofactor": ["heme c", "Fe2+", "carbene"],
             "activated_carbene-cofactor-smiles": [

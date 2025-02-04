@@ -4,14 +4,11 @@ A script for combining the results of multiple zs.
 
 import os
 import re
-import sys
 from glob import glob
 from tqdm import tqdm
 from copy import deepcopy
 
 import pandas as pd
-import numpy as np
-
 
 from REVIVAL.preprocess import ZSData
 from REVIVAL.util import checkNgen_folder
@@ -40,6 +37,7 @@ class ZSComb(ZSData):
             "flowsite/scores/pocket_def_residues_model2-substrate-cofactor/*.csv",
             "ligandmpnn/scores/autoregressive_20/*.csv",
             "vol/*.csv",  #
+            "GALigandDock/*.csv",
             "esmif/*/score/*.csv",
             "coves/*/output/100_processed/*.csv",
             "triad/score/*/*.csv",

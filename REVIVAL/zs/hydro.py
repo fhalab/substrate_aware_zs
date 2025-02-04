@@ -340,36 +340,48 @@ def get_original_resname(universe, resid):
     return residue.resnames[0]
 
 
-def calculate_variant_sasa(parent_pdb: str, mutations: dict):
+def mutate_parent(parent_pdb: str, mutations: dict, var_path: str, regen: bool = False):
+
     """
-    Calculate SASA for a protein variant based on the parent structure.
+    Apply mutations to a parent protein structure and save the mutated structure.
 
     Args:
         parent_pdb (str): Path to the parent protein's PDB file.
         mutations (dict): Dictionary of mutations, each specified as (resid new_resname).
-
-    Returns:
-        float: Solvent-accessible surface area (SASA) for the variant.
+        var_path (str): Path to the of the variant PDB file will be saved.
     """
-    # Load the parent structure
-    universe = Universe(parent_pdb)
 
-    # Apply all mutations
-    for loc, aa in mutations.items():
-        universe = apply_mutation(universe, (loc, aa))
+    if not os.path.exists(var_path):
+        # Load the parent structure
+        universe = Universe(parent_pdb)
 
-    # Write the mutated structure to a temporary PDB file
-    temp_pdb = tempfile.NamedTemporaryFile(suffix=".pdb", delete=False).name
-    universe.atoms.write(temp_pdb)  # Corrected file writing
+        # Apply all mutations
+        for loc, aa in mutations.items():
+            universe = apply_mutation(universe, (loc, aa))
 
-    # Calculate SASA using FreeSASA
-    structure = freesasa.Structure(temp_pdb)
-    sasa = freesasa.calc(structure).totalArea()
+        # Write the mutated structure to a temporary PDB file
+        universe.atoms.write(var_path)  # Corrected file writing
 
-    # Clean up
-    os.remove(temp_pdb)
 
-    return sasa
+# def calculate_variant_sasa(parent_pdb: str, mutations: dict, var_path: str):
+#     """
+#     Calculate SASA for a protein variant based on the parent structure.
+
+#     Args:
+#         parent_pdb (str): Path to the parent protein's PDB file.
+#         mutations (dict): Dictionary of mutations, each specified as (resid new_resname).
+#         var_path (str): Path to the of the variant PDB file will be saved.
+
+#     Returns:
+#         float: Solvent-accessible surface area (SASA) for the variant.
+#     """
+
+
+#     # Calculate SASA using FreeSASA
+#     structure = freesasa.Structure(var_path)
+#     sasa = freesasa.calc(structure).totalArea()
+
+#     return sasa
 
 
 def calculate_native_sasa(aa_list: list, ref_type: str) -> float:
@@ -477,6 +489,7 @@ class HydroData(ZSData):
         active_site_radius: int = 10,
         hydro_dir: str = "zs/hydro",
         max_workers: int = 64,
+        regen: bool = False,
     ):
 
         super().__init__(
@@ -488,8 +501,13 @@ class HydroData(ZSData):
 
         self._plip_dir = plip_dir
         self._hydro_dir = hydro_dir
+        # subfolder to save mutant structures from MDAnalysis
+        self._hydro_mdmut_dir = checkNgen_folder(
+            os.path.join(self._hydro_dir, "md_mut", self.lib_name)
+        )
         self._active_site_radius = active_site_radius
         self._max_workers = max_workers
+        self._regen = regen
 
         print(f"Calculating hydrophobicity for {self.lib_name}...")
 
@@ -757,10 +775,20 @@ class HydroData(ZSData):
         )
         xml_path = os.path.join(self._plip_dir, self.protein_name, "report.xml")
 
+        # mutant strcuture path
+        var_path = os.path.join(self._hydro_mdmut_dir, combo + ".pdb")
+        combo_site_dict = self._get_combo_site_dict(combo)
+        mutate_parent(
+            parent_pdb=parent_struct_path,
+            mutations=combo_site_dict,
+            var_path=var_path,
+            regen=self._regen,
+        )
+
         # get the active site residues
         active_site_dict = {
             "pocket-plip": get_plip_active_site_dict(xml_path=xml_path),
-            "pocket-combo": self._get_combo_site_dict(combo),
+            "pocket-combo": combo_site_dict,
             "pocket-ligandcentroid": self._modify_active_site_info(
                 combo=combo,
                 active_site_info=extract_active_site_by_radius(
@@ -781,8 +809,8 @@ class HydroData(ZSData):
                 ] = calculate_native_sasa(
                     aa_list=list(active_site_info.values()), ref_type=sasa_type
                 )
-            hydro_dict[f"{active_site_type}-sasa-mut"] = calculate_variant_sasa(
-                parent_pdb=parent_struct_path, mutations=active_site_info
+            hydro_dict[f"{active_site_type}-sasa-mut"] = calculate_sasa_from_pdb(
+                pdb_file=var_path, active_site_residues=active_site_info
             )
 
         # Calculate hydrophobicity with three different scale

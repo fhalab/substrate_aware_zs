@@ -334,7 +334,7 @@ class AF3Struct(ZSData):
             joint_smiles = canonicalize_smiles(
                 self.lib_info["carbene_precursor-smiles"]
                 + "."
-                + ".".join(self.lib_info["inactivated-cofactor-smiles"])
+                + self._cofactor_smiles
             )
             # joint inactivate carbene and heme
             json_data["sequences"].append(
@@ -358,9 +358,7 @@ class AF3Struct(ZSData):
                 {
                     "ligand": {
                         "id": "C",
-                        "smiles": canonicalize_smiles(
-                            self.lib_info["inactivated-cofactor-smiles"]
-                        ),
+                        "smiles": self._cofactor_smiles,
                     }
                 }
             )

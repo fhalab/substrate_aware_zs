@@ -149,8 +149,258 @@ class ChaiStruct(ZSData):
             self._joint_smiles = self.substrate_smiles + "." + self._cofactor_smiles
             self._joint_dets = self.substrate_dets + "_" + self._cofactor_dets
             self._gen_chai_structure()
+
+            # fasta_list, output_list = self._get_chai_inputs_same_sub()
         else:
             self._gen_chai_structure_diff_sub()
+            # fasta_list, output_list = self._get_chai_inputs_diff_sub()
+
+        # self._gen_chai_batch(fasta_list=fasta_list, output_list=output_list)
+        # self._rename_chai_outputs(output_list=output_list)
+
+    
+    def _get_chai_inputs_same_sub(self):
+        """
+        Generate the input fasta lists and output_dirs for batching inference
+        """
+
+        fasta_list = []
+        output_list = []
+
+        for (
+            var,
+            seq,
+        ) in tqdm(self.df[[self._var_col_name, self._seq_col_name]].values):
+
+            output_subdir = os.path.join(self._chai_struct_subdir, var)
+
+            # Need to clean up the sequence
+            seq = seq.strip().replace("*", "").replace(" ", "").upper()
+
+            input_fasta = f">protein|{self.lib_name}_{var}\n{seq}\n"
+
+            if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
+
+                # do nothing
+                pass
+
+            elif self._gen_opt == "substrate-no-cofactor":
+
+                # add substrate
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
+
+            elif self._gen_opt == "joint-cofactor-no-substrate":
+
+                # add cofactor
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                )
+
+            elif self._gen_opt == "joint-cofactor-seperate-substrate":
+
+                # add substrate first
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
+
+                # add cofactor smiles
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles}\n"
+                )
+
+            elif self._gen_opt == "joint-carbene_precursor-heme":
+                joint_dets = "_".join(
+                    [
+                        self.lib_info["carbene_precursor"],
+                        "_".join(self.lib_info["inactivated-cofactor"]),
+                    ]
+                )
+
+                joint_smiles = canonicalize_smiles(
+                    self.lib_info["carbene_precursor-smiles"]
+                    + "."
+                    + ".".join(self.lib_info["inactivated-cofactor-smiles"])
+                )
+
+                input_fasta += f">ligand|{joint_dets}\n{joint_smiles}\n"
+
+            elif self._gen_opt == "seperate-carbene_precursor-heme":
+                # add inactivate carbene
+                ligand_smiles = canonicalize_smiles(self.lib_info['carbene_precursor-smiles'])
+                input_fasta += f">ligand|{self.lib_info['carbene_precursor']}\n{ligand_smiles}\n"
+
+                # add cofactor
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles }\n"
+                )
+
+            elif self._gen_opt == "seperate":
+
+                # add joint
+                input_fasta += (
+                    f">ligand|{self.substrate_dets}\n{self.substrate_smiles}\n"
+                )
+
+                # loop through the cofactors and add them individually
+                for cofactor_dets, cofactor_smiles in zip(
+                    self.lib_info["cofactor"], self.lib_info["cofactor-smiles"]
+                ):
+                    cofactor_smiles = canonicalize_smiles(cofactor_smiles)
+                    input_fasta += f">ligand|{cofactor_dets}\n{cofactor_smiles}\n"
+
+            else:
+
+                # add substrate
+                input_fasta += f">ligand|{self._joint_dets}\n{self._joint_smiles}\n"
+
+            # only rerun if the flag is set and the output folder doies not exists
+            if self._ifrerun or not os.path.exists(os.path.join(output_subdir, f"{var}_0.cif")):
+
+                # del the output folder without the cif if it exists
+                if os.path.exists(output_subdir):
+                    os.rmdir(output_subdir)
+
+                output_subdir = Path(checkNgen_folder(output_subdir))
+
+                fasta_path = Path(f"{output_subdir}/{var}.fasta")
+                fasta_path.write_text(input_fasta)
+
+                fasta_list.append(fasta_path)
+                output_list.append(output_subdir)
+
+        return fasta_list, output_list
+
+    def _get_chai_inputs_diff_sub(self):
+
+        """
+        A method to generate the chai structure for each variant.
+
+        Assume additional columns: substrate, substrate-smiles, cofactor, cofactor-smiles, rxn_id
+        """
+
+        fasta_list = []
+        output_list = []
+
+        for (var, seq, sub, sub_smile, cof, cof_smile, rxn_id) in tqdm(
+            self.df[
+                [
+                    self._var_col_name,
+                    self._seq_col_name,
+                    "substrate",
+                    "substrate-smiles",
+                    "cofactor",
+                    "cofactor-smiles",
+                    "rxn_id",
+                ]
+            ].values
+        ):
+
+            output_subdir = os.path.join(
+                self._chai_struct_subdir, f"{var}_{str(rxn_id)}"
+            )
+
+            # Need to clean up the sequence
+            seq = seq.strip().replace("*", "").replace(" ", "").upper()
+
+            input_fasta = f">protein|{self.lib_name}_{var}_{rxn_id}\n{seq}\n"
+
+            if self._gen_opt in ["no-substrate-no-cofactor", "apo", "empty"]:
+
+                # do nothing
+                pass
+
+            elif self._gen_opt == "substrate-no-cofactor":
+
+                # add substrate
+                input_fasta += f">ligand|{sub}\n{sub_smile}\n"
+
+            elif self._gen_opt == "joint-cofactor-no-substrate":
+
+                # add cofactor
+                input_fasta += f">ligand|{cof}\n{cof_smile}\n"
+
+            elif self._gen_opt == "seperate":
+
+                # add substrate first
+                input_fasta += f">ligand|{sub}\n{sub_smile}\n"
+
+                # add cofactor smiles
+                input_fasta += f">ligand|{cof}\n{cof_smile}\n"
+
+            else:
+                joint_dets = sub + "_" + cof
+                joint_smiles = sub_smile + "." + cof_smile
+
+                # add substrate
+                input_fasta += f">ligand|{joint_dets}\n{joint_smiles}\n"
+
+            # only rerun if the flag is set and the output folder doies not exists
+            if self._ifrerun or not os.path.exists(output_subdir):
+
+                output_subdir = Path(checkNgen_folder(output_subdir))
+
+                fasta_path = Path(f"{output_subdir}/{var}.fasta")
+                fasta_path.write_text(input_fasta)
+
+                fasta_list.append(fasta_path)
+                output_list.append(output_subdir)
+
+        return fasta_list, output_list
+
+
+    def _gen_chai_batch(self, fasta_list: list, output_list: list):
+
+        run_inference(
+            fasta_file=fasta_list,
+            output_dir=output_list,
+            # 'default' setup
+            num_trunk_recycles=3,
+            num_diffn_timesteps=200,
+            seed=42,
+            device=torch.device(self._torch_device),
+            use_esm_embeddings=True,
+        )
+
+    def _rename_chai_outputs(self, output_list: list):
+
+        for output_subdir in output_list:
+
+            var = os.path.basename(output_subdir)
+        
+            renamed_output_files = []
+
+            # get name of the output cif or pdb files
+            output_strcut_files = sorted(
+                glob(f"{output_subdir}/*.cif") + glob(f"{output_subdir}/*.pdb")
+            )
+
+            # rename the output files cif or pdb files
+            for output_strcut_file in output_strcut_files:
+                renamed_output_file = output_strcut_file.replace(
+                    "pred.model_idx", var
+                )
+                os.rename(
+                    output_strcut_file,
+                    renamed_output_file,
+                )
+                renamed_output_files.append(renamed_output_file)
+
+            renamed_scores_files = []
+
+            # for npz files do the same
+            output_scores_files = sorted(glob(f"{output_subdir}/*.npz"))
+
+            for output_scores_file in output_scores_files:
+                renamed_output_file = output_scores_file.replace(
+                    "scores.model_idx", var
+                )
+                os.rename(
+                    output_scores_file,
+                    renamed_output_file,
+                )
+                renamed_scores_files.append(renamed_output_file)
 
     def _gen_chai_structure(self):
         """
@@ -221,7 +471,9 @@ class ChaiStruct(ZSData):
                 input_fasta += f">ligand|{self.lib_info['carbene_precursor']}\n{canonicalize_smiles(self.lib_info['carbene_precursor-smiles'])}\n"
 
                 # add cofactor
-                input_fasta += f">ligand|{self.lib_info['inactivated-cofactor']}\n{canonicalize_smiles(self.lib_info['inactivated-cofactor-smiles'])}\n"
+                input_fasta += (
+                    f">ligand|{self._cofactor_dets}\n{self._cofactor_smiles }\n"
+                )
 
             elif self._gen_opt == "seperate":
 

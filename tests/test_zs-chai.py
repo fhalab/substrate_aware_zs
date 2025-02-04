@@ -60,15 +60,15 @@ if __name__ == "__main__":
     # gen_opt="apo"
     # )
 
-    run_gen_chai_structure([
-        "data/meta/Rma-CB.csv",
-        "data/meta/Rma-CSi.csv",
-        "data/meta/ParLQ.csv",
-    ], 
-    gen_opt="joint-carbene_precursor-heme",
-    cofactor_dets="inactivated-cofactor",
-    samesub=True,
-    )
+    # run_gen_chai_structure([
+    #     "data/meta/Rma-CB.csv",
+    #     "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
+    # ], 
+    # gen_opt="joint-carbene_precursor-heme",
+    # cofactor_dets="inactivated-cofactor",
+    # samesub=True,
+    # )
 
     run_gen_chai_structure([
         "data/meta/Rma-CB.csv",
