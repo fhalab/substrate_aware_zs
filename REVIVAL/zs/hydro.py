@@ -726,6 +726,7 @@ class HydroData(ZSData):
 
         # Create a list of variant-replicate pairs
         combo_list = self.df[self._combo_col_name]
+        var_list = self.df[self._var_col_name]
 
         # for combo in combo_list:
         #     hydro_data.append(self._get_naive_var_hydro(combo))
@@ -737,7 +738,7 @@ class HydroData(ZSData):
             # Use executor.map with the worker function
             hydro_data = list(
                 tqdm(
-                    executor.map(self._get_naive_var_hydro, combo_list),
+                    executor.map(self._get_naive_var_hydro, combo_list, var_list),
                     total=len(combo_list),
                     desc="Calculating hydrophobicity",
                 )
@@ -760,7 +761,7 @@ class HydroData(ZSData):
 
         return self._add_diff_to_df(df)
 
-    def _get_naive_var_hydro(self, combo: str) -> pd.dict:
+    def _get_naive_var_hydro(self, combo: str, var: str) -> pd.dict:
 
         """
         Calculate the hydrophobicity of a variant only based on the combo column
@@ -776,7 +777,7 @@ class HydroData(ZSData):
         xml_path = os.path.join(self._plip_dir, self.protein_name, "report.xml")
 
         # mutant strcuture path
-        var_path = os.path.join(self._hydro_mdmut_dir, combo + ".pdb")
+        var_path = os.path.join(self._hydro_mdmut_dir, var + ".pdb")
         combo_site_dict = self._get_combo_site_dict(combo)
         mutate_parent(
             parent_pdb=parent_struct_path,

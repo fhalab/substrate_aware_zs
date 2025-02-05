@@ -28,7 +28,7 @@ AA_DICT = {
     "V": "VAL",  # Valine
 }
 
-TrpB_CHEM = {
+TrpB_COMMON = {
     "cofactor": ["PLP-dependent_aminoacrylate", "Na+"],
     "cofactor-smiles": [
         "[O-]C1=C(/C=[N+]([H])/C(C([O-])=O)=C)C(CP([O-])([O-])=O)=CN=C1C",
@@ -44,6 +44,39 @@ TrpB_CHEM = {
         "[O-]C1=C(/C=[N+]([H])/[C@](CO)([H])C([O-])=O)C(CP([O-])([O-])=O)=CN=C1C",
         "[Na+]",
     ],
+    "positions": {1: 165, 2: 183, 3: 301},
+    "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+    "family": "TrpB",
+    "project": "multi-substrate",
+}
+
+ParLQ_COMMON = {
+    "cofactor": ["carbene-heme"],
+    "cofactor-smiles": [
+        "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=CC(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
+    ],
+    "carbene_precursor": "ethyl diazoacetate (EDA)",
+    "carbene_precursor-smiles": "[N-]=[N+]=CC(OCC)=O",
+    "inactivated-cofactor": ["heme b"],
+    "inactivated-cofactor-smiles": [
+        "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
+    ],  # heme b taken from pdb
+    "activated_carbene-cofactor": ["heme c", "Fe2+"," carbene"],
+    "activated_carbene-cofactor-smiles": [
+        r"C=CC1=C(/C=C2C(C)=C(C=C)C3=N/2)NC(/C=C4N=C(/C=C(C(CCC([O-])=O)=C/5C)\NC5=C/3)C(CCC([O-])=O)=C\4C)=C1C",
+        "[Fe2+]",
+        "CCOC([C])=O"
+    ],
+    "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
+    "AAs": {
+        1: "W",
+        2: "Y",
+        3: "L",
+        4: "Q",
+        5: "F",
+    },  # W56, Y57, L59, Q60, and F89; WYLQF
+    "family": "ParPgb",
+    "project": "ALDE",
 }
 
 ENZYME_INFO_DICT = deepcopy(
@@ -207,7 +240,7 @@ LIB_INFO_DICT = deepcopy(
             "enzyme": "PfTrpB",
             "substrate": "4bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C(=C1)Br",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(Br)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -272,16 +305,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-5bromo": {
             "enzyme": "PfTrpB",
             "substrate": "5bromo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Br",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Br)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -346,16 +379,12 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
         },
         "PfTrpB-7bromo": {
             "enzyme": "PfTrpB",
             "substrate": "7bromo",
             "substrate-smiles": "C1=CC2=C(C(=C1)Br)NC=C2",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(Br)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -420,16 +449,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-5chloro": {
             "enzyme": "PfTrpB",
             "substrate": "5chloro",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1Cl",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -494,16 +523,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-6chloro": {
             "enzyme": "PfTrpB",
             "substrate": "6chloro",
             "substrate-smiles": "C1=CC(=CC2=C1C=CN2)Cl",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -568,16 +597,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-56chloro": {
             "enzyme": "PfTrpB",
             "substrate": "56chloro",
             "substrate-smiles": "ClC(C=C1NC=CC1=C2)=C2Cl",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC(Cl)=C(Cl)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -643,16 +672,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-4cyano": {
             "enzyme": "PfTrpB",
             "substrate": "4cyano",
             "substrate-smiles": "C1=CC(=C2C=CNC2=C1)C#N",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=CC(C#N)=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -718,16 +747,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N2", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-5cyano": {
             "enzyme": "PfTrpB",
             "substrate": "5cyano",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1C#N",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(C=C23)C#N)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -793,16 +822,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N2", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-5iodo": {
             "enzyme": "PfTrpB",
             "substrate": "5iodo",
             "substrate-smiles": "C1=CC2=C(C=CN2)C=C1I",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=CC=C(I)C=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -867,16 +896,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+        #     "positions": {1: 165, 2: 183, 3: 301},
+        #     "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+        #     "family": "TrpB",
+        #     "project": "multi-substrate",
         },
         "PfTrpB-7iodo": {
             "enzyme": "PfTrpB",
             "substrate": "7iodo",
             "substrate-smiles": "C1=CC2=C(C(=C1)I)NC=C2",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C([O-])C(\C=[NH+]\[C@@H](CC2=CNC3=C(I)C=CC=C23)C([O-])=O)=C(COP([O-])([O-])=O)C=N1",
                 "[Na+]",
@@ -941,16 +970,16 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB-7methyl": {
             "enzyme": "PfTrpB",
             "substrate": "7methyl",
             "substrate-smiles": "CC1=CC=CC2=C1NC=C2",
-            **TrpB_CHEM,
+            **TrpB_COMMON,
             "intermediate-smiles": [
                 "CC1=C2NC=C(C[C@H](\[NH+]=C\C3=C(COP([O-])([O-])=O)C=NC(C)=C3[O-])C([O-])=O)C2=CC=C1",
                 "[Na+]",
@@ -1015,10 +1044,10 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "N1", True),
                 ),
             },  # if need to add H
-            "positions": {1: 165, 2: 183, 3: 301},
-            "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
-            "family": "TrpB",
-            "project": "multi-substrate",
+            # "positions": {1: 165, 2: 183, 3: 301},
+            # "AAs": {1: "I", 2: "I", 3: "Y"},  # I165, I183, and Y301
+            # "family": "TrpB",
+            # "project": "multi-substrate",
         },
         "PfTrpB_scope":{
             "enzyme": "PfTrpB",
@@ -1186,26 +1215,10 @@ LIB_INFO_DICT = deepcopy(
             "family": "cyt c",
             "project": "substrate-scope",
         },
-        "ParLQ": {
+        "ParLQ-a": {
             "enzyme": "ParLQ",
             "substrate": "4-vinylanisole",
             "substrate-smiles": "C=CC1=CC=C(OC)C=C1",
-            "cofactor": ["carbene-heme"],
-            "cofactor-smiles": [
-                "C=CC1=C(C=C2C(C)=C(C=C)C3=[N]2[Fe]45(N6C(C(C)=C(CCC([O-])=O)C6=C7)=C3)=CC(OCC)=O)N4C(C=C8[N]5=C7C(CCC([O-])=O)=C8C)=C1C",
-            ],
-            "carbene_precursor": "ethyl diazoacetate (EDA)",
-            "carbene_precursor-smiles": "[N-]=[N+]=CC(OCC)=O",
-            "inactivated-cofactor": ["heme b"],
-            "inactivated-cofactor-smiles": [
-                "Cc1c2n3c(c1CCC(=O)O)C=C4C(=C(C5=[N]4[Fe]36[N]7=C(C=C8N6C(=C5)C(=C8C)C=C)C(=C(C7=C2)C)C=C)C)CCC(=O)O",
-            ],  # heme b taken from pdb
-            "activated_carbene-cofactor": ["heme c", "Fe2+"," carbene"],
-            "activated_carbene-cofactor-smiles": [
-                r"C=CC1=C(/C=C2C(C)=C(C=C)C3=N/2)NC(/C=C4N=C(/C=C(C(CCC([O-])=O)=C/5C)\NC5=C/3)C(CCC([O-])=O)=C\4C)=C1C",
-                "[Fe2+]",
-                "CCOC([C])=O"
-            ],
             "product": "1,2-disubstituted cyclopropanes cis",
             "product-smiles": "COC1=CC=C([C@@H]2[C@H](C(OCC)=O)C2)C=C1",
             "product2": "1,2-disubstituted cyclopropanes trans",
@@ -1258,16 +1271,231 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "C_2", False),
                 ),
             },  # if need to add H
-            "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
-            "AAs": {
-                1: "W",
-                2: "Y",
-                3: "L",
-                4: "Q",
-                5: "F",
-            },  # W56, Y57, L59, Q60, and F89; WYLQF
-            "family": "ParPgb",
-            "project": "ALDE",
+            **ParLQ_COMMON,
+        },
+        "ParLQ-b": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-c": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-d": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-e": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-f": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-g": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-h": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
+        },
+        "ParLQ-i": {
+            "enzyme": "ParLQ",
+            "substrate": "",
+            "substrate-smiles": "",
+            "product": "",
+            "product-smiles": "",
+            "product2": "",
+            "product2-smiles": "",
+            "-info": [
+            ],
+            "carbene-info_joint": [
+            ],
+            "carbene-info_seperate": [
+            ],
+            "cofactor-distances_joint": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            "cofactor-distances_seperate": {
+                "C-C_1": (
+                ),
+                "C-C_2": (
+                ),
+            },  # if need to add H
+            **ParLQ_COMMON,
         },
     }
 )

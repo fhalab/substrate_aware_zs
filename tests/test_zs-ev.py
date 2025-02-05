@@ -27,7 +27,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_all_ev("data/meta/*.csv")
-    run_all_ev("data/meta/*_scope.csv")
+    run_all_ev("data/meta/ParLQ-*.csv")
     # kwargs = {
     #     "scale_fit": "max",
     #     "var_col_name": "muts",

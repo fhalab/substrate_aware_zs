@@ -19,7 +19,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_all_esm(pattern="data/meta/*")
-    run_all_esm(pattern="data/meta/PfTrpB_scope.csv")
+    run_all_esm(pattern="data/meta/ParLQ-*.csv")
 
     f.close()
 

@@ -21,6 +21,7 @@ if __name__ == "__main__":
     # run_all_coves(pattern="data/lib/*", withsub=False)
     # run_all_coves(pattern="data/lib/*", withsub=True)
     # run_all_coves(pattern="data/meta/*_scope.csv", withsub=False)
+    run_all_coves(pattern="data/meta/ParLQ-*.csv", withsub=False)
     # append_all_coves_scores(libs="data/meta/*",coves_dir="zs/coves/apo_clean/output/100")
     # append_all_coves_scores(libs="data/meta/*",coves_dir="zs/coves/sub_clean/output/100")
 
