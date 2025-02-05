@@ -18,24 +18,25 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_combzs(pattern=
-        [
-            "data/meta/ParLQ.csv",
-            "data/meta/PfTrpB-4bromo.csv",
-            "data/meta/PfTrpB-4cyano.csv",
-            "data/meta/PfTrpB-5bromo.csv",
-            "data/meta/PfTrpB-5chloro.csv",
-            "data/meta/PfTrpB-5cyano.csv",
-            "data/meta/PfTrpB-5iodo.csv",
-            "data/meta/PfTrpB-6chloro.csv",
-            "data/meta/PfTrpB-7bromo.csv",
-            "data/meta/PfTrpB-7iodo.csv",
-            "data/meta/PfTrpB-7methyl.csv",
-            "data/meta/PfTrpB-56chloro.csv",
-            "data/meta/Rma-CB.csv",
-            "data/meta/Rma-CSi.csv",
-        ]
-    )
+    # run_all_combzs(pattern="data/meta/*_scope.csv")
+    run_all_combzs(pattern="data/meta/ParLQ-*.csv")
+        # [
+        #     "data/meta/ParLQ.csv",
+        #     "data/meta/PfTrpB-4bromo.csv",
+        #     "data/meta/PfTrpB-4cyano.csv",
+        #     "data/meta/PfTrpB-5bromo.csv",
+        #     "data/meta/PfTrpB-5chloro.csv",
+        #     "data/meta/PfTrpB-5cyano.csv",
+        #     "data/meta/PfTrpB-5iodo.csv",
+        #     "data/meta/PfTrpB-6chloro.csv",
+        #     "data/meta/PfTrpB-7bromo.csv",
+        #     "data/meta/PfTrpB-7iodo.csv",
+        #     "data/meta/PfTrpB-7methyl.csv",
+        #     "data/meta/PfTrpB-56chloro.csv",
+        #     "data/meta/Rma-CB.csv",
+        #     "data/meta/Rma-CSi.csv",
+        # ]
+
 
     f.close()
 

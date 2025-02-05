@@ -68,7 +68,7 @@ if __name__ == "__main__":
     
 
     for dock_opt in ["substrate", "all"]:
-        for lib in sorted(glob(("data/meta/ParLQ*.csv"))):
+        for lib in sorted(glob(("data/meta/ParLQ-*.csv"))):
             if "TrpB" in lib:
                 VinaLibDock(
                     input_csv = lib,

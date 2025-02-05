@@ -491,6 +491,7 @@ class HydroData(ZSData):
         max_workers: int = 64,
         regen: bool = False,
     ):
+        # TODO add option for diff sub
 
         super().__init__(
             input_csv=input_csv,

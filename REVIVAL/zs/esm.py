@@ -202,10 +202,23 @@ class ESM(ZSData):
         Get any score for each variant in the data set
         """
 
+        # copy df and only keep the columns needed
+        sele_cols = [
+            self._var_col_name,
+            self._fit_col_name,
+            self._mut_col_name,
+            self._pos_col_name,
+            "n_mut",
+        ]
+        if "selectivity" in self.df.columns:
+            sele_cols.append("selectivity")
+
+        df = self.df[sele_cols].copy()
+
         df_n_list = []
 
         # TODO test
-        wt_df = self.df[self.df[self._var_col_name] == "WT"].copy()
+        wt_df = df[df[self._var_col_name] == "WT"].copy()
         # add if wt_df is not empty
         if not wt_df.empty:
             wt_df.loc[:, "esm_score"] = 0
@@ -215,7 +228,7 @@ class ESM(ZSData):
         # Get the n mutant scores
         for i in tqdm(list(range(self.max_n_mut + 1))[1:]):
             # Filter out n mutants
-            df_n = self.df[self.df["n_mut"] == i].copy()
+            df_n = df[df["n_mut"] == i].copy()
             if df_n.empty:  # Check if the DataFrame is empty after filtering
                 assert "Data set is empty"
                 continue

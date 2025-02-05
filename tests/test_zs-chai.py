@@ -13,7 +13,7 @@ from REVIVAL.util import checkNgen_folder
 
 if __name__ == "__main__":
 
-    os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
     # log outputs
     f = open(
@@ -24,6 +24,13 @@ if __name__ == "__main__":
         "w",
     )
     sys.stdout = f
+
+    run_gen_chai_structure(
+        "data/meta/ParLQ-*.csv",
+        gen_opt="seperate",
+        cofactor_dets="cofactor",
+        samesub=True
+        )
 
     # # run_gen_chai_structure("data/meta/*.csv")
     # run_gen_chai_structure([ 
@@ -70,15 +77,15 @@ if __name__ == "__main__":
     # samesub=True,
     # )
 
-    run_gen_chai_structure([
-        "data/meta/Rma-CB.csv",
-        "data/meta/Rma-CSi.csv",
-        "data/meta/ParLQ.csv",
-    ], 
-    gen_opt="seperate-carbene_precursor-heme",
-    cofactor_dets="inactivated-cofactor",
-    samesub=True,
-    )
+    # run_gen_chai_structure([
+    #     "data/meta/Rma-CB.csv",
+    #     "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
+    # ], 
+    # gen_opt="seperate-carbene_precursor-heme",
+    # cofactor_dets="inactivated-cofactor",
+    # samesub=True,
+    # )
     # run_gen_chai_structure([
     #     "/disk2/fli/REVIVAL2/data/meta/Rma-CB_scope.csv",
     #     "/disk2/fli/REVIVAL2/data/meta/Rma-CSi_scope.csv",

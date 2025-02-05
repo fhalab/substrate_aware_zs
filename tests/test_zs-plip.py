@@ -28,8 +28,8 @@ if __name__ == "__main__":
     # for lib_dir in sorted(glob("zs/af3/struct_joint/*_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/af3/struct_seperate/*_scope")):
-    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    for lib_dir in sorted(glob("zs/af3/struct_seperate/ParLQ-*")):
+        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
     # for lib_dir in sorted(glob("zs/chai/struct_joint/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
@@ -45,7 +45,7 @@ if __name__ == "__main__":
     ]:
     
         run_all_plip_zs(
-            "data/meta/Rma*_scope.csv",
+            "data/meta/ParLQ-*.csv",
             plip_dir
             )
 

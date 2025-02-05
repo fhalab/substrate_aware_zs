@@ -486,14 +486,6 @@ class ProcessData(LibData):
 
         df = self.input_df.copy()
 
-
-        # if self._combo_col_name in df.columns:
-        #     # drop stop codon containing rows
-        #     df = df.groupby(self._combo_col_name).mean().reset_index()
-
-        # elif self._var_col_name in df.columns:
-        #     df = df.groupby(self._var_col_name).mean().reset_index()
-
         # append muts column for none SSM data
         if self._var_col_name not in df.columns and self._combo_col_name in df.columns:
             df = self._append_mut(df).copy()
@@ -530,23 +522,9 @@ class ProcessData(LibData):
 
 
             # if there are multiple entries for the same combo name, take the mean
-            # groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
+            groupby_cols = [col for col in df.columns if not pd.api.types.is_numeric_dtype(df[col])]
             
-            # groupby_col = df.select_dtypes(exclude=['number']).columns
-
-            # # for trpb additioanl info
-            # if "lib" in df.columns:
-
-            #     df = (
-            #         df.groupby(groupby_col)
-            #         .agg({self._fit_col_name: "mean", "lib": lambda x: ",".join(x)})
-            #         .reset_index()
-            #     )
-            # else:
-            #     print("lib" not in df.columns)
-            #     print(df.columns)
-            #     print(groupby_col)
-            #     df = df.groupby(groupby_col).mean().reset_index()
+            df = df.groupby(groupby_cols).mean().reset_index()
 
             # split the amino acids for SSM data
             if "AA1" not in df.columns and self._combo_col_name in df.columns:
@@ -567,6 +545,14 @@ class ProcessData(LibData):
                         df[col] = ".".join(append_info)
                     else:
                         df[col] = self.lib_info[col]
+
+        # make n_mut to be int
+        df["n_mut"] = df["n_mut"].astype(int)
+
+        # make sure fitness is numeric
+        if df[self._fit_col_name].dtype == "str":
+            # convert fitness to numerical
+            df[self._fit_col_name] = pd.to_numeric(df[self._fit_col_name].str.replace(",", ""), errors='coerce')
 
         # save the output csv
         return df

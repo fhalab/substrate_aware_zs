@@ -145,6 +145,10 @@ class ZSComb(ZSData):
 
             zs_path = zs_path.replace("*.csv", f"{self.lib_name}.csv")
 
+            if not os.path.exists(zs_path):
+                print(f"File {zs_path} does not exist. Skipping...")
+                continue
+
             print(f"Combining {zs_path}...")
 
             zs_df = pd.read_csv(zs_path)
@@ -161,6 +165,10 @@ class ZSComb(ZSData):
         ]:
 
             zs_path = zs_path.replace("*.csv", f"{self.lib_name}.csv")
+
+            if not os.path.exists(zs_path):
+                print(f"File {zs_path} does not exist. Skipping...")
+                continue
 
             print(f"Combining {zs_path}...")
             complex_zs_df = self._append_complex_zs_csv(zs_path)
