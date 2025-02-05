@@ -25,6 +25,7 @@ if __name__ == "__main__":
     sys.stdout = f
 
    
-    run_all_vol(pattern="data/meta/not_scaled/*")
+    run_all_vol(pattern="data/meta/Rma*_scope.csv", samesub=False)
+    run_all_vol(pattern="data/meta/ParLQ-*.csv", samesub=False)
 
     f.close()

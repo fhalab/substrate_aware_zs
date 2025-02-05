@@ -178,8 +178,12 @@ def run_lib_plip(
             lib_out_dir = checkNgen_folder(
                 os.path.join(out_dir, "chai", struct_dets, lib_name)
             )
-            variant_name = get_file_name(cif_file)
-            var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, variant_name))
+
+            variant_name = os.path.basename(os.path.dirname(cif_file)).replace(" ", "_")
+            var_out_dir = checkNgen_folder(os.path.join(lib_out_dir, variant_name)).replace(" ", "_")
+            print(cif_file)
+            print(variant_name)
+            print(var_out_dir)
             tasks.append((cif_file, var_out_dir, variant_name, regen))
 
     # Parallelize the tasks using ProcessPoolExecutor
@@ -399,6 +403,8 @@ class PLIP_ZS(ZSData):
         plip_xml_files = glob(
             f"{self._plip_dir}/{self.lib_name}/*/report.xml", recursive=True
         )
+        print(f"{self._plip_dir}/{self.lib_name}/*/report.xml")
+        print(f"Found {len(plip_xml_files)} plip xml files")
 
         # Create a dictionary to store the data
         df_list = []
@@ -505,9 +511,15 @@ class PLIP_ZS(ZSData):
         else:
             merge_df = result
 
+        fit_df = self.df[self.col2merge].copy()
+        if "rxn_id" in self.df.columns:
+            fit_df[self._var_col_name] = self.df[self._var_col_name].astype(str) + ":" + \
+                                        self.df["rxn_id"].astype(str).str.replace(" ", ":").str.upper()
+
+
         # merge with the self.df to get fitness info
         return pd.merge(
-            self.df[self.col2merge],
+            fit_df,
             merge_df,
             on=self._var_col_name,
             how="outer",

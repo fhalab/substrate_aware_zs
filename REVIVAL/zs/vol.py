@@ -165,7 +165,11 @@ class VolData(ZSData):
 
         var_vol = self.parent_vol
 
+        if var == "WT":
+            return var_vol
+
         for v in var.split(":"):
+
             parent_aa = v[0]
             mut_aa = v[-1]
 
@@ -204,9 +208,10 @@ class VolData(ZSData):
 
         vol_df = []
 
-        for var, substate_smiles, cofactor_smiles in tqdm(self.df[
-            [self._var_col_name, self._subsmiles_col_name, self._cofsmiles_col_name]
-        ]):
+        for _, row in tqdm(self.df.iterrows()):
+            var, substate_smiles, cofactor_smiles = (
+                row[self._var_col_name], row[self._subsmiles_col_name], row[self._cofsmiles_col_name]
+            )
 
             joint_smiles = substate_smiles + "." + cofactor_smiles
             var_vol = self._calc_var_vol(var)

@@ -25,42 +25,44 @@ if __name__ == "__main__":
 
     # run_lib_plip(in_dir="data/structure", out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/af3/struct_joint/*")):
+    # for lib_dir in sorted(glob("zs/af3/struct_joint/*_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/af3/struct_seperate/*")):
+    # for lib_dir in sorted(glob("zs/af3/struct_seperate/*_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/chai/struct_joint/*")):
+    # for lib_dir in sorted(glob("zs/chai/struct_joint/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/chai/struct_seperate/*")):
+    # for lib_dir in sorted(glob("zs/chai/struct_seperate/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
     for plip_dir in[
-        "zs/plip/af3/struct_joint",
+        # "zs/plip/af3/struct_joint",
         # "zs/plip/chai/struct_joint",
-    ]:
-    
-        run_all_plip_zs(
-            "data/meta/not_scaled/*.csv",
-            plip_dir
-            )
-
-    
-    for plip_dir in[
         "zs/plip/af3/struct_seperate",
         # "zs/plip/chai/struct_seperate",
     ]:
     
         run_all_plip_zs(
-            [
-                "data/meta/not_scaled/ParLQ.csv",
-                "data/meta/not_scaled/Rma-CB.csv",
-                "data/meta/not_scaled/Rma-CSi.csv",
-            ],
+            "data/meta/Rma*_scope.csv",
             plip_dir
             )
+
+    
+    # for plip_dir in[
+    #     "zs/plip/af3/struct_seperate",
+    #     # "zs/plip/chai/struct_seperate",
+    # ]:
+    
+    #     run_all_plip_zs(
+    #         [
+    #             # "data/meta/ParLQ.csv",
+    #             "data/meta/Rma-CB_scope.csv",
+    #             "data/meta/Rma-CSi_scope.csv",
+    #         ],
+    #         plip_dir
+    #         )
 
     f.close()
 
