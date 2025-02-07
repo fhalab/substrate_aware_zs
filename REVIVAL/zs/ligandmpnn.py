@@ -246,7 +246,8 @@ class LigandmpnnData(ZSData):
         """
         Filepath to the corresponding .cif file for a given .csv of same name.
         """
-        return os.path.join(self._docked_struct_dir, f"{self.lib_name}.cif")
+        lib_name = self.lib_name.replace("_scope", "")
+        return os.path.join(self._docked_struct_dir, f"{lib_name}.cif")
 
     @property
     def pdb_path(self) -> str:

@@ -626,29 +626,33 @@ class HydroData(ZSData):
             for var in self.df[self._var_col_name].unique()
             for rep in self._rep_list
         ]
+        successes = []
+        for var, rep in var_rep_pairs:
+            print(f"Calculating hydrophobicity for {var} at rep {rep}")
+            successes.append(self._get_var_hydro(var, rep))
 
         # Use ProcessPoolExecutor for parallel processing
-        with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
-            # Use executor.map with the worker function
-            hydro_data = list(
-                tqdm(
-                    executor.map(self._hydro_worker, var_rep_pairs),
-                    total=len(var_rep_pairs),
-                    desc="Calculating hydrophobicity",
-                )
-            )
+        # with ProcessPoolExecutor(max_workers=self._max_workers) as executor:
+        #     # Use executor.map with the worker function
+        #     hydro_data = list(
+        #         tqdm(
+        #             executor.map(self._hydro_worker, var_rep_pairs),
+        #             total=len(var_rep_pairs),
+        #             desc="Calculating hydrophobicity",
+        #         )
+        #     )
 
-        # Separate successful and failed calculations
-        successes = [entry for entry in hydro_data if "error" not in entry]
-        failures = [entry for entry in hydro_data if "error" in entry]
+        # # Separate successful and failed calculations
+        # successes = [entry for entry in hydro_data if "error" not in entry]
+        # failures = [entry for entry in hydro_data if "error" in entry]
 
-        # Log failed pairs
-        if failures:
-            print(f"\nFailed calculations for {len(failures)} variant-replicate pairs:")
-            for failure in failures:
-                print(
-                    f"Variant {failure['variant']}, Replicate {failure['replicate']}: {failure['error']}"
-                )
+        # # Log failed pairs
+        # if failures:
+        #     print(f"\nFailed calculations for {len(failures)} variant-replicate pairs:")
+        #     for failure in failures:
+        #         print(
+        #             f"Variant {failure['variant']}, Replicate {failure['replicate']}: {failure['error']}"
+        #         )
 
         # Convert successful hydrophobicity data to a DataFrame
         return pd.DataFrame(successes)
@@ -867,14 +871,21 @@ class HydroData(ZSData):
                 pdb_file=var_path, chains=ligand_chain_ids[1:]
             )
 
+        if self.substrate_info is not None and self.substrate_info != []:
+            target_coord = calculate_ligand_centroid(
+                        pdb_file=var_path, ligand_info=self.substrate_info
+                    )
+        else:
+            target_coord = calculate_chain_centroid(
+                input_file=var_path, chain_ids=[ligand_chain_ids[0]]
+            )
+
         # get the active site residues
         active_site_dict = {
             "pocket-plip": get_plip_active_site_dict(xml_path=xml_path),
             "pocket-subcentroid": extract_active_site_by_radius(
                 pdb_file=var_path,
-                target_coord=calculate_ligand_centroid(
-                    pdb_file=var_path, ligand_info=self.substrate_info
-                ),
+                target_coord=target_coord,
                 distance_threshold=self._active_site_radius,
             ),
             "pocket-subcofcentroid": extract_active_site_by_radius(
@@ -912,7 +923,12 @@ class HydroData(ZSData):
     @property
     def substrate_info(self) -> list:
         """Get the substrate atom from the library info"""
-        return self.lib_info[f"{self.lib_info['substrate']}-info"]
+        ligand_info = f"{self.lib_info['substrate']}-info"
+
+        if ligand_info in self.lib_info:
+            return self.lib_info[ligand_info]
+        else:
+            return None
 
     @property
     def substrate_mol(self) -> Chem.Mol:

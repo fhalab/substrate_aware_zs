@@ -76,6 +76,9 @@ class ZSComb(ZSData):
         # Use glob to find matching CSV files
         csv_files = glob(pattern, recursive=True)
 
+        if len(csv_files) == 0:
+            print(f"No files found for pattern: {pattern}")
+            return pd.DataFrame()
 
         # Extract the unique portions of each path
         for csv_path in csv_files:
@@ -166,12 +169,10 @@ class ZSComb(ZSData):
 
             zs_path = zs_path.replace("*.csv", f"{self.lib_name}.csv")
 
-            if not os.path.exists(zs_path):
-                print(f"File {zs_path} does not exist. Skipping...")
-                continue
-
             print(f"Combining {zs_path}...")
             complex_zs_df = self._append_complex_zs_csv(zs_path)
+            if complex_zs_df.empty:
+                continue
             complex_common_cols = list(set(df.columns) & set(complex_zs_df.columns))
             print(f"on {complex_common_cols}...")
             df = pd.merge(df, complex_zs_df, on=complex_common_cols, how="outer")

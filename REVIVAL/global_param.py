@@ -67,6 +67,16 @@ ParLQ_COMMON = {
         "[Fe2+]",
         "CCOC([C])=O"
     ],
+    "cofactor-distances_seperate": {
+        "C-C_1": (
+            ("C", 1, "LIG", "C_15", False),
+            ("B", 1, "LIG", "C_1", False),
+        ),
+        "C-C_2": (
+            ("C", 1, "LIG", "C_15", False),
+            ("B", 1, "LIG", "C_2", False),
+        ),
+    },  # if need to add H
     "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
     "AAs": {
         1: "W",
@@ -227,6 +237,14 @@ ENZYME_INFO_DICT = deepcopy(
                 ("B", "HEM", "NAC"),
                 ("B", "HEM", "FE"),
             ],
+            "positions": {1: 56, 2: 57, 3: 59, 4: 60, 5: 89},
+            "AAs": {
+                1: "W",
+                2: "Y",
+                3: "L",
+                4: "Q",
+                5: "F",
+            },  # W56, Y57, L59, Q60, and F89; WYLQF\
             "family": "ParLQ",
             "project": "ALDE",
             "volume": 275.468,  # CASTp with 3zji
@@ -1215,7 +1233,7 @@ LIB_INFO_DICT = deepcopy(
             "family": "cyt c",
             "project": "substrate-scope",
         },
-        "ParLQ-a": {
+        "ParLQ": {
             "enzyme": "ParLQ",
             "substrate": "4-vinylanisole",
             "substrate-smiles": "C=CC1=CC=C(OC)C=C1",
@@ -1260,17 +1278,7 @@ LIB_INFO_DICT = deepcopy(
                     ("B", 1, "LIG", "C_24", False),
                     ("B", 1, "LIG", "C_2", False),
                 ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                    ("C", 1, "LIG", "C_15", False),
-                    ("B", 1, "LIG", "C_1", False),
-                ),
-                "C-C_2": (
-                    ("C", 1, "LIG", "C_15", False),
-                    ("B", 1, "LIG", "C_2", False),
-                ),
-            },  # if need to add H
+            }, 
             **ParLQ_COMMON,
         },
         "ParLQ-b": {
@@ -1281,24 +1289,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-c": {
@@ -1309,24 +1299,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-d": {
@@ -1337,24 +1309,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-e": {
@@ -1365,24 +1319,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-f": {
@@ -1393,24 +1329,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-g": {
@@ -1421,24 +1339,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-h": {
@@ -1449,24 +1349,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
         "ParLQ-i": {
@@ -1477,24 +1359,6 @@ LIB_INFO_DICT = deepcopy(
             "product-smiles": "",
             "product2": "",
             "product2-smiles": "",
-            "-info": [
-            ],
-            "carbene-info_joint": [
-            ],
-            "carbene-info_seperate": [
-            ],
-            "cofactor-distances_joint": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
-            "cofactor-distances_seperate": {
-                "C-C_1": (
-                ),
-                "C-C_2": (
-                ),
-            },  # if need to add H
             **ParLQ_COMMON,
         },
     }

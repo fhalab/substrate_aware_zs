@@ -23,32 +23,34 @@ if __name__ == "__main__":
     sys.stdout = f
 
 
-    run_bonddist(
-        struct_dir="zs/af3/struct_joint",
-        pattern="data/meta/not_scaled/*.csv",
-    )
+    # run_bonddist(
+    #     struct_dir="zs/af3/struct_joint",
+    #     pattern="data/meta/*.csv",
+    # )
     
     run_bonddist(
         struct_dir="zs/af3/struct_seperate",
-        pattern=[
-            "data/meta/not_scaled/ParLQ.csv",
-            "data/meta/not_scaled/Rma-CB.csv",
-            "data/meta/not_scaled/Rma-CSi.csv",
-            ]
+        pattern="data/meta/ParLQ-*.csv",
+        # pattern=[
+        #     "data/meta/ParLQ.csv",
+        #     "data/meta/Rma-CB.csv",
+        #     "data/meta/Rma-CSi.csv",
+        #     ]
         )
 
-    run_bonddist(
-        struct_dir="zs/chai/struct_joint",
-        pattern="data/meta/not_scaled/*.csv",
-    )
+    # run_bonddist(
+    #     struct_dir="zs/chai/struct_joint",
+    #     pattern="data/meta/*.csv",
+    # )
 
     run_bonddist(
         struct_dir="zs/chai/struct_seperate",
-        pattern=[
-            "data/meta/not_scaled/ParLQ.csv",
-            "data/meta/not_scaled/Rma-CB.csv",
-            "data/meta/not_scaled/Rma-CSi.csv",
-            ]
+        pattern="data/meta/ParLQ-*.csv",
+        # pattern=[
+        #     "data/meta/ParLQ.csv",
+        #     "data/meta/Rma-CB.csv",
+        #     "data/meta/Rma-CSi.csv",
+        #     ]
         )
 
 
@@ -57,7 +59,7 @@ if __name__ == "__main__":
     """
     run_bonddist(
         struct_dir: str,
-        pattern: str | list = "data/meta/not_scaled/*.csv",
+        pattern: str | list = "data/meta/*.csv",
         kwargs: dict = {},
     )
     """

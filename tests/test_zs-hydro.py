@@ -45,7 +45,7 @@ if __name__ == "__main__":
 
     # run_all_hydro(pattern="data/meta/PfTrpB_scope.csv", plip_dir="zs/plip/af3/struct_joint", kwargs={"max_workers": 4})
     
-    run_all_hydro(pattern="data/meta/ParLQ-*.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
+    # run_all_hydro(pattern="data/meta/ParLQ-*.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
     run_all_hydro(pattern="data/meta/ParLQ-*.csv", plip_dir="zs/plip/af3/struct_seperate", kwargs={"max_workers": 4})
 
 

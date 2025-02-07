@@ -25,9 +25,15 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
+    # for noise in LigandMPNN_MODEL_DICT.keys():
+    #     run_ligandmpnn(
+    #         pattern="data/meta/ParLQ-*.csv",
+    #         noise_level=noise,
+    #     )
+
     for noise in LigandMPNN_MODEL_DICT.keys():
         run_ligandmpnn(
-            pattern="data/meta/not_scaled/*.csv",
+            pattern="data/meta/*_scope.csv",
             noise_level=noise,
         )
         

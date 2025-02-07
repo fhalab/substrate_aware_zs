@@ -24,13 +24,13 @@ if __name__ == "__main__":
         "w",
     )
     sys.stdout = f
-    run_af3_struct(
-        "data/meta/ParLQ-*.csv",
-        gen_opt="seperate",
-        cofactor_dets="cofactor",
-        samesub=True,
-        gpu_id="1"
-    )
+    # run_af3_struct(
+    #     "data/meta/ParLQ-*.csv",
+    #     gen_opt="seperate",
+    #     cofactor_dets="cofactor",
+    #     samesub=True,
+    #     gpu_id="1"
+    # )
     # run_af3_struct(
     #     # "data/meta/Rma-*.csv",
     #     # "data/meta/PfTrpB-*.csv",
@@ -136,5 +136,6 @@ if __name__ == "__main__":
     #     kwargs: dict = {}
     # ):
     # parse_all_af3_scores(af3_struct_dir: str = "zs/af3/struct_joint")
+    parse_all_af3_scores(af3_struct_pattern = "zs/af3/struct_seperate/ParLQ-*")
 
     f.close()

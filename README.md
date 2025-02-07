@@ -52,7 +52,7 @@ pip install torch-cluster -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
 pip install torch-spline-conv -f https://data.pyg.org/whl/torch-2.1.0+cu121.html
 pip install torch-geometric
 pip install rdkit
-pip install pyyaml wandb biopython spyrmsd einops biopandas plotly prody tqdm lightning imageio
+pip install pyyaml wandb biopython spyrmsd einops biopandas plotly prody tqdm lightning imageio datasets
 pip install e3nn
 ```
 * Troubleshoot

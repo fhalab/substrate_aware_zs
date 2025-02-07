@@ -28,8 +28,8 @@ if __name__ == "__main__":
     # for lib_dir in sorted(glob("zs/af3/struct_joint/*_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    for lib_dir in sorted(glob("zs/af3/struct_seperate/ParLQ-*")):
-        run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
+    # for lib_dir in sorted(glob("zs/af3/struct_seperate/ParLQ-*")):
+    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
     # for lib_dir in sorted(glob("zs/chai/struct_joint/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
@@ -37,17 +37,17 @@ if __name__ == "__main__":
     # for lib_dir in sorted(glob("zs/chai/struct_seperate/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
-    for plip_dir in[
-        # "zs/plip/af3/struct_joint",
-        # "zs/plip/chai/struct_joint",
-        "zs/plip/af3/struct_seperate",
-        # "zs/plip/chai/struct_seperate",
-    ]:
+    # for plip_dir in[
+    #     "zs/plip/af3/struct_joint",
+    #     "zs/plip/chai/struct_joint",
+    #     "zs/plip/af3/struct_seperate",
+    #     "zs/plip/chai/struct_seperate",
+    # ]:
     
-        run_all_plip_zs(
-            "data/meta/ParLQ-*.csv",
-            plip_dir
-            )
+    #     run_all_plip_zs(
+    #         "data/meta/ParLQ-*.csv",
+    #         plip_dir
+    #         )
 
     
     # for plip_dir in[

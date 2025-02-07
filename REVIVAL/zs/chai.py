@@ -834,11 +834,11 @@ def parse_chai_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     print(f"Saved chai scores for {lib_name} to {output_dir}/{lib_name}.csv")
 
 
-def parse_all_chai_scores(chai_struct_dir: str = "zs/chai/struct_joint"):
+def parse_all_chai_scores(chai_struct_pattern: str = "zs/chai/struct_joint/*"):
     """
     A function to parse all the chai scores for all libraries
     """
 
-    for lib in tqdm(sorted(glob(f"{chai_struct_dir}/*"))):
+    for lib in tqdm(sorted(glob(chai_struct_pattern))):
         print(f"Parsing chai scores for {lib}...")
         parse_chai_scores(lib)

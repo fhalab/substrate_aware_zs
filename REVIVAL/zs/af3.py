@@ -815,11 +815,11 @@ def parse_af3_scores(mut_structure_dir: str, score_dir_name: str = "score"):
     print(f"Saved af3 scores for {lib_name} to {output_dir}/{lib_name}.csv")
 
 
-def parse_all_af3_scores(af3_struct_dir: str = "zs/af3/struct_joint"):
+def parse_all_af3_scores(af3_struct_pattern: str = "zs/af3/struct_joint/*"):
     """
     A function to parse all the af3 scores for all libraries
     """
 
-    for lib in tqdm(sorted(glob(f"{af3_struct_dir}/*"))):
+    for lib in tqdm(sorted(glob(af3_struct_pattern))):
         print(f"Parsing af3 scores for {lib}...")
         parse_af3_scores(lib)

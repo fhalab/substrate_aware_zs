@@ -78,20 +78,20 @@ if __name__ == "__main__":
     # gpu_id="0"
     # )
 
-    run_af3_struct([
-        "data/meta/Rma-CB.csv",
-        "data/meta/Rma-CSi.csv",
-        "data/meta/ParLQ.csv",
-    ],
-    gen_opt="joint-carbene_precursor-heme",
-    cofactor_dets="inactivated-cofactor",
-    samesub=True,
-    gpu_id="0"
-    )
+    # run_af3_struct([
+    #     "data/meta/Rma-CB.csv",
+    #     "data/meta/Rma-CSi.csv",
+    #     "data/meta/ParLQ.csv",
+    # ],
+    # gen_opt="joint-carbene_precursor-heme",
+    # cofactor_dets="inactivated-cofactor",
+    # samesub=True,
+    # gpu_id="0"
+    # )
 
     run_af3_struct([
-        "data/meta/Rma-CB.csv",
-        "data/meta/Rma-CSi.csv",
+        # "data/meta/Rma-CB.csv",
+        # "data/meta/Rma-CSi.csv",
         "data/meta/ParLQ.csv",
     ],
     gen_opt="seperate-carbene_precursor-heme",
@@ -123,6 +123,8 @@ if __name__ == "__main__":
 
     # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_joint")
     # parse_all_af3_scores(af3_struct_dir = "zs/af3/struct_seperate")
+    # parse_all_af3_scores(af3_struct_pattern = "zs/af3/struct_seperate/ParLQ-*")
+    # parse_all_af3_scores(af3_struct_pattern = "zs/af3/struct_seperate/*_scope")
 
     # def run_af3_struct(
     #     pattern: str | list = "data/meta/not_scaled/*.csv", 
@@ -132,3 +134,5 @@ if __name__ == "__main__":
     # parse_all_af3_scores(af3_struct_dir: str = "zs/af3/struct_joint")
 
     f.close()
+
+    # parse_all_af3_scores(af3_struct_pattern: str = "zs/af3/struct_joint/*")

@@ -17,32 +17,6 @@ from REVIVAL.util import checkNgen_folder, get_file_name
 
 
 EV_META = {
-    "DHFR": {
-        "recommended": {
-            "bitscore": 0.7,
-            "sequences": 16042,
-            "seqs_per_l": 103.5,
-            "quality": 10,
-        },
-        "other_1": {
-            "bitscore": 0.1,
-            "sequences": 59494,
-            "seqs_per_l": 491.7,
-            "quality": 10,
-        },
-        "other_2": {
-            "bitscore": 0.3,
-            "sequences": 17758,
-            "seqs_per_l": 114.6,
-            "quality": 10,
-        },
-        "other_3": {
-            "bitscore": 0.5,
-            "sequences": 17132,
-            "seqs_per_l": 111.2,
-            "quality": 10,
-        },
-    },
     "ParLQ": {
         "recommended": {
             "bitscore": 0.1,

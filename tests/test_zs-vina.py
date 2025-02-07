@@ -26,6 +26,28 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
+    
+    for struct_dir in sorted(glob(("zs/af3/struct_seperate/ParLQ-*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=16
+        )
+
+    
+    for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=16
+        )
+
     # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
     #     dock_lib_parallel(
     #         struct_dir = struct_dir,
@@ -36,15 +58,15 @@ if __name__ == "__main__":
     #         max_workers=32
     #     )
     
-    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
-    #     dock_lib_parallel(
-    #         struct_dir = struct_dir,
-    #         dock_opt="substrate",
-    #         score_only=True,
-    #         rerun=False,
-    #         cofactor_dets="cofactor",
-    #         max_workers=32
-    #     )
+    for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
+        dock_lib_parallel(
+            struct_dir = struct_dir,
+            dock_opt="substrate",
+            score_only=True,
+            rerun=False,
+            cofactor_dets="cofactor",
+            max_workers=32
+        )
 
     # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
     #     dock_lib_parallel(
@@ -56,7 +78,7 @@ if __name__ == "__main__":
     #         max_workers=32
     #     )
     
-    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/-*"))):
     #     dock_lib_parallel(
     #         struct_dir = struct_dir,
     #         dock_opt="substrate",
@@ -67,21 +89,21 @@ if __name__ == "__main__":
     #     )
     
 
-    for dock_opt in ["substrate", "all"]:
-        for lib in sorted(glob(("data/meta/ParLQ-*.csv"))):
-            if "TrpB" in lib:
-                VinaLibDock(
-                    input_csv = lib,
-                    dock_opt=dock_opt,
-                )
-            else:
-                VinaLibDock(
-                    input_csv = lib,
-                    dock_opt=dock_opt,
-                    cofactor_dets="activated_carbene-cofactor",
-                    redock= True,
-                    max_workers=4
-                )
+    # for dock_opt in ["substrate", "all"]:
+    #     for lib in sorted(glob(("data/meta/ParLQ-*.csv"))):
+    #         if "TrpB" in lib:
+    #             VinaLibDock(
+    #                 input_csv = lib,
+    #                 dock_opt=dock_opt,
+    #             )
+    #         else:
+    #             VinaLibDock(
+    #                 input_csv = lib,
+    #                 dock_opt=dock_opt,
+    #                 cofactor_dets="activated_carbene-cofactor",
+    #                 redock= True,
+    #                 max_workers=4
+    #             )
 
     f.close()
     

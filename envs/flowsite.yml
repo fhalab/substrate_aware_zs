@@ -1,4 +1,5 @@
-name: flowsite
+# conda env create -f flowsite.yml
+name: flowsite2
 channels:
   - conda-forge
   - defaults

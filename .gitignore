@@ -15,6 +15,10 @@ logs
 logs/
 logs/*
 
+figs
+figs/
+figs/*
+
 runs
 runs/
 runs/*

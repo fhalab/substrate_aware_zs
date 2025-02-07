@@ -1,3 +1,4 @@
+# conda env create -f REVIVAL_ligmpnn.yml
 name: REVIVAL_ligmpnn
 channels:
   - pytorch
