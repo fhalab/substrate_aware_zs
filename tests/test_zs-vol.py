@@ -25,7 +25,10 @@ if __name__ == "__main__":
     sys.stdout = f
 
    
-    # run_all_vol(pattern="data/meta/Rma*_scope.csv", samesub=False)
-    run_all_vol(pattern="data/meta/ParLQ-*.csv", samesub=True)
+    run_all_vol(pattern="data/meta/*_scope.csv", samesub=False)
+    # run_all_vol(pattern="data/meta/PfTrpB-*.csv", samesub=True)
+    # run_all_vol(pattern="data/meta/ParLQ-*.csv", samesub=True)
+    # run_all_vol(pattern=
+    #     ["data/meta/Rma-CB.csv", "data/meta/Rma-CSi.csv"], samesub=True)
 
     f.close()

@@ -16,8 +16,12 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+from scipy.spatial import ConvexHull
+
+
 from rdkit import Chem
 from rdkit.Chem import AllChem
+
 
 import freesasa
 from MDAnalysis import Universe
@@ -42,13 +46,13 @@ warnings.filterwarnings("ignore")
 
 
 # Van der Waals radii for common atoms (in Å)
-VDW_RADII = {
-    "H": 1.20,  # Hydrogen
-    "C": 1.70,  # Carbon
-    "N": 1.55,  # Nitrogen
-    "O": 1.52,  # Oxygen
-    "S": 1.80,  # Sulfur
-}
+# VDW_RADII = {
+#     "H": 1.20,  # Hydrogen
+#     "C": 1.70,  # Carbon
+#     "N": 1.55,  # Nitrogen
+#     "O": 1.52,  # Oxygen
+#     "S": 1.80,  # Sulfur
+# }
 
 
 # One-letter amino acid code to side chain SMILES
@@ -76,6 +80,21 @@ AA_SMILES = {
 }
 
 
+
+def calculate_convex_hull_volume(mol):
+    # Generate 3D conformer
+    AllChem.EmbedMolecule(mol, AllChem.ETKDG())
+    conf = mol.GetConformer()
+    
+    # Extract atomic coordinates
+    coords = np.array([list(conf.GetAtomPosition(i)) for i in range(mol.GetNumAtoms())])
+    
+    # Compute the convex hull
+    hull = ConvexHull(coords)
+    return hull.volume  # Returns the volume of the convex hull
+
+
+
 def calculate_smiles_vol(smiles: str) -> float:
     """
     Calculate the approximate volume of an amino acid side chain.
@@ -99,13 +118,13 @@ def calculate_smiles_vol(smiles: str) -> float:
     AllChem.EmbedMolecule(mol, AllChem.ETKDG())
 
     # Calculate the volume
-    volume = 0.0
-    for atom in mol.GetAtoms():
-        symbol = atom.GetSymbol()
-        radius = VDW_RADII.get(symbol, 1.50)  # Default radius for unknown atoms
-        volume += (4 / 3) * math.pi * (radius ** 3)  # Volume of a sphere: (4/3)*π*r³
+    # volume = 0.0
+    # for atom in mol.GetAtoms():
+    #     symbol = atom.GetSymbol()
+    #     radius = VDW_RADII.get(symbol, 1.50)  # Default radius for unknown atoms
+    #     volume += (4 / 3) * math.pi * (radius ** 3)  # Volume of a sphere: (4/3)*π*r³
 
-    return volume
+    return calculate_convex_hull_volume(mol)
 
 
 AA_VOL = {
@@ -183,8 +202,8 @@ class VolData(ZSData):
         vol_df = []
 
         substrate_vol = calculate_smiles_vol(self.substrate_smiles)
-        cofactor_vol = calculate_smiles_vol(self.cofactor_smiles)
-        joint_vol = calculate_smiles_vol(self.joint_smiles)
+        # cofactor_vol = calculate_smiles_vol(self.cofactor_smiles)
+        # joint_vol = calculate_smiles_vol(self.joint_smiles)
 
         for var in tqdm(self.df[self._var_col_name]):
             var_vol = self._calc_var_vol(var)
@@ -193,11 +212,11 @@ class VolData(ZSData):
                     self._var_col_name: var,
                     "var_vol": var_vol,
                     "substrate_vol": substrate_vol,
-                    "cofactor_vol": cofactor_vol,
-                    "joint_vol": joint_vol,
+                    # "cofactor_vol": cofactor_vol,
+                    # "joint_vol": joint_vol,
                     "var-substrate_vol": var_vol - substrate_vol,
-                    "var-cofactor_vol": var_vol - cofactor_vol,
-                    "var-joint_vol": var_vol - joint_vol,
+                    # "var-cofactor_vol": var_vol - cofactor_vol,
+                    # "var-joint_vol": var_vol - joint_vol,
                 },
             )
 
@@ -216,19 +235,25 @@ class VolData(ZSData):
             joint_smiles = substate_smiles + "." + cofactor_smiles
             var_vol = self._calc_var_vol(var)
             substrate_vol = calculate_smiles_vol(substate_smiles)
-            cofactor_vol = calculate_smiles_vol(cofactor_smiles)
-            joint_vol = calculate_smiles_vol(joint_smiles)
+            # try:
+            #     cofactor_vol = calculate_smiles_vol(cofactor_smiles)
+            # except:
+            #     cofactor_vol = np.nan
+            # try:
+            #     joint_vol = calculate_smiles_vol(joint_smiles)
+            # except:
+            #     joint_vol = np.nan
 
             vol_df.append(
                 {
                     self._var_col_name: var,
                     "var_vol": var_vol,
                     "substrate_vol": substrate_vol,
-                    "cofactor_vol": cofactor_vol,
-                    "joint_vol": joint_vol,
+                    # "cofactor_vol": cofactor_vol,
+                    # "joint_vol": joint_vol,
                     "var-substrate_vol": var_vol - substrate_vol,
-                    "var-cofactor_vol": var_vol - cofactor_vol,
-                    "var-joint_vol": var_vol - joint_vol,
+                    # "var-cofactor_vol": var_vol - cofactor_vol,
+                    # "var-joint_vol": var_vol - joint_vol,
                 }
             )
 
