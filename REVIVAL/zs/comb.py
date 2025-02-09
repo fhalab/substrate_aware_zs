@@ -136,8 +136,14 @@ class ZSComb(ZSData):
 
         df = self.df[self.common_cols].copy()
 
+        # make sure  n_mut col is numerical
+        df["n_mut"] = df["n_mut"].astype(int)
+
         # add hamming distance first
         df["hd"] = -1 * df["n_mut"]
+
+        # make sure wt n_mut is 0
+        df.loc[df["n_mut"] == 0, "hd"] = 0
 
         # first get the simple ones
         for zs_path in [

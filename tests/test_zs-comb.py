@@ -18,8 +18,9 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
-    run_all_combzs(pattern="data/meta/*_scope.csv")
+    # run_all_combzs(pattern="data/meta/*_scope.csv")
     # run_all_combzs(pattern="data/meta/*.csv")
+    run_all_combzs(pattern="data/meta/ParLQ-*.csv")
         # [
         #     "data/meta/ParLQ.csv",
         #     "data/meta/PfTrpB-4bromo.csv",
