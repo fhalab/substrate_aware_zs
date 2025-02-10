@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 from sklearn.metrics import ndcg_score
-
+from sklearn.preprocessing import StandardScaler
 
 import numpy as np
 import pandas as pd
@@ -595,6 +595,9 @@ def predict_logistic(X_new, logistic_params):
 def generate_X_y(campaign, x_cols: list = [], y_name: str = None):
     df = pd.read_csv(campaign)
     X = df[x_cols].to_numpy()
+    scaler = StandardScaler()
+    X = scaler.fit_transform(X)
+
     y = df[y_name].to_numpy()
 
     assert X.shape[0] == y.shape[0], print(
@@ -604,14 +607,15 @@ def generate_X_y(campaign, x_cols: list = [], y_name: str = None):
 
 
 def train_test_all(
-    pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv", output_dir="zs/lincomb"
+    pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv", output_dir="zs/lincomb"
 ):
     """ """
     pattern = [f for f in glob(pattern) if "_scope" not in f]
 
     # define
     y_name = "fitness"
-    results_cols = COMMON_COLS[1:]
+
+    results_cols = FINAL_COL_ORDER[1:]
 
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
@@ -743,7 +747,7 @@ def train_test_all(
 # clean up and save minimal comb
 def clean_comb(in_path, lib):
 
-    out_path = in_path.replace("comb", "comb/miniaml")
+    out_path = in_path.replace("comb", "comb/minimal")
 
     checkNgen_folder(out_path)
 
@@ -1022,6 +1026,8 @@ def plot_metrics_heatmap(
         vmin=vmin,
         vmax=vmax,
     )
+    
+    plt.ylabel("")
     plt.savefig(output_path, format="svg", dpi=300, bbox_inches="tight")
     print(f"Saved heatmap: {output_path}")
 
@@ -1101,7 +1107,7 @@ def processnplot_metrics(
         # Full heatmap for all entries
         full_data = pd.concat([cb_df, csi_df, parlq_rho_df])[final_col_order]
         full_order = lib_order[-11:]
-        full_size = (8, 4)
+        full_size = (8, 4.2)
 
     colorbar_label = f"{METRICS_DICT[metric]}\n({FITSELE_DICT[fit2sele]})"
     vmin, vmax = METRIC_COLOR_THRESHOLD[metric]

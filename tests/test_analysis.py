@@ -17,10 +17,11 @@ if __name__ == "__main__":
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
     sys.stdout = f
 
+    # get_minimal_comb(pattern="zs/comb/*.csv")
 
-    # train_test_all(
-    #     pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv", output_dir="zs/lincomb"
-    # )
+    train_test_all(
+        pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv", output_dir="zs/lincomb"
+    )
 
     # process_and_save_metrics(
     #     input_dir="zs/comb", 
@@ -31,7 +32,6 @@ if __name__ == "__main__":
     #     input_dir="zs/metrics",
     #     output_dir="figs/metrics"
     #     )
-    get_minimal_comb(pattern="zs/comb/*.csv")
 
     f.close()
 
