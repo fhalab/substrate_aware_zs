@@ -5,13 +5,13 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.analysis import train_test_all, process_and_save_metrics, plot_all_metrics
+from REVIVAL.analysis import train_test_all, process_and_save_metrics, plot_all_metrics, get_minimal_comb
 from REVIVAL.util import checkNgen_folder
 
 
 if __name__ == "__main__":
 
-    log_folder = checkNgen_folder("logs/lincomb")
+    log_folder = checkNgen_folder("logs/analysis")
 
     # log outputs
     f = open(os.path.join(log_folder, f"{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}.out"), 'w')
@@ -27,10 +27,11 @@ if __name__ == "__main__":
     #     output_dir="zs/metrics"
     #     )
 
-    plot_all_metrics(
-        input_dir="zs/metrics",
-        output_dir="figs/metrics"
-        )
+    # plot_all_metrics(
+    #     input_dir="zs/metrics",
+    #     output_dir="figs/metrics"
+    #     )
+    get_minimal_comb(pattern="zs/comb/*.csv")
 
     f.close()
 

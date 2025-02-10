@@ -740,6 +740,64 @@ def train_test_all(
     np.savez(os.path.join(output_dir, "logistic_params.npz"), **logistic_params)
 
 
+# clean up and save minimal comb
+def clean_comb(in_path, lib):
+
+    out_path = in_path.replace("comb", "comb/miniaml")
+
+    checkNgen_folder(out_path)
+
+    df = pd.read_csv(in_path)
+
+    # flip the sign
+    for c in df.columns[1:]:
+        if (
+            "Triad_score" in c
+            or "chain_pae_min" in c
+            or "sum_" in c
+            or "naive_score" in c
+            or c == "complexscore"
+            or c == "dH"
+            or c == "ligscore"
+            or c == "recscore"
+            or c == "score"
+            or c == "total_score"
+            or "vina_" in c
+            or "0:" in c
+            or "1:" in c
+            or "2:" in c
+            or "_vol" in c
+        ):
+            df[c] = -df[c]
+            print(f"flipped {c}")
+    
+    if "TrpB" in in_path:
+        append_col = ["fitness"]
+        df = df[TRPB_COLS[1:] + append_col].rename(columns=TRPB_COL_DICT)
+    elif "ParLQ" in in_path:
+        append_col = ["fitness", "selectivity"]
+        df = df[PARLQ_COLS[1:] + append_col].rename(columns=PARLQ_COL_DICT)
+    elif "Rma-CB" in in_path:
+        append_col = ["fitness", "selectivity"]
+        df = df[CB_COLS[1:] + append_col].rename(columns=CB_COL_DICT)
+    elif "Rma-CSi" in in_path:
+        append_col = ["fitness", "selectivity"]
+        df = df[CSI_COLS[1:] + append_col].rename(columns=CSI_COL_DICT)
+
+
+    return df[FINAL_COL_ORDER[1:]+append_col].to_csv(out_path, index=False)
+
+
+def get_minimal_comb(pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv"):
+    """
+    Reduce the comb to just the critical columns
+    """
+    for f in tqdm(sorted(glob(pattern))):
+        if "_scope" in f:
+            continue  # Skip files with "_scope"
+        clean_comb(f, get_file_name(f))
+
+
 def process_and_save_metrics(
     input_dir="/disk2/fli/REVIVAL2/zs/comb", output_dir="/disk2/fli/REVIVAL2/zs/metrics"
 ):
