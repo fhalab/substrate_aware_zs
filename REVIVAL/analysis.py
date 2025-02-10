@@ -22,11 +22,14 @@ from sklearn.linear_model import LinearRegression
 from scipy.optimize import minimize
 from scipy.stats import spearmanr
 
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 from REVIVAL.util import checkNgen_folder, get_file_name
 
 
-common_cols = [
+COMMON_COLS = [
     "lib",
     "hd",
     "ev_score",
@@ -36,11 +39,11 @@ common_cols = [
     "Triad_score_score-frompdb-cleanup",
     "ligandmpnn_score",
     "flowsite_score",
-    "dH", # "complexscore",
+    "dH",  # "complexscore",
     "vina_apo-score-substrate_cofactor-docked",
     "var_vol",
 ]
-common_heme_col = common_cols + [
+COMMON_HEME_COLS = COMMON_COLS + [
     "chain_iptm_BA_avg_score_seperate_chai",
     "chain_pae_min_CA_avg_score_seperate_af3",
     "pocket-subcofcentroid-hw_avg - substrate-logp_af3-struct_separate",
@@ -49,7 +52,7 @@ common_heme_col = common_cols + [
 ]
 
 
-common_col_dict = {
+COMMON_COL_DICT = {
     "lib": "Library",
     "hd": "Hamming distance",
     "ev_score": "EVmutation",
@@ -64,8 +67,8 @@ common_col_dict = {
     "vina_apo-score-substrate_cofactor-docked": "Vina",
     "var_vol": "Active-site volume",
 }
-common_heme_col_dict = {
-    **common_col_dict,
+COMMON_HEME_COL_dict = {
+    **COMMON_COL_DICT,
     "chain_iptm_BA_avg_score_seperate_chai": "Chai-1",
     "chain_pae_min_CA_avg_score_seperate_af3": "AF3",
     "pocket-subcofcentroid-hw_avg - substrate-logp_af3-struct_separate": "Hydrophobicity",
@@ -73,7 +76,7 @@ common_heme_col_dict = {
     # "num_interactions_avg_af3-score_seperate": "PLIP",
 }
 
-trpb_cols = common_cols + [
+TRPB_COLS = COMMON_COLS + [
     "chain_iptm_AB_avg_score_joint_chai",
     "chain_pae_min_BA_avg_score_joint_af3",
     "2:GLU-NH_2_avg_af3-struct_joint",
@@ -82,8 +85,8 @@ trpb_cols = common_cols + [
     # "num_interactions_avg_af3-score_joint"
 ]
 
-trpb_col_dict = {
-    **common_col_dict,
+TRPB_COL_DICT = {
+    **COMMON_COL_DICT,
     "chain_iptm_AB_avg_score_joint_chai": "Chai-1",
     "chain_pae_min_BA_avg_score_joint_af3": "AF3",
     "2:GLU-NH_2_avg_af3-struct_joint": "Bond distance",
@@ -92,44 +95,44 @@ trpb_col_dict = {
     # "num_interactions_avg_af3-score_joint": "PLIP",
 }
 
-parlq_cols = common_heme_col + ["0:C-C_1_avg_af3-struct_seperate"]
+PARLQ_COLS = COMMON_HEME_COLS + ["0:C-C_1_avg_af3-struct_seperate"]
 
-parlq_col_dict = {
-    **common_heme_col_dict,
+PARLQ_COL_DICT = {
+    **COMMON_HEME_COL_dict,
     "0:C-C_1_avg_af3-struct_seperate": "Bond distance",
 }
 
-cb_col = common_heme_col + ["0:C-B_avg_af3-struct_seperate"]
+CB_COLS = COMMON_HEME_COLS + ["0:C-B_avg_af3-struct_seperate"]
 
-cb_col_dict = {**common_heme_col_dict, "0:C-B_avg_af3-struct_seperate": "Bond distance"}
+CB_COL_DICT = {**COMMON_HEME_COL_dict, "0:C-B_avg_af3-struct_seperate": "Bond distance"}
 
-csi_col = common_heme_col + ["0:C-Si_avg_af3-struct_seperate"]
-csi_col_dict = {
-    **common_heme_col_dict,
+CSI_COLS = COMMON_HEME_COLS + ["0:C-Si_avg_af3-struct_seperate"]
+CSI_COL_DICT = {
+    **COMMON_HEME_COL_dict,
     "0:C-Si_avg_af3-struct_seperate": "Bond distance",
 }
 
-final_col_order = [
-            "Library",
-            "Hamming distance",
-            "EVmutation",
-            "ESM2",
-            "ESM-IF",
-            "CoVES",
-            r"ΔΔ$G_f$", # "ΔΔG",
-            "Vina",
-            "GALigandDock",
-            "AF3",
-            "Chai-1",
-            "LigandMPNN",
-            "FlowSite",
-            "Bond distance",
-            "Hydrogen bonds",
-            "Hydrophobicity",
-            "Active-site volume",
-        ]
+FINAL_COL_ORDER = [
+    "Library",
+    "Hamming distance",
+    "EVmutation",
+    "ESM2",
+    "ESM-IF",
+    "CoVES",
+    r"ΔΔ$G_f$",  # "ΔΔG",
+    "Vina",
+    "GALigandDock",
+    "AF3",
+    "Chai-1",
+    "LigandMPNN",
+    "FlowSite",
+    "Bond distance",
+    "Hydrogen bonds",
+    "Hydrophobicity",
+    "Active-site volume",
+]
 
-lib_order = [
+LIB_ORDER = [
     "PfTrpB-7iodo",
     "PfTrpB-7methyl",
     "PfTrpB-7bromo",
@@ -153,6 +156,38 @@ lib_order = [
     "ParLQ-h",
     "ParLQ-i",
 ]
+
+
+# Define metric categories
+METRICS = ["rho", "ndcg", "ndcg10", "ndcg20", "ndcg25", "top10", "top20", "top25"]
+METRICS_DICT = {
+    "rho": "Spearman's ρ",
+    "ndcg": "NDCG",
+    "ndcg10": "NDCG@10%",
+    "ndcg20": "NDCG@20%",
+    "ndcg25": "NDCG@25%",
+    "top10": "Top 10% recall",
+    "top20": "Top 20% recall",
+    "top25": "Top 25% recall",
+}
+FITSELE_DICT = {
+    "fit": "activity",
+    "sele": "selectivity",
+}
+FIT_METRICS = {metric: [] for metric in METRICS}
+SELE_METRICS = {metric: [] for metric in METRICS}
+ALL_METRICS_OPTS = [f"{t}_{metric}" for t in ["fit", "sele"] for metric in METRICS]
+
+METRIC_COLOR_THRESHOLD = {
+    "rho": [-0.25, 0.55],
+    "ndcg": [0.6, 0.9],
+    "ndcg10": [0.1, 0.75],
+    "ndcg20": [0.15, 0.75],
+    "ndcg25": [0.15, 0.75],
+    "top10": [0, 0.6],
+    "top20": [0, 0.6],
+    "top25": [0, 0.6],
+}
 
 
 def ndcg_scale(y_true: np.ndarray, y_pred: np.ndarray):
@@ -576,7 +611,7 @@ def train_test_all(
 
     # define
     y_name = "fitness"
-    results_cols = common_cols[1:]
+    results_cols = COMMON_COLS[1:]
 
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
@@ -682,7 +717,9 @@ def train_test_all(
 
     checkNgen_folder(output_dir)
 
-    lin_rho_pairwise_df = pd.DataFrame(lin_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys())
+    lin_rho_pairwise_df = pd.DataFrame(
+        lin_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
+    )
     lin_rho_pairwise_df.to_csv(os.path.join(output_dir, "lin_rho_pairwise_df.csv"))
     np.savez(os.path.join(output_dir, "lin_params.npz"), **lin_params)
 
@@ -704,9 +741,8 @@ def train_test_all(
 
 
 def process_and_save_metrics(
-    input_dir="/disk2/fli/REVIVAL2/zs/comb", 
-    output_dir="/disk2/fli/REVIVAL2/zs/metrics"
-    ):
+    input_dir="/disk2/fli/REVIVAL2/zs/comb", output_dir="/disk2/fli/REVIVAL2/zs/metrics"
+):
     """
     Processes CSV files to compute ranking metrics (NDCG, Spearman, Top-N recall)
     for fitness and selectivity and saves the results as CSV files.
@@ -715,18 +751,6 @@ def process_and_save_metrics(
     - input_dir: str, path to the directory containing the CSV files.
     - output_dir: str, path to the directory where the results will be saved.
     """
-
-    # Define metric categories
-    metrics = ["rho", "ndcg", "ndcg10", "ndcg20", "ndcg25", "top10", "top20", "top25"]
-    fit_metrics = {metric: [] for metric in metrics}
-    sele_metrics = {metric: [] for metric in metrics}
-
-    # Define conditions for flipping score sign
-    flip_conditions = [
-        "Triad_score", "chain_pae_min", "sum_", "naive_score", 
-        "complexscore", "dH", "ligscore", "recscore", "score", 
-        "total_score", "vina_", "0:", "1:", "2:", "_vol"
-    ]
 
     # Process each CSV file
     for f in sorted(glob(os.path.join(input_dir, "*.csv"))):
@@ -737,7 +761,9 @@ def process_and_save_metrics(
 
         # Convert fitness column to numeric if it's a string
         if df_original["fitness"].dtype == "O":
-            df_original["fitness"] = pd.to_numeric(df_original["fitness"].str.replace(",", ""), errors='coerce')
+            df_original["fitness"] = pd.to_numeric(
+                df_original["fitness"].str.replace(",", ""), errors="coerce"
+            )
 
         # Keep only numerical columns
         df_original = df_original[df_original.select_dtypes(include=["number"]).columns]
@@ -746,12 +772,18 @@ def process_and_save_metrics(
         print(f"Processing: {df_name}")
 
         # Initialize metric dictionaries
-        metric_dicts = {metric: dict.fromkeys(df_original.columns, np.nan) for metric in metrics}
+        metric_dicts = {
+            metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS
+        }
         for metric in metric_dicts.values():
             metric["lib"] = df_name
 
         add_selectivity = "selectivity" in df_original.columns
-        sele_metric_dicts = {metric: dict.fromkeys(df_original.columns, np.nan) for metric in metrics} if add_selectivity else {}
+        sele_metric_dicts = (
+            {metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS}
+            if add_selectivity
+            else {}
+        )
 
         for metric in sele_metric_dicts.values():
             metric["lib"] = df_name
@@ -769,53 +801,296 @@ def process_and_save_metrics(
             y_score = df[c].values
 
             # Flip sign based on conditions
-            if any(substr in c for substr in flip_conditions):
-                y_score = -y_score
+            if (
+                "Triad_score" in c
+                or "chain_pae_min" in c
+                or "sum_" in c
+                or "naive_score" in c
+                or c == "complexscore"
+                or c == "dH"
+                or c == "ligscore"
+                or c == "recscore"
+                or c == "score"
+                or c == "total_score"
+                or "vina_" in c
+                or "0:" in c
+                or "1:" in c
+                or "2:" in c
+                or "_vol" in c
+            ):
+                y_score = -1 * y_score
             elif " - " in c:
                 y_score = np.abs(y_score)
 
             # Compute metrics
-            metric_dicts["rho"][c] = spearmanr(y_true, y_score).correlation if np.any(y_score != y_score[0]) else np.nan
+            metric_dicts["rho"][c] = (
+                spearmanr(y_true, y_score).correlation
+                if np.any(y_score != y_score[0])
+                else np.nan
+            )
             metric_dicts["ndcg"][c] = ndcg_scale(y_true=y_true, y_pred=y_score)
-            metric_dicts["ndcg10"][c] = custom_ndcg(y_true=y_true, y_score=y_score, k=10)
-            metric_dicts["ndcg20"][c] = custom_ndcg(y_true=y_true, y_score=y_score, k=20)
-            metric_dicts["ndcg25"][c] = custom_ndcg(y_true=y_true, y_score=y_score, k=25)
-            metric_dicts["top10"][c] = calc_top_n_percent_recall(y_true=y_true, y_score=y_score, top_n=10)
-            metric_dicts["top20"][c] = calc_top_n_percent_recall(y_true=y_true, y_score=y_score, top_n=20)
-            metric_dicts["top25"][c] = calc_top_n_percent_recall(y_true=y_true, y_score=y_score, top_n=25)
-            
+            metric_dicts["ndcg10"][c] = custom_ndcg(
+                y_true=y_true, y_score=y_score, top=10
+            )
+            metric_dicts["ndcg20"][c] = custom_ndcg(
+                y_true=y_true, y_score=y_score, top=20
+            )
+            metric_dicts["ndcg25"][c] = custom_ndcg(
+                y_true=y_true, y_score=y_score, top=25
+            )
+            metric_dicts["top10"][c] = calc_top_n_percent_recall(
+                y_true=y_true, y_score=y_score, top_n=10
+            )
+            metric_dicts["top20"][c] = calc_top_n_percent_recall(
+                y_true=y_true, y_score=y_score, top_n=20
+            )
+            metric_dicts["top25"][c] = calc_top_n_percent_recall(
+                y_true=y_true, y_score=y_score, top_n=25
+            )
+
             # Selectivity calculations
             if add_selectivity and c != "selectivity":
                 y_true_sele = df["selectivity"].values
                 y_score_sele = y_score
 
-                sele_metric_dicts["rho"][c] = spearmanr(y_true_sele, y_score_sele).correlation if np.any(y_score_sele != y_score_sele[0]) else np.nan
-                sele_metric_dicts["ndcg"][c] = ndcg_scale(y_true=y_true_sele, y_pred=y_score_sele)
-                sele_metric_dicts["ndcg10"][c] = custom_ndcg(y_true=y_true_sele, y_score=y_score_sele, k=10)
-                sele_metric_dicts["ndcg20"][c] = custom_ndcg(y_true=y_true_sele, y_score=y_score_sele, k=20)
-                sele_metric_dicts["ndcg25"][c] = custom_ndcg(y_true=y_true_sele, y_score=y_score_sele, k=25)
-                sele_metric_dicts["top10"][c] = calc_top_n_percent_recall(y_true=y_true_sele, y_score=y_score_sele, top_n=10)
-                sele_metric_dicts["top20"][c] = calc_top_n_percent_recall(y_true=y_true_sele, y_score=y_score_sele, top_n=20)
-                sele_metric_dicts["top25"][c] = calc_top_n_percent_recall(y_true=y_true_sele, y_score=y_score_sele, top_n=25)
-                
+                sele_metric_dicts["rho"][c] = (
+                    spearmanr(y_true_sele, y_score_sele).correlation
+                    if np.any(y_score_sele != y_score_sele[0])
+                    else np.nan
+                )
+                sele_metric_dicts["ndcg"][c] = ndcg_scale(
+                    y_true=y_true_sele, y_pred=y_score_sele
+                )
+                sele_metric_dicts["ndcg10"][c] = custom_ndcg(
+                    y_true=y_true_sele, y_score=y_score_sele, top=10
+                )
+                sele_metric_dicts["ndcg20"][c] = custom_ndcg(
+                    y_true=y_true_sele, y_score=y_score_sele, top=20
+                )
+                sele_metric_dicts["ndcg25"][c] = custom_ndcg(
+                    y_true=y_true_sele, y_score=y_score_sele, top=25
+                )
+                sele_metric_dicts["top10"][c] = calc_top_n_percent_recall(
+                    y_true=y_true_sele, y_score=y_score_sele, top_n=10
+                )
+                sele_metric_dicts["top20"][c] = calc_top_n_percent_recall(
+                    y_true=y_true_sele, y_score=y_score_sele, top_n=20
+                )
+                sele_metric_dicts["top25"][c] = calc_top_n_percent_recall(
+                    y_true=y_true_sele, y_score=y_score_sele, top_n=25
+                )
+
         # Append results
-        for metric in metrics:
-            fit_metrics[metric].append(metric_dicts[metric])
+        for metric in METRICS:
+            FIT_METRICS[metric].append(metric_dicts[metric])
             if add_selectivity:
-                sele_metrics[metric].append(sele_metric_dicts[metric])
+                SELE_METRICS[metric].append(sele_metric_dicts[metric])
 
     # Save results as DataFrames
     os.makedirs(output_dir, exist_ok=True)
 
-    for metric, metric_list in fit_metrics.items():
+    for metric, metric_list in FIT_METRICS.items():
         df = pd.DataFrame(metric_list)
         # rename parlq to parlq-a
-        df['lib'] = df['lib'].apply(lambda x: 'ParLQ-a' if x == 'ParLQ' else x)
+        df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
         df.to_csv(f"{output_dir}/fit_{metric}.csv", index=False)
 
-    for metric, metric_list in sele_metrics.items():
+    for metric, metric_list in SELE_METRICS.items():
         df = pd.DataFrame(metric_list)
-        df['lib'] = df['lib'].apply(lambda x: 'ParLQ-a' if x == 'ParLQ' else x)
+        df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
         df.to_csv(f"{output_dir}/sele_{metric}.csv", index=False)
 
     print("All metrics saved successfully!")
+
+
+def process_metrics2plot(df, lib_order, group_name, col_dict, cols):
+    """
+    Filters, renames, and processes a subset of a DataFrame.
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame.
+    - lib_order (list): List of libraries to filter.
+    - group_name (str): Name of the new average group (e.g., "PfTrpB-avg").
+    - col_dict (dict): Mapping of column names for renaming.
+    - cols (list): List of relevant columns to keep.
+
+    Returns:
+    - processed_df (pd.DataFrame): The processed DataFrame.
+    - group_avg_df (pd.DataFrame): A DataFrame containing the average values for the group.
+    """
+    processed_df = df[df["lib"].isin(lib_order)].copy()
+    print(processed_df.head())
+    processed_df = processed_df[cols].rename(columns=col_dict).reset_index(drop=True)
+
+    # Compute mean values
+    group_avg_df = processed_df.set_index("Library").mean().to_frame().T
+    group_avg_df["Library"] = group_name
+    group_avg_df = group_avg_df[
+        ["Library"] + group_avg_df.columns.tolist()[:-1]
+    ].reset_index(drop=True)
+
+    return processed_df, group_avg_df
+
+
+def plot_metrics_heatmap(
+    data,
+    output_path,
+    lib_order,
+    colorbar_label,
+    vmin,
+    vmax,
+    figsize=(8, 1.6),
+    cbar_shrink=1.0,
+):
+    """
+    Creates and saves a heatmap based on the processed data.
+
+    Parameters:
+    - data (pd.DataFrame): Data to plot.
+    - output_path (str): Path to save the figure.
+    - lib_order (list): Order for reindexing.
+    - colorbar_label (str): Label for the colorbar.
+    - figsize (tuple): Figure size.
+    - cbar_shrink (float): Shrink factor for the colorbar.
+    """
+    plt.figure(figsize=figsize)
+    sns.heatmap(
+        data.set_index("Library").reindex(lib_order),
+        cmap="vlag",
+        annot=True,
+        fmt=".1f",
+        linewidths=0.5,
+        cbar_kws={"label": colorbar_label, "shrink": cbar_shrink},
+        vmin=vmin,
+        vmax=vmax,
+    )
+    plt.savefig(output_path, format="svg", dpi=300, bbox_inches="tight")
+    print(f"Saved heatmap: {output_path}")
+
+
+def processnplot_metrics(
+    df,
+    lib_order,
+    trpb_cols,
+    parlq_cols,
+    cb_cols,
+    csi_cols,
+    trpb_col_dict,
+    parlq_col_dict,
+    cb_col_dict,
+    csi_col_dict,
+    final_col_order,
+    metric_name,
+    output_dir,
+):
+    """
+    Processes data and generates heatmaps for a given metric.
+
+    Parameters:
+    - df (pd.DataFrame): The input DataFrame.
+    - lib_order (list): Custom sorting order.
+    - trpb_cols, parlq_cols, cb_cols, csi_cols (list): Relevant columns for each group.
+    - trpb_col_dict, parlq_col_dict, cb_col_dict, csi_col_dict (dict): Column renaming mappings.
+    - final_col_order (list): Final order of columns for the heatmap.
+    - metric_name (str): Metric name (e.g., "fit_rho").
+    - output_dir (str): Directory to save outputs.
+    """
+    # get colorbar_label
+    fit2sele, metric = metric_name.split("_")
+
+    # Process each group
+    parlq_rho_df, parlqmean = process_metrics2plot(
+        df, lib_order[-9:], "ParLQ-avg", parlq_col_dict, parlq_cols
+    )
+
+    cb_df = (
+        df[df["lib"] == "Rma-CB"]
+        .copy()[cb_cols]
+        .rename(columns=cb_col_dict)
+        .reset_index(drop=True)
+    )
+    csi_df = (
+        df[df["lib"] == "Rma-CSi"]
+        .copy()[csi_cols]
+        .rename(columns=csi_col_dict)
+        .reset_index(drop=True)
+    )
+
+    if fit2sele == "fit":
+        trpb_rho_df, trpbmean = process_metrics2plot(
+            df, lib_order[:11], "PfTrpB-avg", trpb_col_dict, trpb_cols
+        )
+
+        # Small summary heatmap
+        summary_data = pd.concat([trpbmean, cb_df, csi_df, parlqmean])[final_col_order]
+        summary_order = ["PfTrpB-avg", "Rma-CB", "Rma-CSi", "ParLQ-avg"]
+        summary_size = (8, 1.6)
+
+        # Full heatmap for all entries
+        full_data = pd.concat([trpb_rho_df, cb_df, csi_df, parlq_rho_df])[
+            final_col_order
+        ]
+        full_order = lib_order
+        full_size = (7.2, 8)
+
+    # no trpb
+    else:
+        # Small summary heatmap
+        summary_data = pd.concat([cb_df, csi_df, parlqmean])[final_col_order]
+        summary_order = ["Rma-CB", "Rma-CSi", "ParLQ-avg"]
+        summary_size = (8, 1.24)
+
+        # Full heatmap for all entries
+        full_data = pd.concat([cb_df, csi_df, parlq_rho_df])[final_col_order]
+        full_order = lib_order[-11:]
+        full_size = (8, 4)
+
+    colorbar_label = f"{METRICS_DICT[metric]}\n({FITSELE_DICT[fit2sele]})"
+    vmin, vmax = METRIC_COLOR_THRESHOLD[metric]
+
+    # Plot heatmaps
+    plot_metrics_heatmap(
+        data=summary_data,
+        output_path=os.path.join(output_dir, f"zs_sum_{metric_name}.svg"),
+        lib_order=summary_order,
+        colorbar_label=colorbar_label,
+        vmin=vmin,
+        vmax=vmax,
+        figsize=summary_size,
+    )
+
+    plot_metrics_heatmap(
+        data=full_data,
+        output_path=os.path.join(output_dir, f"zs_sum_{metric_name}_all.svg"),
+        lib_order=full_order,
+        colorbar_label=colorbar_label,
+        vmin=vmin,
+        vmax=vmax,
+        figsize=full_size,
+        cbar_shrink=0.5,
+    )
+
+
+def plot_all_metrics(input_dir="zs/metrics", output_dir="figs/metrics"):
+
+    checkNgen_folder(output_dir)
+
+    common_params = {
+        "lib_order": LIB_ORDER,
+        "trpb_cols": TRPB_COLS,
+        "parlq_cols": PARLQ_COLS,
+        "cb_cols": CB_COLS,
+        "csi_cols": CSI_COLS,
+        "trpb_col_dict": TRPB_COL_DICT,
+        "parlq_col_dict": PARLQ_COL_DICT,
+        "cb_col_dict": CB_COL_DICT,
+        "csi_col_dict": CSI_COL_DICT,
+        "final_col_order": FINAL_COL_ORDER,
+    }
+
+    for m in tqdm(ALL_METRICS_OPTS):
+        fit2sele, metric = m.split("_")
+        df = pd.read_csv(os.path.join(input_dir, f"{m}.csv"))
+
+        # Process and plot for Spearman's ρ (activity)
+        processnplot_metrics(df, **common_params, metric_name=m, output_dir=output_dir)

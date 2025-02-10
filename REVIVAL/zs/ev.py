@@ -69,32 +69,6 @@ EV_META = {
             "quality": 10,
         },
     },
-    "TmTrpB": {
-        "recommended": {
-            "bitscore": 0.1,
-            "sequences": 73656,
-            "seqs_per_l": 256.6,
-            "quality": 10,
-        },
-        "chosen": {
-            "bitscore": 0.3,
-            "sequences": 5816,
-            "seqs_per_l": 15.4,
-            "quality": 10,
-        },
-        "other_2": {
-            "bitscore": 0.5,
-            "sequences": 5566,
-            "seqs_per_l": 14.8,
-            "quality": 10,
-        },
-        "other_3": {
-            "bitscore": 0.7,
-            "sequences": 4476,
-            "seqs_per_l": 11.8,
-            "quality": 10,
-        },
-    },
     "Rma": {
         "recommended": {
             "bitscore": 0.3,

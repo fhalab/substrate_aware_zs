@@ -5,7 +5,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.analysis import train_test_all
+from REVIVAL.analysis import train_test_all, process_and_save_metrics, plot_all_metrics
 from REVIVAL.util import checkNgen_folder
 
 
@@ -18,16 +18,19 @@ if __name__ == "__main__":
     sys.stdout = f
 
 
-    train_test_all(
-        pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv", output_dir="zs/lincomb"
-    )
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv", output_dir="zs/lincomb"
+    # )
+
+    # process_and_save_metrics(
+    #     input_dir="zs/comb", 
+    #     output_dir="zs/metrics"
+    #     )
+
+    plot_all_metrics(
+        input_dir="zs/metrics",
+        output_dir="figs/metrics"
+        )
 
     f.close()
-
-    """
-    train_test_all(
-        pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv", output_dir="zs/lincomb"
-    )
-    """
-
 
