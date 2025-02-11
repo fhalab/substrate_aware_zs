@@ -19,9 +19,32 @@ if __name__ == "__main__":
 
     # get_minimal_comb(pattern="zs/comb/*.csv")
 
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv", output_dir="zs/lincomb"
+    # )
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    #     output_dir="zs/lincomb",
+    #     sele_cols=["EVmutation", "AF3"]
+    # )
+
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    #     output_dir="zs/lincomb",
+    #     sele_cols=["EVmutation", "AF3", "ESM-IF"]
+    # )
+
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    #     output_dir="zs/lincomb",
+    #     sele_cols=["EVmutation", "ESM-IF"]
+    # )
     train_test_all(
-        pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv", output_dir="zs/lincomb"
+        pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+        output_dir="zs/lincomb",
+        sele_cols=["AF3", "ESM-IF"]
     )
+
 
     # process_and_save_metrics(
     #     input_dir="zs/comb", 

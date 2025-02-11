@@ -607,7 +607,9 @@ def generate_X_y(campaign, x_cols: list = [], y_name: str = None):
 
 
 def train_test_all(
-    pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv", output_dir="zs/lincomb"
+    pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    output_dir="zs/lincomb",
+    sele_cols: list = [],
 ):
     """ """
     pattern = [f for f in glob(pattern) if "_scope" not in f]
@@ -615,7 +617,11 @@ def train_test_all(
     # define
     y_name = "fitness"
 
-    results_cols = FINAL_COL_ORDER[1:]
+    if len(sele_cols) == 0:
+        sele_cols = FINAL_COL_ORDER[1:]
+        append_name = ""
+    else:
+        append_name = "_" + "_".join(sele_cols)
 
     if isinstance(pattern, str):
         lib_list = sorted(glob(pattern))
@@ -625,7 +631,7 @@ def train_test_all(
     # extract ZS data from results csv
     campaigns = {}
     for campaign in lib_list:
-        X, y = generate_X_y(campaign, results_cols, y_name)
+        X, y = generate_X_y(campaign, sele_cols, y_name)
         campaigns[get_file_name(campaign)] = (X, y)
 
         # handle NaNs
@@ -724,24 +730,24 @@ def train_test_all(
     lin_rho_pairwise_df = pd.DataFrame(
         lin_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
     )
-    lin_rho_pairwise_df.to_csv(os.path.join(output_dir, "lin_rho_pairwise_df.csv"))
-    np.savez(os.path.join(output_dir, "lin_params.npz"), **lin_params)
+    lin_rho_pairwise_df.to_csv(os.path.join(output_dir, f"lin_rho_pairwise_df{append_name}.csv"))
+    np.savez(os.path.join(output_dir, f"lin_params{append_name}.npz"), **lin_params)
 
     lin_piece_rho_pairwise_df = pd.DataFrame(
         lin_piece_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
     )
     lin_piece_rho_pairwise_df.to_csv(
-        os.path.join(output_dir, "lin_piece_rho_pairwise_df.csv")
+        os.path.join(output_dir, f"lin_piece_rho_pairwise_df{append_name}.csv")
     )
-    np.savez(os.path.join(output_dir, "lin_piece_params.npz"), **lin_piece_params)
+    np.savez(os.path.join(output_dir, f"lin_piece_params{append_name}.npz"), **lin_piece_params)
 
     logistic_rho_pairwise_df = pd.DataFrame(
         logistic_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
     )
     logistic_rho_pairwise_df.to_csv(
-        os.path.join(output_dir, "logistic_rho_pairwise_df.csv")
+        os.path.join(output_dir, f"logistic_rho_pairwise_df{append_name}.csv")
     )
-    np.savez(os.path.join(output_dir, "logistic_params.npz"), **logistic_params)
+    np.savez(os.path.join(output_dir, f"logistic_params{append_name}.npz"), **logistic_params)
 
 
 # clean up and save minimal comb
@@ -1158,3 +1164,79 @@ def plot_all_metrics(input_dir="zs/metrics", output_dir="figs/metrics"):
 
         # Process and plot for Spearman's ρ (activity)
         processnplot_metrics(df, **common_params, metric_name=m, output_dir=output_dir)
+
+
+
+####### for lin comb plot #######
+
+# Function to plot heatmap
+def plot_train_test_heatmap(df, size, vmin, vmax, output_path, title=None):
+    plt.figure(figsize=size)
+    sns.heatmap(
+        df,
+        cmap="vlag",
+        annot=True,
+        fmt=".1f",
+        linewidths=0.5,
+        cbar_kws={
+            "label": "Spearman's ρ\n(activity)",
+            "ticks": [0, 0.5],
+            "shrink": 0.5,
+        },
+        vmin=vmin,
+        vmax=vmax,
+    )
+    plt.xlabel("Testing")
+    plt.ylabel("Training")
+    if title:
+        plt.title(title)
+    plt.savefig(output_path, dpi=300, bbox_inches="tight")
+    plt.close()
+
+
+def process_and_plot_corr(file_path, lib_order, output_dir, vmin, vmax):
+    """
+    Loads a correlation matrix, computes group averages, and plots two heatmaps.
+
+    Args:
+        file_path (str): Path to the CSV file.
+        lib_order (list): Ordered list of libraries.
+        groups (dict): Dictionary mapping new row names to lists of existing rows.
+    """
+
+    # Load and preprocess data
+    df = pd.read_csv(file_path, index_col=0).reset_index(drop=True)
+    df = df.rename(columns={"ParLQ": "ParLQ-a"})  # Rename specific column
+    df["Library"] = df.columns  # Add "Library" column
+    df.set_index("Library", inplace=True)
+    df = df.reindex(lib_order)[lib_order]  # Reorder rows & columns
+
+    # Define library order and groups
+    groups = {
+        "ParLQ-avg": [c for c in lib_order if "ParLQ" in c],
+        "PfTrpB-avg": [c for c in lib_order if "PfTrpB" in c],
+    }
+
+    # Compute group averages
+    for new_row, rows in groups.items():
+        df[new_row] = df[rows].mean(axis=1)  # Compute column-wise mean
+        df.loc[new_row] = df.loc[rows].mean()  # Compute row-wise mean
+
+    checkNgen_folder(output_dir)
+    output_grouped = os.path.join(output_dir, f"zs_{get_file_name(file_path)}.svg")
+    output_full = output_grouped.replace(".svg", "_all.svg")
+
+    # Plot and save full heatmap
+    plot_train_test_heatmap(
+        df, size=(10, 8), vmin=vmin, vmax=vmax, output_path=output_full
+    )
+
+    # Subset for grouped heatmap
+    subset_df = df.loc[["PfTrpB-avg", "Rma-CB", "Rma-CSi", "ParLQ-avg"]][
+        ["PfTrpB-avg", "Rma-CB", "Rma-CSi", "ParLQ-avg"]
+    ]
+
+    # Plot and save grouped heatmap
+    plot_train_test_heatmap(
+        subset_df, size=(2.1, 1.6), vmin=vmin, vmax=vmax, output_path=output_grouped
+    )
