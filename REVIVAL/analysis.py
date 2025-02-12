@@ -808,167 +808,168 @@ def get_minimal_comb(pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv"):
         clean_comb(f, get_file_name(f))
 
 
-def process_and_save_metrics(
-    input_dir="/disk2/fli/REVIVAL2/zs/comb", output_dir="/disk2/fli/REVIVAL2/zs/metrics"
-):
-    """
-    Processes CSV files to compute ranking metrics (NDCG, Spearman, Top-N recall)
-    for fitness and selectivity and saves the results as CSV files.
+# TODO CHECK
+# def process_and_save_metrics(
+#     input_dir="/disk2/fli/REVIVAL2/zs/comb", output_dir="/disk2/fli/REVIVAL2/zs/metrics"
+# ):
+#     """
+#     Processes CSV files to compute ranking metrics (NDCG, Spearman, Top-N recall)
+#     for fitness and selectivity and saves the results as CSV files.
 
-    Parameters:
-    - input_dir: str, path to the directory containing the CSV files.
-    - output_dir: str, path to the directory where the results will be saved.
-    """
+#     Parameters:
+#     - input_dir: str, path to the directory containing the CSV files.
+#     - output_dir: str, path to the directory where the results will be saved.
+#     """
 
-    # Process each CSV file
-    for f in sorted(glob(os.path.join(input_dir, "*.csv"))):
-        if "_scope" in f:
-            continue  # Skip files with "_scope"
+#     # Process each CSV file
+#     for f in sorted(glob(os.path.join(input_dir, "*.csv"))):
+#         if "_scope" in f:
+#             continue  # Skip files with "_scope"
 
-        df_original = pd.read_csv(f)
+#         df_original = pd.read_csv(f)
 
-        # Convert fitness column to numeric if it's a string
-        if df_original["fitness"].dtype == "O":
-            df_original["fitness"] = pd.to_numeric(
-                df_original["fitness"].str.replace(",", ""), errors="coerce"
-            )
+#         # Convert fitness column to numeric if it's a string
+#         if df_original["fitness"].dtype == "O":
+#             df_original["fitness"] = pd.to_numeric(
+#                 df_original["fitness"].str.replace(",", ""), errors="coerce"
+#             )
 
-        # Keep only numerical columns
-        df_original = df_original[df_original.select_dtypes(include=["number"]).columns]
+#         # Keep only numerical columns
+#         df_original = df_original[df_original.select_dtypes(include=["number"]).columns]
 
-        df_name = os.path.basename(f).replace(".csv", "")  # Extract filename
-        print(f"Processing: {df_name}")
+#         df_name = os.path.basename(f).replace(".csv", "")  # Extract filename
+#         print(f"Processing: {df_name}")
 
-        # Initialize metric dictionaries
-        metric_dicts = {
-            metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS
-        }
-        for metric in metric_dicts.values():
-            metric["lib"] = df_name
+#         # Initialize metric dictionaries
+#         metric_dicts = {
+#             metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS
+#         }
+#         for metric in metric_dicts.values():
+#             metric["lib"] = df_name
 
-        add_selectivity = "selectivity" in df_original.columns
-        sele_metric_dicts = (
-            {metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS}
-            if add_selectivity
-            else {}
-        )
+#         add_selectivity = "selectivity" in df_original.columns
+#         sele_metric_dicts = (
+#             {metric: dict.fromkeys(df_original.columns, np.nan) for metric in METRICS}
+#             if add_selectivity
+#             else {}
+#         )
 
-        for metric in sele_metric_dicts.values():
-            metric["lib"] = df_name
+#         for metric in sele_metric_dicts.values():
+#             metric["lib"] = df_name
 
-        for c in df_original.columns:
-            if c in ["fitness"] or "_rank" in c:
-                continue
+#         for c in df_original.columns:
+#             if c in ["fitness"] or "_rank" in c:
+#                 continue
 
-            # Remove NaN rows
-            df = df_original[df_original[c].notna()]
-            if df.empty:
-                continue
+#             # Remove NaN rows
+#             df = df_original[df_original[c].notna()]
+#             if df.empty:
+#                 continue
 
-            y_true = df["fitness"].values
-            y_score = df[c].values
+#             y_true = df["fitness"].values
+#             y_score = df[c].values
 
-            # Flip sign based on conditions
-            if (
-                "Triad_score" in c
-                or "chain_pae_min" in c
-                or "sum_" in c
-                or "naive_score" in c
-                or c == "complexscore"
-                or c == "dH"
-                or c == "ligscore"
-                or c == "recscore"
-                or c == "score"
-                or c == "total_score"
-                or "vina_" in c
-                or "0:" in c
-                or "1:" in c
-                or "2:" in c
-                or "_vol" in c
-            ):
-                y_score = -1 * y_score
-            elif " - " in c:
-                y_score = np.abs(y_score)
+#             # Flip sign based on conditions
+#             if (
+#                 "Triad_score" in c
+#                 or "chain_pae_min" in c
+#                 or "sum_" in c
+#                 or "naive_score" in c
+#                 or c == "complexscore"
+#                 or c == "dH"
+#                 or c == "ligscore"
+#                 or c == "recscore"
+#                 or c == "score"
+#                 or c == "total_score"
+#                 or "vina_" in c
+#                 or "0:" in c
+#                 or "1:" in c
+#                 or "2:" in c
+#                 or "_vol" in c
+#             ):
+#                 y_score = -1 * y_score
+#             elif " - " in c:
+#                 y_score = np.abs(y_score)
 
-            # Compute metrics
-            metric_dicts["rho"][c] = (
-                spearmanr(y_true, y_score).correlation
-                if np.any(y_score != y_score[0])
-                else np.nan
-            )
-            metric_dicts["ndcg"][c] = ndcg_scale(y_true=y_true, y_pred=y_score)
-            metric_dicts["ndcg10"][c] = custom_ndcg(
-                y_true=y_true, y_score=y_score, top=10
-            )
-            metric_dicts["ndcg20"][c] = custom_ndcg(
-                y_true=y_true, y_score=y_score, top=20
-            )
-            metric_dicts["ndcg25"][c] = custom_ndcg(
-                y_true=y_true, y_score=y_score, top=25
-            )
-            metric_dicts["top10"][c] = calc_top_n_percent_recall(
-                y_true=y_true, y_score=y_score, top_n=10
-            )
-            metric_dicts["top20"][c] = calc_top_n_percent_recall(
-                y_true=y_true, y_score=y_score, top_n=20
-            )
-            metric_dicts["top25"][c] = calc_top_n_percent_recall(
-                y_true=y_true, y_score=y_score, top_n=25
-            )
+#             # Compute metrics
+#             metric_dicts["rho"][c] = (
+#                 spearmanr(y_true, y_score).correlation
+#                 if np.any(y_score != y_score[0])
+#                 else np.nan
+#             )
+#             metric_dicts["ndcg"][c] = ndcg_scale(y_true=y_true, y_pred=y_score)
+#             metric_dicts["ndcg10"][c] = custom_ndcg(
+#                 y_true=y_true, y_score=y_score, top=10
+#             )
+#             metric_dicts["ndcg20"][c] = custom_ndcg(
+#                 y_true=y_true, y_score=y_score, top=20
+#             )
+#             metric_dicts["ndcg25"][c] = custom_ndcg(
+#                 y_true=y_true, y_score=y_score, top=25
+#             )
+#             metric_dicts["top10"][c] = calc_top_n_percent_recall(
+#                 y_true=y_true, y_score=y_score, top_n=10
+#             )
+#             metric_dicts["top20"][c] = calc_top_n_percent_recall(
+#                 y_true=y_true, y_score=y_score, top_n=20
+#             )
+#             metric_dicts["top25"][c] = calc_top_n_percent_recall(
+#                 y_true=y_true, y_score=y_score, top_n=25
+#             )
 
-            # Selectivity calculations
-            if add_selectivity and c != "selectivity":
-                y_true_sele = df["selectivity"].values
-                y_score_sele = y_score
+#             # Selectivity calculations
+#             if add_selectivity and c != "selectivity":
+#                 y_true_sele = df["selectivity"].values
+#                 y_score_sele = y_score
 
-                sele_metric_dicts["rho"][c] = (
-                    spearmanr(y_true_sele, y_score_sele).correlation
-                    if np.any(y_score_sele != y_score_sele[0])
-                    else np.nan
-                )
-                sele_metric_dicts["ndcg"][c] = ndcg_scale(
-                    y_true=y_true_sele, y_pred=y_score_sele
-                )
-                sele_metric_dicts["ndcg10"][c] = custom_ndcg(
-                    y_true=y_true_sele, y_score=y_score_sele, top=10
-                )
-                sele_metric_dicts["ndcg20"][c] = custom_ndcg(
-                    y_true=y_true_sele, y_score=y_score_sele, top=20
-                )
-                sele_metric_dicts["ndcg25"][c] = custom_ndcg(
-                    y_true=y_true_sele, y_score=y_score_sele, top=25
-                )
-                sele_metric_dicts["top10"][c] = calc_top_n_percent_recall(
-                    y_true=y_true_sele, y_score=y_score_sele, top_n=10
-                )
-                sele_metric_dicts["top20"][c] = calc_top_n_percent_recall(
-                    y_true=y_true_sele, y_score=y_score_sele, top_n=20
-                )
-                sele_metric_dicts["top25"][c] = calc_top_n_percent_recall(
-                    y_true=y_true_sele, y_score=y_score_sele, top_n=25
-                )
+#                 sele_metric_dicts["rho"][c] = (
+#                     spearmanr(y_true_sele, y_score_sele).correlation
+#                     if np.any(y_score_sele != y_score_sele[0])
+#                     else np.nan
+#                 )
+#                 sele_metric_dicts["ndcg"][c] = ndcg_scale(
+#                     y_true=y_true_sele, y_pred=y_score_sele
+#                 )
+#                 sele_metric_dicts["ndcg10"][c] = custom_ndcg(
+#                     y_true=y_true_sele, y_score=y_score_sele, top=10
+#                 )
+#                 sele_metric_dicts["ndcg20"][c] = custom_ndcg(
+#                     y_true=y_true_sele, y_score=y_score_sele, top=20
+#                 )
+#                 sele_metric_dicts["ndcg25"][c] = custom_ndcg(
+#                     y_true=y_true_sele, y_score=y_score_sele, top=25
+#                 )
+#                 sele_metric_dicts["top10"][c] = calc_top_n_percent_recall(
+#                     y_true=y_true_sele, y_score=y_score_sele, top_n=10
+#                 )
+#                 sele_metric_dicts["top20"][c] = calc_top_n_percent_recall(
+#                     y_true=y_true_sele, y_score=y_score_sele, top_n=20
+#                 )
+#                 sele_metric_dicts["top25"][c] = calc_top_n_percent_recall(
+#                     y_true=y_true_sele, y_score=y_score_sele, top_n=25
+#                 )
 
-        # Append results
-        for metric in METRICS:
-            FIT_METRICS[metric].append(metric_dicts[metric])
-            if add_selectivity:
-                SELE_METRICS[metric].append(sele_metric_dicts[metric])
+#         # Append results
+#         for metric in METRICS:
+#             FIT_METRICS[metric].append(metric_dicts[metric])
+#             if add_selectivity:
+#                 SELE_METRICS[metric].append(sele_metric_dicts[metric])
 
-    # Save results as DataFrames
-    os.makedirs(output_dir, exist_ok=True)
+#     # Save results as DataFrames
+#     os.makedirs(output_dir, exist_ok=True)
 
-    for metric, metric_list in FIT_METRICS.items():
-        df = pd.DataFrame(metric_list)
-        # rename parlq to parlq-a
-        df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
-        df.to_csv(f"{output_dir}/fit_{metric}.csv", index=False)
+#     for metric, metric_list in FIT_METRICS.items():
+#         df = pd.DataFrame(metric_list)
+#         # rename parlq to parlq-a
+#         df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
+#         df.to_csv(f"{output_dir}/fit_{metric}.csv", index=False)
 
-    for metric, metric_list in SELE_METRICS.items():
-        df = pd.DataFrame(metric_list)
-        df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
-        df.to_csv(f"{output_dir}/sele_{metric}.csv", index=False)
+#     for metric, metric_list in SELE_METRICS.items():
+#         df = pd.DataFrame(metric_list)
+#         df["lib"] = df["lib"].apply(lambda x: "ParLQ-a" if x == "ParLQ" else x)
+#         df.to_csv(f"{output_dir}/sele_{metric}.csv", index=False)
 
-    print("All metrics saved successfully!")
+#     print("All metrics saved successfully!")
 
 
 def process_metrics2plot(df, lib_order, group_name, col_dict, cols):
@@ -1170,7 +1171,7 @@ def plot_all_metrics(input_dir="zs/metrics", output_dir="figs/metrics"):
 ####### for lin comb plot #######
 
 # Function to plot heatmap
-def plot_train_test_heatmap(df, size, vmin, vmax, output_path, title=None):
+def plot_train_test_heatmap(df, size, vmin, vmax, output_path, shrink, title=None):
     plt.figure(figsize=size)
     sns.heatmap(
         df,
@@ -1181,7 +1182,7 @@ def plot_train_test_heatmap(df, size, vmin, vmax, output_path, title=None):
         cbar_kws={
             "label": "Spearman's ρ\n(activity)",
             "ticks": [0, 0.5],
-            "shrink": 0.5,
+            "shrink": shrink,
         },
         vmin=vmin,
         vmax=vmax,
@@ -1211,6 +1212,18 @@ def process_and_plot_corr(file_path, lib_order, output_dir, vmin, vmax):
     df.set_index("Library", inplace=True)
     df = df.reindex(lib_order)[lib_order]  # Reorder rows & columns
 
+    # add a column averaging all columns for each row
+    df["All-avg"] = df[lib_order].mean(axis=1)
+
+    checkNgen_folder(output_dir)
+    output_grouped = os.path.join(output_dir, f"zs_{get_file_name(file_path)}.svg")
+    output_full = output_grouped.replace(".svg", "_all.svg")
+
+    # Plot and save full heatmap
+    plot_train_test_heatmap(
+        df, size=(10, 8), vmin=vmin, vmax=vmax, output_path=output_full, shrink=0.5
+    )
+
     # Define library order and groups
     groups = {
         "ParLQ-avg": [c for c in lib_order if "ParLQ" in c],
@@ -1222,14 +1235,6 @@ def process_and_plot_corr(file_path, lib_order, output_dir, vmin, vmax):
         df[new_row] = df[rows].mean(axis=1)  # Compute column-wise mean
         df.loc[new_row] = df.loc[rows].mean()  # Compute row-wise mean
 
-    checkNgen_folder(output_dir)
-    output_grouped = os.path.join(output_dir, f"zs_{get_file_name(file_path)}.svg")
-    output_full = output_grouped.replace(".svg", "_all.svg")
-
-    # Plot and save full heatmap
-    plot_train_test_heatmap(
-        df, size=(10, 8), vmin=vmin, vmax=vmax, output_path=output_full
-    )
 
     # Subset for grouped heatmap
     subset_df = df.loc[["PfTrpB-avg", "Rma-CB", "Rma-CSi", "ParLQ-avg"]][
@@ -1238,5 +1243,5 @@ def process_and_plot_corr(file_path, lib_order, output_dir, vmin, vmax):
 
     # Plot and save grouped heatmap
     plot_train_test_heatmap(
-        subset_df, size=(2.1, 1.6), vmin=vmin, vmax=vmax, output_path=output_grouped
+        subset_df, size=(2.1, 1.6), vmin=vmin, vmax=vmax, output_path=output_grouped, shrink=1
     )

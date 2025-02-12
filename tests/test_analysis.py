@@ -39,17 +39,17 @@ if __name__ == "__main__":
     #     output_dir="zs/lincomb",
     #     sele_cols=["EVmutation", "ESM-IF"]
     # )
-    train_test_all(
-        pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
-        output_dir="zs/lincomb",
-        sele_cols=["AF3", "ESM-IF"]
-    )
+    # train_test_all(
+    #     pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    #     output_dir="zs/lincomb",
+    #     sele_cols=["AF3", "ESM-IF"]
+    # )
 
 
-    # process_and_save_metrics(
-    #     input_dir="zs/comb", 
-    #     output_dir="zs/metrics"
-    #     )
+    process_and_save_metrics(
+        input_dir="zs/comb/minimal", 
+        output_dir="zs/metrics"
+        )
 
     # plot_all_metrics(
     #     input_dir="zs/metrics",
