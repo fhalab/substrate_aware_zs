@@ -645,18 +645,18 @@ def train_test_all(
             y[np.where(np.isnan(y))] = 0
 
     # define validation folds
-    lin_rho_pairwise = np.zeros(
-        (len(campaigns.keys()), len(campaigns.keys())),
-    )
-    lin_piece_rho_pairwise = np.zeros(
-        (len(campaigns.keys()), len(campaigns.keys())),
-    )
+    # lin_rho_pairwise = np.zeros(
+    #     (len(campaigns.keys()), len(campaigns.keys())),
+    # )
+    # lin_piece_rho_pairwise = np.zeros(
+    #     (len(campaigns.keys()), len(campaigns.keys())),
+    # )
     logistic_rho_pairwise = np.zeros(
         (len(campaigns.keys()), len(campaigns.keys())),
     )
 
-    lin_params = {}
-    lin_piece_params = {}
+    # lin_params = {}
+    # lin_piece_params = {}
     logistic_params = {}
 
     for i, train_fold in tqdm(enumerate(campaigns.keys())):
@@ -664,19 +664,19 @@ def train_test_all(
         X_train, y_train = campaigns[train_fold]
 
         # fit linear model
-        params_lin = fit_linear_model(X_train, y_train)
-        w_0_lin = params_lin["intercept"]
-        w_lin = params_lin["weights"]
+        # params_lin = fit_linear_model(X_train, y_train)
+        # w_0_lin = params_lin["intercept"]
+        # w_lin = params_lin["weights"]
 
-        # fit piecewise lin model
-        params_piece = fit_piecewise_model(X_train, y_train)
-        w_0_piece = params_piece["intercept"]
-        w_piece = params_piece["weights"]
-        alphas_tup_piece = params_piece["alphas"]
-        alphas_piece = np.array([item for tup in alphas_tup_piece for item in tup])
-        piecewise_params = np.concatenate(
-            [np.array([w_0_piece]), w_piece, alphas_piece]
-        )
+        # # fit piecewise lin model
+        # params_piece = fit_piecewise_model(X_train, y_train)
+        # w_0_piece = params_piece["intercept"]
+        # w_piece = params_piece["weights"]
+        # alphas_tup_piece = params_piece["alphas"]
+        # alphas_piece = np.array([item for tup in alphas_tup_piece for item in tup])
+        # piecewise_params = np.concatenate(
+        #     [np.array([w_0_piece]), w_piece, alphas_piece]
+        # )
 
         # fit logistic model
         logistic_params = fit_logistic_model(X_train, y_train)
@@ -686,16 +686,16 @@ def train_test_all(
             X_test, y_test = campaigns[test_fold]
             print(f"xtest{X_test[:10, :10]} ytest{y_test[:10]}")
             # lin model inference
-            y_hat_lin = inference_linear_model(X_test, w_0_lin, w_lin)
+            # y_hat_lin = inference_linear_model(X_test, w_0_lin, w_lin)
 
-            # lin model scoring
-            lin_corr, _ = spearmanr(y_hat_lin, y_test)
+            # # lin model scoring
+            # lin_corr, _ = spearmanr(y_hat_lin, y_test)
 
-            # piecewise lin model inference
-            y_hat_piece = inference_piecewise_model(X=X_test, params=piecewise_params)
+            # # piecewise lin model inference
+            # y_hat_piece = inference_piecewise_model(X=X_test, params=piecewise_params)
 
-            # model scoring
-            piece_lin_corr, _ = spearmanr(y_hat_piece, y_test)
+            # # model scoring
+            # piece_lin_corr, _ = spearmanr(y_hat_piece, y_test)
 
             # logistic model scoring
             y_hat_logistic = predict_logistic(X_test, logistic_params)
@@ -703,22 +703,22 @@ def train_test_all(
             logistic_corr, _ = spearmanr(y_hat_logistic, y_test)
 
             # writing to corr arrays and paramweight json
-            print(
-                f"INFO: Fitted linear model and obbtained spearmanrho of {lin_corr} by fitting on:\n{train_fold}\nand scoring on:\n{test_fold}."
-            )
-            lin_rho_pairwise[i, j] = lin_corr
-            lin_params[f"train_fold_{train_fold}_test_fold_{test_fold}"] = (
-                w_0_lin,
-                w_lin,
-            )
+            # print(
+            #     f"INFO: Fitted linear model and obbtained spearmanrho of {lin_corr} by fitting on:\n{train_fold}\nand scoring on:\n{test_fold}."
+            # )
+            # lin_rho_pairwise[i, j] = lin_corr
+            # lin_params[f"train_fold_{train_fold}_test_fold_{test_fold}"] = (
+            #     w_0_lin,
+            #     w_lin,
+            # )
 
-            print(
-                f"INFO: Fitted piecewise linear model and obbtained spearmanrho of {piece_lin_corr} by fitting on:\n{train_fold}\n and scoring on:\n{test_fold}."
-            )
-            lin_piece_rho_pairwise[i, j] = piece_lin_corr
-            lin_piece_params[
-                f"train_fold_{train_fold}_test_fold_{test_fold}"
-            ] = piecewise_params
+            # print(
+            #     f"INFO: Fitted piecewise linear model and obbtained spearmanrho of {piece_lin_corr} by fitting on:\n{train_fold}\n and scoring on:\n{test_fold}."
+            # )
+            # lin_piece_rho_pairwise[i, j] = piece_lin_corr
+            # lin_piece_params[
+            #     f"train_fold_{train_fold}_test_fold_{test_fold}"
+            # ] = piecewise_params
 
             logistic_rho_pairwise[i, j] = logistic_corr
             logistic_params[
@@ -727,19 +727,19 @@ def train_test_all(
 
     checkNgen_folder(output_dir)
 
-    lin_rho_pairwise_df = pd.DataFrame(
-        lin_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
-    )
-    lin_rho_pairwise_df.to_csv(os.path.join(output_dir, f"lin_rho_pairwise_df{append_name}.csv"))
-    np.savez(os.path.join(output_dir, f"lin_params{append_name}.npz"), **lin_params)
+    # lin_rho_pairwise_df = pd.DataFrame(
+    #     lin_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
+    # )
+    # lin_rho_pairwise_df.to_csv(os.path.join(output_dir, f"lin_rho_pairwise_df{append_name}.csv"))
+    # np.savez(os.path.join(output_dir, f"lin_params{append_name}.npz"), **lin_params)
 
-    lin_piece_rho_pairwise_df = pd.DataFrame(
-        lin_piece_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
-    )
-    lin_piece_rho_pairwise_df.to_csv(
-        os.path.join(output_dir, f"lin_piece_rho_pairwise_df{append_name}.csv")
-    )
-    np.savez(os.path.join(output_dir, f"lin_piece_params{append_name}.npz"), **lin_piece_params)
+    # lin_piece_rho_pairwise_df = pd.DataFrame(
+    #     lin_piece_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()
+    # )
+    # lin_piece_rho_pairwise_df.to_csv(
+    #     os.path.join(output_dir, f"lin_piece_rho_pairwise_df{append_name}.csv")
+    # )
+    # np.savez(os.path.join(output_dir, f"lin_piece_params{append_name}.npz"), **lin_piece_params)
 
     logistic_rho_pairwise_df = pd.DataFrame(
         logistic_rho_pairwise, columns=campaigns.keys(), index=campaigns.keys()

@@ -5,7 +5,7 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.analysis import train_test_all, process_and_save_metrics, plot_all_metrics, get_minimal_comb
+from REVIVAL.analysis import train_test_all, plot_all_metrics, get_minimal_comb # process_and_save_metrics
 from REVIVAL.util import checkNgen_folder
 
 
@@ -46,10 +46,10 @@ if __name__ == "__main__":
     # )
 
 
-    process_and_save_metrics(
-        input_dir="zs/comb/minimal", 
-        output_dir="zs/metrics"
-        )
+    # process_and_save_metrics(
+    #     input_dir="zs/comb/minimal", 
+    #     output_dir="zs/metrics"
+    #     )
 
     # plot_all_metrics(
     #     input_dir="zs/metrics",
