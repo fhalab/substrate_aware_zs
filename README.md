@@ -1,5 +1,7 @@
 ## About
-A repository for our paper titled "Substrate-Aware Zero-Shot Predictors for Non-Native Enzyme Activities"
+* A repository for our paper titled "Substrate-Aware Zero-Shot Predictors for Non-Native Enzyme Activities".
+* See [Zenodo](https://doi.org/10.5281/zenodo.15226690) for data
+![fig1](fig1.png)
 
 ## Environments
 * The main environment is `substrate_aware.yml`
@@ -88,3 +90,6 @@ The `data/` folder is organized as follows:
 
 ## Analysis
 * The analysis scripts are located in `substrate_aware.analysis`.
+
+## Contact
+* [Francesca-Zhoufan Li](mailto:fzl@caltech.edu)
