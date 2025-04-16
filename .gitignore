@@ -37,6 +37,7 @@ sandbox/*
 *.pdb
 *.idea
 *.npy
+*.zip
 
 temp_hetatm.pdb
 
