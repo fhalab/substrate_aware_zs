@@ -12,9 +12,9 @@ from copy import deepcopy
 import numpy as np
 import pandas as pd
 
-from REVIVAL.global_param import LIB_INFO_DICT, APPEND_INFO_COLS
-from REVIVAL.chem_helper import canonicalize_smiles
-from REVIVAL.util import (
+from substrate_aware.global_param import LIB_INFO_DICT, APPEND_INFO_COLS
+from substrate_aware.chem_helper import canonicalize_smiles
+from substrate_aware.util import (
     checkNgen_folder,
     get_file_name,
     read_parent_fasta,

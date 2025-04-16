@@ -3,14 +3,6 @@ data
 data/
 data/*
 
-data2add
-data2add/
-data2add/*
-
-data2decide
-data2decide/
-data2decide/*
-
 logs
 logs/
 logs/*
@@ -35,22 +27,14 @@ zs
 zs/
 zs/*
 
-sandbox/testopenmm
-sandbox/testopenmm/*
-sandbox/test_vina
-sandbox/test_vina/*
-
-SSMuLA-zs
-SSMuLA-zs/
-SSMuLA-zs/*
-
-*.pdb
-
-sandbox/files/*
+sandbox
+sandbox/
+sandbox/*
 
 !/REVIVAL/*
 !/REVIVAL/zs/ 
 
+*.pdb
 *.idea
 *.npy
 

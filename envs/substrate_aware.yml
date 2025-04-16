@@ -1,8 +1,8 @@
 # For the general environment:
 # Install or update using
-# conda env update --file REVIVAL.yml --prune
+# conda env update --file substrate_aware.yml --prune
 
-name: REVIVAL
+name: substrate_aware
 channels:
   - pytorch
   - pyg

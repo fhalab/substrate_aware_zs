@@ -9,8 +9,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.vina import dock_lib_parallel, VinaLibDock
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.vina import dock_lib_parallel, VinaLibDock
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -27,28 +27,8 @@ if __name__ == "__main__":
     sys.stdout = f
 
     
-    for struct_dir in sorted(glob(("zs/af3/struct_seperate/ParLQ-*"))):
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
 
-    
-    for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=16
-        )
-
-    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
+    # for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
     #     dock_lib_parallel(
     #         struct_dir = struct_dir,
     #         dock_opt="substrate",
@@ -58,17 +38,17 @@ if __name__ == "__main__":
     #         max_workers=32
     #     )
     
-    for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
-        dock_lib_parallel(
-            struct_dir = struct_dir,
-            dock_opt="substrate",
-            score_only=True,
-            rerun=False,
-            cofactor_dets="cofactor",
-            max_workers=32
-        )
+    # for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=32
+    #     )
 
-    # for struct_dir in sorted(glob(("zs/chai/struct_joint/*"))):
+    # for struct_dir in sorted(glob(("zs/af3/struct_joint/*"))):
     #     dock_lib_parallel(
     #         struct_dir = struct_dir,
     #         dock_opt="substrate",
@@ -78,7 +58,69 @@ if __name__ == "__main__":
     #         max_workers=32
     #     )
     
-    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/-*"))):
+    # for struct_dir in sorted(glob(("zs/af3/struct_seperate/*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=32
+    #     )
+
+
+    # for struct_dir in sorted(glob(("zs/af3/struct_seperate/ParLQ-*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=16
+    #     )
+
+    
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=16
+    #     )
+
+    # for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=32
+    #     )
+    
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/ParLQ-*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=32
+    #     )
+
+    # for struct_dir in sorted(glob(("zs/chai/struct_joint/PfTrpB*"))):
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=32
+    #     )
+    
+    # for struct_dir in sorted(glob(("zs/chai/struct_seperate/*"))):
     #     dock_lib_parallel(
     #         struct_dir = struct_dir,
     #         dock_opt="substrate",
@@ -105,6 +147,121 @@ if __name__ == "__main__":
     #                 max_workers=4
     #             )
 
+    # for struct_dir in [
+    #     "zs/chai/struct_joint/ParLQ",
+    #     "zs/chai/struct_joint/Rma-CB",
+    #     "zs/chai/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/chai/struct_seperate/ParLQ",
+    #     "zs/chai/struct_seperate/Rma-CB",
+    #     "zs/chai/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+
+    # for struct_dir in [
+    #     "zs/chai/struct_joint/ParLQ",
+    #     "zs/chai/struct_joint/Rma-CB",
+    #     "zs/chai/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/chai/struct_seperate/ParLQ",
+    #     "zs/chai/struct_seperate/Rma-CB",
+    #     "zs/chai/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+
+
+    # for struct_dir in [
+    #     "zs/af3/struct_joint/ParLQ",
+    #     "zs/af3/struct_joint/Rma-CB",
+    #     "zs/af3/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/af3/struct_seperate/ParLQ",
+    #     "zs/af3/struct_seperate/Rma-CB",
+    #     "zs/af3/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=True,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+
+    # for struct_dir in [
+    #     "zs/af3/struct_joint/ParLQ",
+    #     "zs/af3/struct_joint/Rma-CB",
+    #     "zs/af3/struct_joint/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
+    
+    # for struct_dir in [
+    #     "zs/af3/struct_seperate/ParLQ",
+    #     "zs/af3/struct_seperate/Rma-CB",
+    #     "zs/af3/struct_seperate/Rma-CSi",
+    # ]:
+    #     dock_lib_parallel(
+    #         struct_dir = struct_dir,
+    #         dock_opt="substrate+carbene",
+    #         score_only=False,
+    #         rerun=False,
+    #         cofactor_dets="cofactor",
+    #         max_workers=8
+    #     )
     f.close()
     
     """

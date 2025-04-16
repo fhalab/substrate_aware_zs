@@ -9,8 +9,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.hydro import run_all_hydro
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.hydro import run_all_hydro
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -25,30 +25,22 @@ if __name__ == "__main__":
     sys.stdout = f
 
    
-    # run_all_hydro(pattern="data/meta/*", plip_dir="zs/plip/af3/struct_joint", kwargs={"max_workers": 4})
+    # run_all_hydro(pattern="data/meta/PfTrpB*", plip_dir="zs/plip/af3/struct_joint", kwargs={"max_workers": 4})
     # run_all_hydro(pattern=[
     #     "data/meta/ParLQ.csv",
     #     "data/meta/Rma-CB.csv",
     #     "data/meta/Rma-CSi.csv",
     #     ], plip_dir="zs/plip/af3/struct_seperate", kwargs={"max_workers": 4})
 
-    # run_all_hydro(pattern="data/meta/*", plip_dir="zs/plip/chai/struct_joint", kwargs={"max_workers": 4})
+    # run_all_hydro(pattern="data/meta/PfTrpB*", plip_dir="zs/plip/chai/struct_joint", kwargs={"max_workers": 4})
     # run_all_hydro(pattern=[
     #     "data/meta/ParLQ.csv",
     #     "data/meta/Rma-CB.csv",
     #     "data/meta/Rma-CSi.csv",
     #     ], plip_dir="zs/plip/chai/struct_seperate", kwargs={"max_workers": 4})
 
-    # run_all_hydro(pattern="data/meta/ParLQ.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
-    
-    # run_all_hydro(pattern="data/meta/*scope.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
-
-    # run_all_hydro(pattern="data/meta/PfTrpB_scope.csv", plip_dir="zs/plip/af3/struct_joint", kwargs={"max_workers": 4})
-    
-    # run_all_hydro(pattern="data/meta/ParLQ-*.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
-    run_all_hydro(pattern="data/meta/ParLQ-*.csv", plip_dir="zs/plip/af3/struct_seperate", kwargs={"max_workers": 4})
-
-
+    # run_all_hydro(pattern="data/meta/*.csv", plip_dir="zs/plip/frompdb/struct", kwargs={"max_workers": 4})
+ 
 
     f.close()
 

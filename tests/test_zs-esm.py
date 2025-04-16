@@ -5,8 +5,8 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.esm import run_all_esm
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.esm import run_all_esm
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
     
@@ -19,7 +19,6 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_all_esm(pattern="data/meta/*")
-    run_all_esm(pattern="data/meta/ParLQ-*.csv")
 
     f.close()
 

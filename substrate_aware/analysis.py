@@ -26,7 +26,7 @@ import seaborn as sns
 import matplotlib.pyplot as plt
 
 
-from REVIVAL.util import checkNgen_folder, get_file_name
+from substrate_aware.util import checkNgen_folder, get_file_name
 
 
 COMMON_COLS = [
@@ -607,7 +607,7 @@ def generate_X_y(campaign, x_cols: list = [], y_name: str = None):
 
 
 def train_test_all(
-    pattern="/disk2/fli/REVIVAL2/zs/comb/minimal/*.csv",
+    pattern="/disk2/fli/substrate_aware/zs/comb/minimal/*.csv",
     output_dir="zs/lincomb",
     sele_cols: list = [],
 ):
@@ -798,7 +798,7 @@ def clean_comb(in_path, lib):
     return df[FINAL_COL_ORDER[1:]+append_col].to_csv(out_path, index=False)
 
 
-def get_minimal_comb(pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv"):
+def get_minimal_comb(pattern="/disk2/fli/substrate_aware/zs/comb/*.csv"):
     """
     Reduce the comb to just the critical columns
     """
@@ -810,7 +810,8 @@ def get_minimal_comb(pattern="/disk2/fli/REVIVAL2/zs/comb/*.csv"):
 
 # TODO CHECK
 # def process_and_save_metrics(
-#     input_dir="/disk2/fli/REVIVAL2/zs/comb", output_dir="/disk2/fli/REVIVAL2/zs/metrics"
+#     input_dir="/disk2/fli/substrate_aware/zs/comb", 
+#     output_dir="/disk2/fli/substrate_aware/zs/metrics"
 # ):
 #     """
 #     Processes CSV files to compute ranking metrics (NDCG, Spearman, Top-N recall)

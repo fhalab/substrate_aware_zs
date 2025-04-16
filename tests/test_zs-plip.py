@@ -8,8 +8,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.plip import run_lib_plip, run_all_plip_zs
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.plip import run_lib_plip, run_all_plip_zs
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -25,16 +25,7 @@ if __name__ == "__main__":
 
     # run_lib_plip(in_dir="data/structure", out_dir="zs/plip")
 
-    # for lib_dir in sorted(glob("zs/af3/struct_joint/*_scope")):
-    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
-
     # for lib_dir in sorted(glob("zs/af3/struct_seperate/ParLQ-*")):
-    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
-
-    # for lib_dir in sorted(glob("zs/chai/struct_joint/PfTrpB_scope")):
-    #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
-
-    # for lib_dir in sorted(glob("zs/chai/struct_seperate/PfTrpB_scope")):
     #     run_lib_plip(in_dir=lib_dir, out_dir="zs/plip")
 
     # for plip_dir in[
@@ -45,24 +36,10 @@ if __name__ == "__main__":
     # ]:
     
     #     run_all_plip_zs(
-    #         "data/meta/ParLQ-*.csv",
+    #         "data/meta/*.csv",
     #         plip_dir
     #         )
 
-    
-    # for plip_dir in[
-    #     "zs/plip/af3/struct_seperate",
-    #     # "zs/plip/chai/struct_seperate",
-    # ]:
-    
-    #     run_all_plip_zs(
-    #         [
-    #             # "data/meta/ParLQ.csv",
-    #             "data/meta/Rma-CB_scope.csv",
-    #             "data/meta/Rma-CSi_scope.csv",
-    #         ],
-    #         plip_dir
-    #         )
 
     f.close()
 

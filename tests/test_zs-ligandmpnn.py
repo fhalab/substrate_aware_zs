@@ -8,8 +8,8 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.ligandmpnn import run_ligandmpnn, LigandMPNN_MODEL_DICT
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.ligandmpnn import run_ligandmpnn, LigandMPNN_MODEL_DICT
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -27,14 +27,9 @@ if __name__ == "__main__":
 
     # for noise in LigandMPNN_MODEL_DICT.keys():
     #     run_ligandmpnn(
-    #         pattern="data/meta/ParLQ-*.csv",
+    #         pattern="data/meta/*.csv",
     #         noise_level=noise,
     #     )
 
-    for noise in LigandMPNN_MODEL_DICT.keys():
-        run_ligandmpnn(
-            pattern="data/meta/*_scope.csv",
-            noise_level=noise,
-        )
-        
+
     f.close()

@@ -10,8 +10,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.esmif import run_esmif
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.esmif import run_esmif
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -29,8 +29,6 @@ if __name__ == "__main__":
 
     # run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure", withsub= False)
     # run_esmif("data/meta/not_scaled/*", in_structure_dir= "data/structure/docked", withsub= True)
-
-    run_esmif("data/meta/ParLQ-*.csv", in_structure_dir= "data/structure", withsub= False)
 
     """
     run_esmif(pattern: str | list = "data/meta/scale2parent/*.csv", kwargs: dict = {})

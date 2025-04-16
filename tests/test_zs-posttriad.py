@@ -7,8 +7,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.triad import run_parse_triad_results
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.triad import run_parse_triad_results
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_parse_triad_results("data/meta/not_scaled/D*.csv")
+    run_parse_triad_results("data/meta/*.csv")
 
     """run_parse_triad_results(
     pattern: str | list = "data/meta/scale2parent/*.csv"

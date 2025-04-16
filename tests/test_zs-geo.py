@@ -7,8 +7,8 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.geometries import run_bonddist
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.geometries import run_bonddist
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -25,33 +25,33 @@ if __name__ == "__main__":
 
     # run_bonddist(
     #     struct_dir="zs/af3/struct_joint",
-    #     pattern="data/meta/*.csv",
+    #     pattern="data/meta/PfTrpB*.csv",
     # )
     
-    run_bonddist(
-        struct_dir="zs/af3/struct_seperate",
-        pattern="data/meta/ParLQ-*.csv",
-        # pattern=[
-        #     "data/meta/ParLQ.csv",
-        #     "data/meta/Rma-CB.csv",
-        #     "data/meta/Rma-CSi.csv",
-        #     ]
-        )
+    # run_bonddist(
+    #     struct_dir="zs/af3/struct_seperate",
+    #     pattern="data/meta/ParLQ-*.csv",
+    #     )
+
+    # run_bonddist(
+    #     struct_dir="zs/af3/struct_seperate",
+    #     pattern="data/meta/Rma-*.csv",
+    #     )
 
     # run_bonddist(
     #     struct_dir="zs/chai/struct_joint",
-    #     pattern="data/meta/*.csv",
+    #     pattern="data/meta/PfTrpB*.csv",
     # )
 
-    run_bonddist(
-        struct_dir="zs/chai/struct_seperate",
-        pattern="data/meta/ParLQ-*.csv",
-        # pattern=[
-        #     "data/meta/ParLQ.csv",
-        #     "data/meta/Rma-CB.csv",
-        #     "data/meta/Rma-CSi.csv",
-        #     ]
-        )
+    # run_bonddist(
+    #     struct_dir="zs/chai/struct_seperate",
+    #     pattern="data/meta/ParLQ-*.csv",
+    #     )
+    
+    # run_bonddist(
+    #     struct_dir="zs/chai/struct_seperate",
+    #     pattern="data/meta/Rma-*.csv",
+    #     )
 
 
     f.close()

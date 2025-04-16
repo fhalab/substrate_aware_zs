@@ -8,8 +8,8 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.zs.flowsite import run_flowsite
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.flowsite import run_flowsite
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -27,16 +27,9 @@ if __name__ == "__main__":
 
     for opt in [1,2]:
         run_flowsite(
-            pattern="data/meta/ParLQ-*.csv",
+            pattern="data/meta/*.csv",
             flowsite_inference_opt = "pocket_def_residues",
             flowsite_model_opt=opt
         )
 
-    for opt in [1,2]:
-        run_flowsite(
-            pattern="data/meta/*_scope.csv",
-            flowsite_inference_opt = "pocket_def_residues",
-            flowsite_model_opt=opt
-        )
-    
     f.close()

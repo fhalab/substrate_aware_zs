@@ -15,9 +15,9 @@
 #                                                                             #
 ###############################################################################
 
-__title__ = 'REVIVAL2'
-__description__ = 'REVIVAL2'
-__url__ = 'https://github.com/fhalab/REVIVAL2.git'
+__title__ = 'substrate_aware_zs'
+__description__ = 'Substrate aware zero-shot predictors'
+__url__ = 'https://github.com/fhalab/substrate_aware_zs.git'
 __version__ = '1.0.0'
 __author__ = 'Francesca-Zhoufan Li'
 __author_email__ = 'fzl@caltech.edu'

@@ -1,8 +1,8 @@
 # For the general environment:
 # Install or update using
-# conda env update --file REVIVAL_ligmpnn.yml --prune
+# conda env update --file substrate_aware_ligmpnn.yml --prune
 
-name: REVIVAL_ligmpnn
+name: substrate_aware_ligmpnn
 channels:
   - pytorch
   - pyg

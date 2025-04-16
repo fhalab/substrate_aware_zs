@@ -5,8 +5,8 @@ import os
 
 from datetime import datetime
 
-from REVIVAL.preprocess import preprocess_all, gen_apo_structures, process_substratescope_df
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.preprocess import preprocess_all, gen_apo_structures, process_substratescope_df
+from substrate_aware.util import checkNgen_folder
 
 
 if __name__ == "__main__":
@@ -20,7 +20,6 @@ if __name__ == "__main__":
     # preprocess_all(input_pattern = "data/lib/*.csv", scale_fit="none")
     # gen_apo_structures()
     # process_substratescope_df()
-    preprocess_all(input_pattern = "data/lib/ParLQ-*.csv", scale_fit="none")
 
     f.close()
 

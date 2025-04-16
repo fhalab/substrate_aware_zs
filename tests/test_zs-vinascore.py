@@ -9,8 +9,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.vina import run_parse_vina_results
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.vina import run_parse_vina_results
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -55,12 +55,12 @@ if __name__ == "__main__":
     #     vina_struct_dir="zs/vina/chai/struct_joint",
     # )
 
-    run_parse_vina_results(
-        pattern="data/meta/ParLQ-*.csv",
-        dock_opt="substrate",
-        score_only=True,
-        vina_struct_dir="zs/vina/chai/struct_seperate",
-    )
+    # run_parse_vina_results(
+    #     pattern="data/meta/ParLQ-*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="zs/vina/chai/struct_seperate",
+    # )
 
     # run_parse_vina_results(
     #     pattern="data/meta/*.csv",
@@ -69,12 +69,12 @@ if __name__ == "__main__":
     #     vina_struct_dir="zs/vina/af3/struct_joint",
     # )
 
-    run_parse_vina_results(
-        pattern="data/meta/ParLQ-*.csv",
-        dock_opt="substrate",
-        score_only=True,
-        vina_struct_dir="zs/vina/af3/struct_seperate",
-    )
+    # run_parse_vina_results(
+    #     pattern="data/meta/ParLQ-*.csv",
+    #     dock_opt="substrate",
+    #     score_only=True,
+    #     vina_struct_dir="zs/vina/af3/struct_seperate",
+    # )
 
 
     # run_parse_vina_results(

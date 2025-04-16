@@ -7,8 +7,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.triad import run_traid
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.triad import run_traid
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -22,11 +22,18 @@ if __name__ == "__main__":
     )
     sys.stdout = f
 
-    run_traid("data/meta/*_scope.csv", kwargs={"withsub": False, "cleanup": True})
     # run_traid(
-    #     "data/meta/not_scaled/*.csv",
+    #     "data/meta/*.csv",
     #     in_structure_dir="data/structure/docked",
     #     kwargs={"withsub": True, "cleanup": False}
+    # )
+
+    # run_traid("data/meta/*.csv", kwargs={"withsub": False, "cleanup": True})
+    
+    # run_traid(
+    #     "data/meta/*.csv",
+    #     in_structure_dir="data/structure/docked",
+    #     kwargs={"withsub": True, "cleanup": True}
     # )
 
 

@@ -9,8 +9,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.vol import run_all_vol
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.vol import run_all_vol
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -25,7 +25,6 @@ if __name__ == "__main__":
     sys.stdout = f
 
    
-    run_all_vol(pattern="data/meta/*_scope.csv", samesub=False)
     # run_all_vol(pattern="data/meta/PfTrpB-*.csv", samesub=True)
     # run_all_vol(pattern="data/meta/ParLQ-*.csv", samesub=True)
     # run_all_vol(pattern=

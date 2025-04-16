@@ -9,8 +9,8 @@ from glob import glob
 
 from datetime import datetime
 
-from REVIVAL.zs.ev import run_all_ev
-from REVIVAL.util import checkNgen_folder
+from substrate_aware.zs.ev import run_all_ev
+from substrate_aware.util import checkNgen_folder
 
 if __name__ == "__main__":
 
@@ -27,14 +27,5 @@ if __name__ == "__main__":
     sys.stdout = f
 
     # run_all_ev("data/meta/*.csv")
-    run_all_ev("data/meta/ParLQ-*.csv")
-    # kwargs = {
-    #     "scale_fit": "max",
-    #     "var_col_name": "muts",
-    #     "ev_model_dir": "data/SSMuLA_ev",
-    #     "zs_dir": "SSMuLA-zs",
-    #     "ev_dir": "ev",
-    # }
-    # run_all_ev("data/SSMuLA/TEV*", kwargs=kwargs)
 
     f.close()

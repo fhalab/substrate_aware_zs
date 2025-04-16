@@ -1,5 +1,5 @@
-# conda env create -f REVIVAL_ligmpnn.yml
-name: REVIVAL_ligmpnn
+# conda env create -f substrate_aware_ligmpnn.yml
+name: substrate_aware_ligmpnn
 channels:
   - pytorch
   - pyg
@@ -583,4 +583,4 @@ dependencies:
       - werkzeug==3.0.6
       - wordcloud==1.9.4
       - xarray==2024.7.0
-prefix: /disk2/fli/miniconda3/envs/REVIVAL_ligmpnn
+prefix: /disk2/fli/miniconda3/envs/substrate_aware_ligmpnn
