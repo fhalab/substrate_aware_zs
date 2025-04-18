@@ -31,8 +31,8 @@ sandbox
 sandbox/
 sandbox/*
 
-!/REVIVAL/*
-!/REVIVAL/zs/ 
+!/substrate_aware/*
+!/substrate_aware/zs/ 
 
 *.pdb
 *.idea
